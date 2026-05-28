@@ -9,6 +9,7 @@ environment.systemPackages = with pkgs; [
   nano
   parted
   pciutils
+  nh
   usbutils
   age
   sops

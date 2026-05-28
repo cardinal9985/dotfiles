@@ -1,0 +1,8 @@
+keys:
+  - &nostromo age1gydhtrnwnzcxg29rlskh76e2ttvf6r6jsczhpw3m0aw3j7uawq0sgfmxr9
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - age:
+        - *nostromo

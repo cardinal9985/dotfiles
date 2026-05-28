@@ -25,9 +25,14 @@
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixcord = {
+      url = "github:kaylorben/nixcord";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, ... }@inputs:
+  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, ... }@inputs:
   let
     mkHost = { host, user, system ? "x86_64-linux" }: nixpkgs.lib.nixosSystem {
       inherit system;
@@ -42,6 +47,7 @@
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs = { inherit host user inputs; };
           home-manager.users.${user} = import ./home/${user}/${host}.nix;
+          home-manager.sharedModules = [ nixcord.homeModules.default ];
         }
         ./hosts/${host}/disko.nix
         ./hosts/${host}/hardware-configuration.nix

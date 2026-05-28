@@ -3,6 +3,7 @@
 {
   imports = [
     ../../modules/home/maxwell/shared/default.nix
+    ../../modules/home/maxwell/nostromo/default.nix
   ];
   home.username = "maxwell";
   home.homeDirectory = "/home/maxwell";

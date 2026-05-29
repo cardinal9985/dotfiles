@@ -9,7 +9,7 @@ in
 
   programs.spicetify = {
     enable = true;
-    theme = spicePkgs.themes.bloom;
+    theme = spicePkgs.themes.catppuccin;
 
     customColorScheme = {
       text               = s.base05; # main text

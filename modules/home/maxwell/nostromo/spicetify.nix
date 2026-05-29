@@ -16,9 +16,9 @@ in
       subtext            = s.base04; # secondary text
       sidebar-text       = s.base05;
       main               = s.base00; # main background
-      sidebar            = s.base01; # sidebar background
+      sidebar            = s.base00; # sidebar background
       player             = s.base00;
-      card               = s.base01;
+      card               = s.base00;
       shadow             = s.base00;
       selected-row       = s.base02;
       button             = s.base0D; # accent (blue)

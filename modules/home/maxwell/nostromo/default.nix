@@ -10,6 +10,7 @@
     ./stylix.nix
     ./easyeffects.nix
     ./spicetify.nix
+    ./gammastep.nix
   ];
 
 }

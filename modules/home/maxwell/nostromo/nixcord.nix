@@ -242,7 +242,6 @@
         volumeBooster.enable = true;
         ClearURLs.enable = true;
         biggerStreamPreview.enable = true;
-        petpet.enable = true;
       };
     };
   };

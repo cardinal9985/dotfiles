@@ -51,7 +51,7 @@
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-          home-manager.backupFileExtension = "backup";
+          home-manager.backupFileExtension = "backup-$(date +%Y%m%d%H%M%S)";
           home-manager.extraSpecialArgs = { inherit host user inputs; };
           home-manager.users.${user} = import ./home/${user}/${host}.nix;
           home-manager.sharedModules = [ nixcord.homeModules.default ];

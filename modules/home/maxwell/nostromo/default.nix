@@ -8,6 +8,7 @@
     ./aliases.nix
     ./firefox.nix
     ./stylix.nix
+    ./easyeffects.nix
   ];
 
 }

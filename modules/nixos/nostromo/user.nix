@@ -11,7 +11,7 @@
       maxwell = {
         isNormalUser = true;
         shell = pkgs.zsh;
-        extraGroups = [ "wheel" "networkmanager" "video" ];
+        extraGroups = [ "wheel" "networkmanager" "video" "audio" ];
         hashedPasswordFile = config.sops.secrets."users/maxwell_password".path;
       };
       root.hashedPassword = "!";

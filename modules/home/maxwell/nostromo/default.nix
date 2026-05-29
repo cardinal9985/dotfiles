@@ -9,6 +9,7 @@
     ./firefox.nix
     ./stylix.nix
     ./easyeffects.nix
+    ./spicetify.nix
   ];
 
 }

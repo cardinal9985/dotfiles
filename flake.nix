@@ -26,6 +26,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    spicetify-nix = {
+      url = "github:Gerg-L/spicetify-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nixcord = {
       url = "github:kaylorben/nixcord";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -37,7 +42,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, ... }@inputs:
+  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, ... }@inputs:
   let
     mkHost = { host, user, system ? "x86_64-linux" }: nixpkgs.lib.nixosSystem {
       inherit system;
@@ -54,7 +59,10 @@
           home-manager.backupFileExtension = "backup-$(date +%Y%m%d%H%M%S)";
           home-manager.extraSpecialArgs = { inherit host user inputs; };
           home-manager.users.${user} = import ./home/${user}/${host}.nix;
-          home-manager.sharedModules = [ nixcord.homeModules.default ];
+          home-manager.sharedModules = [
+            nixcord.homeModules.default
+            spicetify-nix.homeManagerModules.default
+          ];
         }
         ./hosts/${host}/disko.nix
         ./hosts/${host}/hardware-configuration.nix

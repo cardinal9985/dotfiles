@@ -82,6 +82,16 @@ in
         /* Hide redundant sidebar header */
         #sidebar-header { display: none !important; }
 
+        /* Restore downloads button */
+        #downloads-button { display: flex !important; }
+
+        /* Restore sidebar scrollbar */
+        #sidebar-box scrollbar,
+        #sidebar scrollbar {
+          display: block !important;
+          appearance: auto !important;
+        }
+
         /* Everforest Dark Hard color overrides for SimpleFox */
         :root {
           --bg-1: #1e2326;

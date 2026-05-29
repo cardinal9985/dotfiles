@@ -54,6 +54,11 @@
         nur.modules.nixos.default
         stylix.nixosModules.stylix
         {
+          nixpkgs.overlays = [
+            (import ./overlays/deskmat.nix)
+          ];
+        }
+        {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "backup-$(date +%Y%m%d%H%M%S)";

@@ -1,0 +1,80 @@
+title: "Hyprland Keybinds"
+
+sections:
+  - title: "Apps"
+    keybinds:
+      - key: "SUPER + T"
+        description: "Terminal (Kitty)"
+      - key: "SUPER + R"
+        description: "Launcher (Rofi)"
+      - key: "SUPER + E"
+        description: "File Manager (Dolphin)"
+      - key: "SUPER + B"
+        description: "Browser (Firefox)"
+
+  - title: "Windows"
+    keybinds:
+      - key: "SUPER + Q"
+        description: "Close Window"
+      - key: "SUPER + F"
+        description: "Fullscreen"
+      - key: "SUPER + V"
+        description: "Toggle Float"
+      - key: "SUPER + P"
+        description: "Pseudo Tile"
+      - key: "SUPER + J"
+        description: "Toggle Split"
+
+  - title: "Focus"
+    keybinds:
+      - key: "SUPER + ←↑↓→"
+        description: "Move Focus"
+      - key: "SUPER + SHIFT + ←↑↓→"
+        description: "Move Window"
+
+  - title: "Workspaces"
+    keybinds:
+      - key: "SUPER + 1-5"
+        description: "Switch Workspace"
+      - key: "SUPER + SHIFT + 1-5"
+        description: "Move Window to Workspace"
+      - key: "SUPER + Scroll"
+        description: "Cycle Workspaces"
+
+  - title: "Screenshots"
+    keybinds:
+      - key: "SUPER + S"
+        description: "Region Screenshot"
+      - key: "SUPER + SHIFT + S"
+        description: "Fullscreen Screenshot"
+
+  - title: "Media"
+    keybinds:
+      - key: "Play/Pause Key"
+        description: "Play / Pause"
+      - key: "Next Key"
+        description: "Next Track"
+      - key: "Prev Key"
+        description: "Previous Track"
+      - key: "Stop Key"
+        description: "Stop"
+      - key: "Vol Up / Down"
+        description: "Volume ±5%"
+      - key: "Mute Key"
+        description: "Toggle Mute"
+
+  - title: "Utilities"
+    keybinds:
+      - key: "SUPER + C"
+        description: "Clipboard History"
+      - key: "SUPER + N"
+        description: "Notification Center"
+      - key: "SUPER + ALT + R"
+        description: "Save Replay Buffer"
+      - key: "SUPER + F1"
+        description: "Toggle Keybind Cheatsheet"
+
+  - title: "System"
+    keybinds:
+      - key: "SUPER + SHIFT + M"
+        description: "Exit Hyprland"

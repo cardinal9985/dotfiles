@@ -11,4 +11,11 @@
     };
   };
 
+  services.resolved = {
+    enable = true;
+    dnssec = "allow-downgrade";
+    domains = [ "~." ];
+    fallbackDns = [ "9.9.9.9" "149.112.112.112" ];
+  };
+
 }

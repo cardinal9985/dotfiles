@@ -1,5 +1,5 @@
 {
-  description = "nostromo system configuration";
+  description = "My System Configuration";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -30,9 +30,14 @@
       url = "github:kaylorben/nixcord";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    stylix = {
+      url = "github:danth/stylix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, ... }@inputs:
+  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, ... }@inputs:
   let
     mkHost = { host, user, system ? "x86_64-linux" }: nixpkgs.lib.nixosSystem {
       inherit system;
@@ -42,9 +47,11 @@
         impermanence.nixosModules.impermanence
         home-manager.nixosModules.home-manager
         nur.modules.nixos.default
+        stylix.nixosModules.stylix
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "backup";
           home-manager.extraSpecialArgs = { inherit host user inputs; };
           home-manager.users.${user} = import ./home/${user}/${host}.nix;
           home-manager.sharedModules = [ nixcord.homeModules.default ];

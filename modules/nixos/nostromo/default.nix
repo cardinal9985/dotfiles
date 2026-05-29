@@ -10,6 +10,7 @@
     ./bluetooth.nix
     ./desktop.nix
     ./sops.nix
+    ./stylix.nix
     ./user.nix
     ./packages.nix
     ./swap.nix

@@ -6,7 +6,68 @@
     discord.equicord.enable = true;
     discord.vencord.enable = false;
 
+    # Everforest Dark Hard color overrides for midnight theme
+    quickCss = ''
+      body {
+        --font: 'JetBrainsMono Nerd Font';
+        --code-font: 'JetBrainsMono Nerd Font';
+        font-weight: 400;
+
+        --gap: 12px;
+        --divider-thickness: 4px;
+        --border-thickness: 1px;
+        --animations: on;
+        --list-item-transition: 0.2s ease;
+        --dms-icon-transition: 0.2s ease;
+        --corner-text: 'nostromo';
+        --panel-button-hover-transition: 0.2s ease;
+        --sidebar-hover-transition: 0.2s ease;
+        --chatbar-height: 47px;
+        --small-user-panel: on;
+        --transparency-tweaks: off;
+        --remove-bg-layer: off;
+        --panel-blur: off;
+        --custom-dms-background: off;
+        --background-image-url: url("");
+
+        /* Everforest Dark Hard colors */
+        --bg-1: #1e2326;
+        --bg-2: #2b3339;
+        --bg-3: #323c41;
+        --bg-4: #3d484d;
+        --hover: hsl(200, 12%, 25%);
+        --active: hsl(200, 12%, 28%);
+        --selected: hsl(200, 12%, 28%);
+        --accent-1: #a7c080;
+        --accent-2: #83c092;
+        --accent-3: #7fbbb3;
+        --accent-4: #7fbbb3;
+        --accent-5: #7a8478;
+        --mention: hsla(97, 30%, 63%, 0.1);
+        --mention-hover: hsla(97, 30%, 63%, 0.15);
+        --text-1: #d3c6aa;
+        --text-2: #9da9a0;
+        --text-3: #859289;
+        --text-4: #7a8478;
+        --text-5: #4f585e;
+        --icon-primary: #d3c6aa;
+        --icon-secondary: #859289;
+        --icon-subtle: #7a8478;
+        --online-indicator: #a7c080;
+        --dnd-indicator: #e67e80;
+        --idle-indicator: #dbbc7f;
+        --streaming-indicator: #d699b6;
+        --white: #d3c6aa;
+        --black: #1e2326;
+      }
+    '';
+
     config = {
+      useQuickCss = true;
+      themeLinks = [
+        "https://refact0r.github.io/midnight-discord/build/midnight.css"
+      ];
+
       frameless = false;
       disableMinSize = true;
       plugins = {
@@ -181,6 +242,7 @@
         volumeBooster.enable = true;
         ClearURLs.enable = true;
         biggerStreamPreview.enable = true;
+        petpet.enable = true;
       };
     };
   };

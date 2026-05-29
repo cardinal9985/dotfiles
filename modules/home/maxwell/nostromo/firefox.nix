@@ -1,5 +1,14 @@
 { pkgs, ... }:
 
+let
+  simplefox = pkgs.fetchFromGitHub {
+    owner = "migueravila";
+    repo = "SimpleFox";
+    rev = "master";
+    sha256 = "sha256-iNILXnOZYbzy2/HcUpyiq6VOLA2C6fogAAwSWsTun1U=";
+  };
+in
+
 {
   xdg.mimeApps = {
     defaultApplications = {
@@ -24,10 +33,10 @@
       DisableTelemetry = true;
       DontCheckDefaultBrowser = true;
       EnableTrackingProtection = {
-        Cryptomining = true;
+        Cryptomining   = true;
         Fingerprinting = true;
-        Locked = true;
-        Value = true;
+        Locked         = true;
+        Value          = true;
       };
       OverrideFirstRunPage = "";
       OverridePostUpdatePage = "";
@@ -67,9 +76,37 @@
       };
 
       userChrome = ''
-        /* Hide horizontal tab bar */
+        /* Hide native horizontal tab bar */
         #TabsToolbar { visibility: collapse !important; }
-      '';
+
+        /* Hide redundant sidebar header */
+        #sidebar-header { display: none !important; }
+
+        /* Everforest Dark Hard color overrides for SimpleFox */
+        :root {
+          --bg-1: #1e2326;
+          --bg-2: #2b3339;
+          --bg-3: #323c41;
+          --bg-4: #3d484d;
+          --hover: #3d484d;
+          --active: #475258;
+          --selected: #475258;
+          --accent-1: #a7c080;
+          --accent-2: #83c092;
+          --accent-3: #7fbbb3;
+          --accent-4: #d699b6;
+          --accent-5: #7a8478;
+          --mention: hsla(97, 30%, 63%, 0.1);
+          --mention-hover: hsla(97, 30%, 63%, 0.15);
+          --text-1: #d3c6aa;
+          --text-2: #9da9a0;
+          --text-3: #859289;
+          --text-4: #7a8478;
+          --text-5: #4f585e;
+        }
+      '' + builtins.readFile "${simplefox}/chrome/userChrome.css";
+
+      userContent = builtins.readFile "${simplefox}/chrome/userContent.css";
     };
   };
 }

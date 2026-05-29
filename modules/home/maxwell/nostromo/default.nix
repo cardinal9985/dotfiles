@@ -7,6 +7,7 @@
     ./kitty.nix
     ./aliases.nix
     ./firefox.nix
+    ./stylix.nix
   ];
 
 }

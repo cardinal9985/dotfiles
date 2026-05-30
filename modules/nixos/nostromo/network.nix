@@ -6,7 +6,7 @@
     networkmanager.enable = true;
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 36475 ]; # 36475 = SSH
+      allowedTCPPorts = [ 36475 43122 ]; # 36475 = SSH 43122 = Nicotine
     };
   };
 

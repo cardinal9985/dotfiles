@@ -1,20 +1,29 @@
 { pkgs, ... }:
 
 {
-  services.desktopManager.plasma6.enable = true;
-
-  programs.hyprland = {
-    enable = true;
-    xwayland.enable = true;
+  services = {
+    desktopManager.plasma6.enable = true;
+    greetd.enable = true;
   };
 
-  services.greetd.enable = true;
+  programs = {
+    hyprland = {
+      enable = true;
+      xwayland.enable = true;
+    };
+    regreet.enable = true;
+  };
 
-  programs.regreet.enable = true;
-
-  xdg.portal = {
-    enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
+  xdg = {
+    mime.defaultApplications = {
+      "x-scheme-handler/http"  = "zen.desktop";
+      "x-scheme-handler/https" = "zen.desktop";
+      "text/html"              = "zen.desktop";
+    };
+    portal = {
+      enable = true;
+      extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
+    };
   };
 
   security.polkit.enable = true;

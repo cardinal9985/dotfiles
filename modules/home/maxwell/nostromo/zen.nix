@@ -16,6 +16,42 @@
     };
   };
 
+  # Keep links from opening in Tor or Brave
+  xdg.desktopEntries = {
+    brave-browser = {
+      name = "Brave Web Browser";
+      exec = "brave %U";
+      icon = "brave-browser";
+      comment = "Access the Internet";
+      categories = [ "Network" "WebBrowser" ];
+      mimeType = [];
+    };
+    "com.brave.Browser" = {
+      name = "Brave Web Browser";
+      exec = "brave %U";
+      icon = "brave-browser";
+      comment = "Access the Internet";
+      categories = [ "Network" "WebBrowser" ];
+      mimeType = [];
+    };
+    tor-browser = {
+      name = "Tor Browser";
+      exec = "tor-browser %U";
+      icon = "tor-browser";
+      comment = "Browse Anonymously";
+      categories = [ "Network" "WebBrowser" ];
+      mimeType = [];
+    };
+    torbrowser = {
+      name = "Tor Browser";
+      exec = "tor-browser %U";
+      icon = "tor-browser";
+      comment = "Browse Anonymously";
+      categories = [ "Network" "WebBrowser" ];
+      mimeType = [];
+    };
+  };
+
   programs.zen-browser = {
     enable = true;
     languagePacks = [ "en-US" ];

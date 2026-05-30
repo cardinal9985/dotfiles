@@ -2,7 +2,7 @@
 
 {
   home.packages = with pkgs; [
-    swww
+    awww
     waypaper
   ];
 
@@ -11,7 +11,7 @@
     language = en
     folder = ~/dotfiles/wallpapers
     wallpaper = ~/dotfiles/wallpapers/fern-1.png
-    backend = swww
+    backend = awww
     monitors = All
     fill = fill
     sort = name
@@ -21,8 +21,8 @@
     show_gifs_only = False
     post_command = 
     number_of_columns = 3
-    swww_transition_type = fade
-    swww_transition_duration = 2
-    swww_transition_fps = 60
+    awww_transition_type = fade
+    awww_transition_duration = 2
+    awww_transition_fps = 60
   '';
 }

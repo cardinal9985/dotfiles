@@ -73,9 +73,33 @@ in
         "sidebar.verticalTabs" = true;
         "sidebar.main.tools" = "bookmarks,history,syncedtabs";
         "sidebar.visibility" = "always-show";
+
+        # Toolbar layout
+        "browser.uiCustomization.state" = builtins.toJSON {
+          placements = {
+            nav-bar = [
+              "sidebar-button"
+              "back-button"
+              "forward-button"
+              "stop-reload-button"
+              "urlbar-container"
+              "unified-extensions-button"
+              "downloads-button"
+            ];
+            toolbar-menubar = [ "menubar-items" ];
+            TabsToolbar = [ "tabbrowser-tabs" "new-tab-button" "alltabs-button" ];
+            PersonalToolbar = [ "personal-bookmarks" ];
+            widget-overflow-fixed-list = [];
+          };
+          seen = [ "developer-button" "unified-extensions-button" "downloads-button" "sidebar-button" ];
+          dirtyAreaCache = [ "nav-bar" ];
+          currentVersion = 20;
+          newElementCount = 0;
+        };
       };
 
-      userChrome = ''
+      userChrome = builtins.readFile "${simplefox}/chrome/userChrome.css" + ''
+
         /* Hide native horizontal tab bar */
         #TabsToolbar { visibility: collapse !important; }
 
@@ -90,6 +114,11 @@ in
         #sidebar scrollbar {
           display: block !important;
           appearance: auto !important;
+        }
+
+        /* Restore bookmark favicons */
+        #PersonalToolbar .bookmark-item > .toolbarbutton-icon {
+          display: flex !important;
         }
 
         /* Everforest Dark Hard color overrides for SimpleFox */
@@ -114,7 +143,7 @@ in
           --text-4: #7a8478;
           --text-5: #4f585e;
         }
-      '' + builtins.readFile "${simplefox}/chrome/userChrome.css";
+      '';
 
       userContent = builtins.readFile "${simplefox}/chrome/userContent.css";
     };

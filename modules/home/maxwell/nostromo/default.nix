@@ -18,7 +18,7 @@
     ./rofi.nix
     ./hyprlock.nix
     ./hypridle.nix
-    ./swww.nix
+    ./awww.nix
   ];
 
 }

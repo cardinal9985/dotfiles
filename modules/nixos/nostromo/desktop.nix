@@ -8,10 +8,12 @@
     xwayland.enable = true;
   };
 
-  services.displayManager.sddm = {
+  services.greetd = {
     enable = true;
-    wayland.enable = true;
+    settings.default_session.user = "greeter";
   };
+
+  programs.regreet.enable = true;
 
   xdg.portal = {
     enable = true;

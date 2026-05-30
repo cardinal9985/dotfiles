@@ -235,7 +235,6 @@
         friendsSince.enable = true;
         fixCodeblockGap.enable = true;
         disableCallIdle.enable = true;
-        disableCameras.enable = true;
         disableDeepLinks.enable = true;
         plainFolderIcon.enable = true;
         readAllNotificationsButton.enable = true;

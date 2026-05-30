@@ -1,11 +1,30 @@
 { pkgs, ... }:
 
 {
-  powerManagement.cpuFreqGovernor = "performance";
-
   boot = {
-    kernelParams = [ "iommu=pt" "amd_iommu=on" ]; # AMD Page Fault Fix
+    kernelParams = [
+      "iommu=pt"
+      "amd_iommu=on"    # AMD Page Fault Fix
+      "quiet"
+      "splash"
+      "rd.plymouth=1"
+      "video=2560x1080" # Ultrawide resolution for plymouth
+    ];
+
     kernelPackages = pkgs.linuxPackages_latest;
+
+    kernelModules = [ "kvm-amd" ];
+
+    kernel.sysctl = {
+      "vm.max_map_count" = 2147483642; # Required for some games (Star Citizen etc)
+    };
+
+    tmp.cleanOnBoot = true;
+
+    plymouth.enable = true;
+
+    supportedFilesystems = [ "ntfs" ];
+
     loader = {
       efi.canTouchEfiVariables = true;
       systemd-boot = {
@@ -13,6 +32,7 @@
         configurationLimit = 20;
       };
     };
+
     initrd = {
       supportedFilesystems = [ "btrfs" ];
       systemd = {

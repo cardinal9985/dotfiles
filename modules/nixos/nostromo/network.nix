@@ -1,7 +1,6 @@
 { ... }:
 
 {
-
   networking = {
     hostName = "nostromo";
     networkmanager.enable = true;
@@ -13,9 +12,10 @@
 
   services.resolved = {
     enable = true;
-    dnssec = "allow-downgrade";
-    domains = [ "~." ];
-    fallbackDns = [ "9.9.9.9" "149.112.112.112" ];
+    settings.Resolve = {
+      DNSSEC = "allow-downgrade";
+      Domains = [ "~." ];
+      FallbackDNS = [ "9.9.9.9" "149.112.112.112" ];
+    };
   };
-
 }

@@ -16,6 +16,7 @@
     ./packages.nix
     ./swap.nix
     ./impermanence.nix
+    ./power.nix
   ];
 
 }

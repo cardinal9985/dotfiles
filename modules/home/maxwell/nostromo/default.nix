@@ -14,6 +14,7 @@
     ./hyprland.nix
     ./waybar.nix
     ./packages.nix
+    ./thunderbird.nix
     ./swaync.nix
     ./rofi.nix
     ./hyprlock.nix

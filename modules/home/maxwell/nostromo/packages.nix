@@ -110,7 +110,6 @@
     discordchatexporter-desktop  # Export Discord Chats
     simplex-chat-desktop         # Private Messenger
     zuse                         # IRC Client
-    thunderbird                  # Email Client
 
     # ─── [ Security ] ───────────────────────────────────────────────────
 

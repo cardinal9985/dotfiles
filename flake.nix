@@ -40,9 +40,14 @@
       url = "github:danth/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, ... }@inputs:
+  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, zen-browser, ... }@inputs:
   let
     mkHost = { host, user, system ? "x86_64-linux" }: nixpkgs.lib.nixosSystem {
       inherit system;
@@ -67,6 +72,7 @@
           home-manager.sharedModules = [
             nixcord.homeModules.default
             spicetify-nix.homeManagerModules.default
+            zen-browser.homeModules.default
           ];
         }
         ./hosts/${host}/disko.nix

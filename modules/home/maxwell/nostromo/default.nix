@@ -6,7 +6,7 @@
     ./nixcord.nix
     ./kitty.nix
     ./aliases.nix
-    ./firefox.nix
+    ./zen.nix
     ./stylix.nix
     ./easyeffects.nix
     ./spicetify.nix

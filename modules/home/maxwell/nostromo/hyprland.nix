@@ -134,7 +134,7 @@ in
         "$mod, T, exec, kitty"
         "$mod, R, exec, rofi -show drun"
         "$mod, E, exec, dolphin"
-        "$mod, B, exec, firefox"
+        "$mod, B, exec, zen"
         "$mod, W, exec, waypaper"
 
         # Windows

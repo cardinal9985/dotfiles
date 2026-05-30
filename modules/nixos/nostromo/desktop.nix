@@ -8,10 +8,7 @@
     xwayland.enable = true;
   };
 
-  services.greetd = {
-    enable = true;
-    settings.default_session.user = "greeter";
-  };
+  services.greetd.enable = true;
 
   programs.regreet.enable = true;
 

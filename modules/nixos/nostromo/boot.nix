@@ -4,11 +4,12 @@
   boot = {
     kernelParams = [
       "iommu=pt"
-      "amd_iommu=on"    # AMD Page Fault Fix
+      "amd_iommu=on" # AMD Page Fault Fix
       "quiet"
       "splash"
       "rd.plymouth=1"
-      "video=2560x1080" # Ultrawide resolution for plymouth
+      "video=DP-6:2560x1080@200"
+      "plymouth.use-simpledrm=1"
     ];
 
     kernelPackages = pkgs.linuxPackages_latest;

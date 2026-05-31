@@ -12,13 +12,9 @@
       "plymouth.use-simpledrm=1"
     ];
 
-    kernelPackages = pkgs.linuxPackages_latest;
+    kernelPackages = pkgs.linuxPackages_zen;
 
     kernelModules = [ "kvm-amd" ];
-
-    kernel.sysctl = {
-      "vm.max_map_count" = 2147483642; # Required for some games (Star Citizen etc)
-    };
 
     tmp.cleanOnBoot = true;
 

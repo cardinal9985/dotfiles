@@ -14,6 +14,7 @@
     ./stylix.nix
     ./user.nix
     ./packages.nix
+    ./gaming.nix
     ./nix-settings.nix
     ./swap.nix
     ./impermanence.nix

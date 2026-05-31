@@ -21,6 +21,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nix-mineral = {
+      url = "github:cynicsketch/nix-mineral";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nur = {
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -47,13 +52,14 @@
     };
   };
 
-  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, zen-browser, ... }@inputs:
+  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, ... }@inputs:
   let
     mkHost = { host, user, system ? "x86_64-linux" }: nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inherit host user inputs; };
       modules = [
         disko.nixosModules.disko
+        nix-mineral.nixosModules.nix-mineral
         impermanence.nixosModules.impermanence
         home-manager.nixosModules.home-manager
         nur.modules.nixos.default

@@ -3,7 +3,6 @@
 {
 
   imports = [
-    ./nix-settings.nix
     ./locale.nix
     ./ssh.nix
     ./fonts.nix

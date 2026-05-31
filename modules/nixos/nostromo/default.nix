@@ -14,8 +14,10 @@
     ./stylix.nix
     ./user.nix
     ./packages.nix
+    ./nix-settings.nix
     ./swap.nix
     ./impermanence.nix
+    ./security.nix
     ./power.nix
   ];
 

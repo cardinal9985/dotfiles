@@ -16,10 +16,6 @@
       ignoreSpace = true;
       share = true;
     };
-
-    initContent = ''
-      eval "$(zoxide init zsh)"
-    '';
   };
 
   programs.zoxide = {
@@ -30,6 +26,14 @@
   programs.fzf = {
     enable = true;
     enableZshIntegration = true;
+    defaultOptions = [ "--preview 'bat --color=always --style=numbers {}'" ];
+  };
+
+  programs.bat = {
+    enable = true;
+    config = {
+      style = "numbers,changes,header";
+    };
   };
 
   programs.starship = {

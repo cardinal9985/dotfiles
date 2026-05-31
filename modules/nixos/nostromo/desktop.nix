@@ -25,6 +25,4 @@
       extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
     };
   };
-
-  security.polkit.enable = true;
 }

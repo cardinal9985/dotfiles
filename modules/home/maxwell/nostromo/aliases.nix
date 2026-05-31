@@ -4,6 +4,7 @@
   home.shellAliases = {
     rebuild  = "nh os switch ~/dotfiles";
     clean    = "nh clean all";
+    update   = "nix flake update ~/dotfiles";
     secrets  = "sudo SOPS_AGE_KEY_FILE=/persist/secrets/age/keys.txt sops ~/dotfiles/secrets/secrets.yaml";
 
     # EasyEffects preset switching

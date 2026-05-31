@@ -116,9 +116,6 @@
     ente-auth         # 2FA Authentication
     bitwarden-desktop # Password Manager
     rbw               # CLI Bitwarden
-    pinentry-tty      # Needed for gpg-tui
-    gpg-tui           # TUI GPG Client
-    seahorse          # Keyring
     proton-vpn        # VPN
 
     # ─── [ Audio Engineering ] ──────────────────────────────────────────

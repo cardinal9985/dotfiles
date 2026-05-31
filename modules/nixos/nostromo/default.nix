@@ -13,7 +13,7 @@
     ./stylix.nix
     ./user.nix
     ./packages.nix
-    ./gaming.nix
+    ./steam.nix
     ./nix-settings.nix
     ./swap.nix
     ./impermanence.nix

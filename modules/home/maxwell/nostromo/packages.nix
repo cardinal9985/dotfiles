@@ -64,42 +64,6 @@
     libresprite       # Sprite Editor
     pixelorama        # Pixel Art
 
-    # ─── [ Gaming ] ─────────────────────────────────────────────────────
-
-    vintagestory  # Better then Minecraft
-    steamcmd      # Steam CLI Utility
-    #ckan         # KSP Mod Manager
-    doomrunner    # Doom Launcher
-    uzdoom        # Doom Engine
-    #rimsort      # Rimworld Mod Manager
-    #heroic       # Epic Client
-    #ryubing      # Switch Emulator
-    #rpcs3        # PS3 Emulator
-    #xenia-canary # 360 Emulator
-    #xemu         # OG Xbox Emulator
-    #shadps4      # PS4 Emulator
-    #pcsx2        # PS2 Emulator
-
-    # inputs.nix-citizen.packages.${pkgs.stdenv.hostPlatform.system}.rsi-launcher # Star Citizen
-
-    #(prismlauncher.override {
-    #  additionalPrograms = [
-    #    ffmpeg
-    #    zenity
-    #  ];
-    #  gamemodeSupport = true;
-    #  jdks = [
-    #    zulu8  # Minecraft 1.16 and below
-    #    zulu17 # Minecraft 1.17 – 1.20.4
-    #    zulu21 # Minecraft 1.20.5 and above
-    #  ];
-    #})
-
-    #(retroarch.withCores (cores: with cores; [
-    #  snes9x    # SNES
-    #  mupen64plus # N64
-    #]))
-
     # ─── [ Browsing ] ───────────────────────────────────────────────────
 
     tor-browser  # Private Browser

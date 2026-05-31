@@ -20,6 +20,7 @@
 
   environment.systemPackages = with pkgs; [
     nvidia-vaapi-driver
+    nvtopPackages.nvidia
   ];
 
 }

@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 {
   programs = {
@@ -52,11 +52,6 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    mangohud
-    nvtopPackages.nvidia
-  ];
-
   boot.kernel.sysctl = {
     "vm.max_map_count" = 2147483642;
     "kernel.sched_autogroup_enabled" = 0;
@@ -76,9 +71,9 @@
   };
 
   security.pam.loginLimits = [
-    { domain = "@users"; item = "rtprio";   type = "-"; value = "95";        }
-    { domain = "@users"; item = "memlock";  type = "-"; value = "unlimited"; }
-    { domain = "@users"; item = "nofile";   type = "soft"; value = "524288"; }
-    { domain = "@users"; item = "nofile";   type = "hard"; value = "524288"; }
+    { domain = "@users"; item = "rtprio";  type = "-";    value = "95";        }
+    { domain = "@users"; item = "memlock"; type = "-";    value = "unlimited"; }
+    { domain = "@users"; item = "nofile";  type = "soft"; value = "524288";    }
+    { domain = "@users"; item = "nofile";  type = "hard"; value = "524288";    }
   ];
 }

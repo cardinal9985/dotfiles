@@ -18,6 +18,7 @@
     ./swaync.nix
     ./rofi.nix
     ./hyprlock.nix
+    ./gaming.nix
     ./hypridle.nix
     ./awww.nix
   ];

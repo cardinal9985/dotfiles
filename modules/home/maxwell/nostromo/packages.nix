@@ -30,9 +30,6 @@
     # ─── [ GUI Tools ] ──────────────────────────────────────────────────
 
     gparted                  # Partition Management
-    input-remapper           # Input Remapping
-    piper                    # Mouse Management
-    openrgb-with-all-plugins # RGB Light Management
     flashprint               # 3D Printing
     kdePackages.kate         # Backup Text Editor
     kdePackages.dolphin      # Backup File Manager

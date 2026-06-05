@@ -21,18 +21,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    prismlauncher-cracked = {
-      url = "github:Diegiwg/PrismLauncher-Cracked";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nix-mineral = {
       url = "github:cynicsketch/nix-mineral";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     nix-citizen = {
-      url = "github:the-inconvenient-veil/nix-citizen";
+      url = "github:LovingMelody/nix-citizen";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -62,7 +57,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, prismlauncher-cracked, ... }@inputs:
+  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, ... }@inputs:
   let
     mkHost = { host, user, system ? "x86_64-linux" }: nixpkgs.lib.nixosSystem {
       inherit system;

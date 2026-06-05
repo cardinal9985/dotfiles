@@ -6,6 +6,13 @@
 
     base16Scheme = "${pkgs.base16-schemes}/share/themes/everforest-dark-hard.yaml";
 
+    icons = {
+      enable = true;
+      package = pkgs.papirus-icon-theme;
+      dark = "Papirus-Dark";
+      light = "Papirus-Light";
+    };
+
     fonts = {
       sansSerif = {
         package = pkgs.inter;

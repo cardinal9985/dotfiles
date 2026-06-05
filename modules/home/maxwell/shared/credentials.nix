@@ -4,8 +4,6 @@
   home.packages = with pkgs; [
     gpg-tui
     pinentry-qt
-    kdePackages.kwallet
-    kdePackages.kwallet-pam
   ];
 
   services.gpg-agent = {

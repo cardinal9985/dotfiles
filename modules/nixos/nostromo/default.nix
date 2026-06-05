@@ -19,6 +19,7 @@
     ./impermanence.nix
     ./security.nix
     ./power.nix
+    ./peripherals.nix
   ];
 
 }

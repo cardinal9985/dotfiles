@@ -3,7 +3,6 @@
 {
   home.packages = with pkgs; [
     mangohud
-    lutris
     heroic
     steamcmd
     vintagestory
@@ -13,7 +12,7 @@
     uzdoom
     inputs.nix-citizen.packages.${pkgs.stdenv.hostPlatform.system}.rsi-launcher
 
-    (inputs.prismlauncher-cracked.packages.${pkgs.stdenv.hostPlatform.system}.prismlauncher.override {
+    (pkgs.prismlauncher.override {
       additionalPrograms = [
         ffmpeg
         zenity

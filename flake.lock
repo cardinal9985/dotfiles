@@ -620,6 +620,26 @@
         "type": "github"
       }
     },
+    "nix-index-database": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780210899,
+        "narHash": "sha256-4axz3OBPTKa6LIkXV8n0lc63MQU+et2CB5DGobEAi6k=",
+        "owner": "nix-community",
+        "repo": "nix-index-database",
+        "rev": "97df9dc0b7c924344b793a15c1e8e4522ebb854e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nix-index-database",
+        "type": "github"
+      }
+    },
     "nix-mineral": {
       "inputs": {
         "flake-compat": "flake-compat_3",
@@ -883,6 +903,7 @@
         "home-manager": "home-manager",
         "impermanence": "impermanence",
         "nix-citizen": "nix-citizen",
+        "nix-index-database": "nix-index-database",
         "nix-mineral": "nix-mineral",
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_3",

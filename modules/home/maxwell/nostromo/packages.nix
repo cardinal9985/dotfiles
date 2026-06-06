@@ -1,8 +1,6 @@
 { pkgs, inputs, ... }:
 
 {
-
-  # Packages that should be installed to the user profile.
   home.packages = with pkgs; [
 
     # ─── [ CLI/TUI Tools ] ──────────────────────────────────────────────
@@ -118,7 +116,5 @@
     playerctl       # Media Key Control
     pavucontrol     # Volume Mixer
     hyprpolkitagent # Authentication Agent
-
   ];
-
 }

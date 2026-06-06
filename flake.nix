@@ -55,9 +55,14 @@
       url = "github:0xc000022070/zen-browser-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    rocksmith-nix = {
+      url = "github:Daaboulex/rocksmith-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, ... }@inputs:
+  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, rocksmith-nix, ... }@inputs:
   let
     mkHost = { host, user, system ? "x86_64-linux" }: nixpkgs.lib.nixosSystem {
       inherit system;
@@ -72,6 +77,7 @@
         {
           nixpkgs.overlays = [
             (import ./overlays/deskmat.nix)
+            rocksmith-nix.overlays.default
           ];
         }
         {
@@ -84,6 +90,7 @@
             nixcord.homeModules.default
             spicetify-nix.homeManagerModules.default
             zen-browser.homeModules.default
+            rocksmith-nix.homeManagerModules.default
           ];
         }
         ./hosts/${host}/disko.nix

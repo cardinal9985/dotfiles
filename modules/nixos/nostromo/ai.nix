@@ -7,21 +7,6 @@ let
   ];
 in
 {
-  # ── Container backend ────────────────────────────────────────────────────────
-
-  virtualisation.podman = {
-    enable = true;
-    dockerCompat = true;
-    defaultNetwork.settings.dns_enabled = true;
-  };
-
-  # NVIDIA Container Toolkit — allows Podman containers to access the GPU
-  hardware.nvidia-container-toolkit.enable = true;
-
-  virtualisation.oci-containers.backend = "podman";
-
-  # ── Ollama ──────────────────────────────────────────────────────────────────
-
   virtualisation.oci-containers.containers.ollama = {
     image = "ollama/ollama:latest";
     autoStart = true;
@@ -38,8 +23,6 @@ in
     ];
   };
 
-  # ── Model pre-pulling ────────────────────────────────────────────────────────
-
   systemd.services.ollama-pull-models = {
     description = "Pull configured Ollama models";
     after = [ "podman-ollama.service" ];
@@ -54,8 +37,6 @@ in
     script = builtins.concatStringsSep "\n"
       (map (model: "${pkgs.podman}/bin/podman exec ollama ollama pull ${model}") models);
   };
-
-  # ── Open WebUI ───────────────────────────────────────────────────────────────
 
   virtualisation.oci-containers.containers.open-webui = {
     image = "ghcr.io/open-webui/open-webui:main";
@@ -81,8 +62,6 @@ in
     ];
   };
 
-  # ── Create the shared podman network ─────────────────────────────────────────
-
   systemd.services.podman-network-ai = {
     description = "Create podman network for AI services";
     before = [ "podman-ollama.service" "podman-open-webui.service" ];
@@ -93,8 +72,6 @@ in
     };
     script = "${pkgs.podman}/bin/podman network create ai 2>/dev/null || true";
   };
-
-  # ── Packages ─────────────────────────────────────────────────────────────────
 
   environment.systemPackages = with pkgs; [
     claude-code

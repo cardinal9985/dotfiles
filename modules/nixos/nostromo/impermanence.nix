@@ -8,6 +8,7 @@
       "/var/lib/bluetooth"
       "/var/lib/systemd/coredump"
       "/var/lib/nixos"
+      "/var/lib/libvirt"
       {
         directory = "/var/lib/ollama";
         user = "ollama";

@@ -3,6 +3,7 @@
 {
 
   imports = [
+    # Modules
     ./network.nix
     ./ai.nix
     ./boot.nix
@@ -21,6 +22,10 @@
     ./security.nix
     ./power.nix
     ./peripherals.nix
+    ./virtualisation.nix
+    # VMs
+    ./vms/zealos.nix
+    ./vms/whonix.nix
   ];
 
 }

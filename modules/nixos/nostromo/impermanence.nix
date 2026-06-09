@@ -1,5 +1,4 @@
 { ... }:
-
 {
   environment.persistence."/persist" = {
     hideMounts = true;
@@ -9,6 +8,18 @@
       "/var/lib/bluetooth"
       "/var/lib/systemd/coredump"
       "/var/lib/nixos"
+      {
+        directory = "/var/lib/ollama";
+        user = "ollama";
+        group = "ollama";
+        mode = "0755";
+      }
+      {
+        directory = "/var/lib/open-webui";
+        user = "open-webui";
+        group = "open-webui";
+        mode = "0755";
+      }
     ];
     files = [
       "/etc/machine-id"

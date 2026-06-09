@@ -96,7 +96,7 @@
             spicetify-nix.homeManagerModules.default
             zen-browser.homeModules.default
             rocksmith-nix.homeManagerModules.default
-            nix-index-database.hmModules.nix-index
+            nix-index-database.homeModules.nix-index
           ];
         }
         ./hosts/${host}/disko.nix

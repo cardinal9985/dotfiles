@@ -4,6 +4,7 @@
 
   imports = [
     ./network.nix
+    ./ai.nix
     ./boot.nix
     ./gpu.nix
     ./audio.nix

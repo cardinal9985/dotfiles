@@ -1,7 +1,6 @@
 { config, pkgs, ... }:
 
 {
-
   hardware = {
     nvidia = {
       modesetting.enable = true;
@@ -16,11 +15,11 @@
       enable32Bit = true;
     };
   };
+
   services.xserver.videoDrivers = [ "nvidia" ];
 
   environment.systemPackages = with pkgs; [
     nvidia-vaapi-driver
     nvtopPackages.nvidia
   ];
-
 }

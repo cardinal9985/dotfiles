@@ -6,6 +6,7 @@
     ./nixcord.nix
     ./kitty.nix
     ./aliases.nix
+    ./greet.nix
     ./zen.nix
     ./stylix.nix
     ./easyeffects.nix

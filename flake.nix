@@ -74,7 +74,7 @@
 
   outputs = { self, nixpkgs, colmena, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, rocksmith-nix, nix-index-database, ... }@inputs:
   let
-    hostPlatform = "x86_64-linux";
+    system = "x86_64-linux";
 
     workstationModules = { host, user }: [
       disko.nixosModules.disko

@@ -112,6 +112,17 @@
       disko.nixosModules.disko
       impermanence.nixosModules.impermanence
       sops-nix.nixosModules.sops
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.useGlobalPkgs = true;
+        home-manager.useUserPackages = true;
+        home-manager.backupFileExtension = "backup-$(date +%Y%m%d%H%M%S)";
+        home-manager.extraSpecialArgs = { inherit host user inputs; };
+        home-manager.users.${user} = import ./home/${user}/${host}.nix;
+        home-manager.sharedModules = [
+          nix-index-database.homeModules.nix-index
+        ];
+      }
       ./hosts/${host}/disko.nix
       ./hosts/${host}/hardware-configuration.nix
       ./hosts/${host}/configuration.nix

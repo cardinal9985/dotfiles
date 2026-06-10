@@ -101,6 +101,10 @@
     qbittorrent    # Torrent Client
     yt-dlp         # Youtube Downloader
 
+    # ─── [ AI] ──────────────────────────────────────────────────────────
+
+    claude-code
+
     # ─── [ Hyprland ] ───────────────────────────────────────────────────
 
     grimblast       # Screenshot Tool

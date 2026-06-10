@@ -8,13 +8,7 @@
     settings.web.listen.port = 47890;
   };
 
-  services.smartd = {
-    enable = true;
-    devices = [
-      { device = "/dev/sda"; }
-      { device = "/dev/sdb"; }
-    ];
-  };
+  services.smartd.enable = true;
 
   systemd.tmpfiles.rules = [
     "d /persist/scrutiny 0755 root root -"

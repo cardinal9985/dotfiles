@@ -1,17 +1,7 @@
 { ... }:
 
 {
-  nixpkgs.config.allowUnfree = true;
-
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
-    auto-optimise-store = true;
-    trusted-users = [ "root" "maxwell" ];
-    cores = 0;
-    max-jobs = "auto";
-    keep-outputs = true;
-    keep-derivations = true;
-
     substituters = [
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
@@ -29,11 +19,5 @@
       "zen-browser.cachix.org-1:noIP8+rnMwyN1UMhqaRCILSAB9WHPBZJ9677DyZfMiM="
       "nix-citizen.cachix.org-1:lPMkWc2X8XD4/7YPEEwXKKBg+SVbYTVrAaLA2wQTKCo="
     ];
-  };
-
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 30d";
   };
 }

@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    colmena = {
+      url = "github:zhaofengli/colmena";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     impermanence.url = "github:nix-community/impermanence";
 
     disko = {
@@ -67,9 +72,11 @@
     };
   };
 
-  outputs = { self, nixpkgs, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, rocksmith-nix, nix-index-database, ... }@inputs:
+  outputs = { self, nixpkgs, colmena, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, rocksmith-nix, nix-index-database, ... }@inputs:
   let
-    mkHost = { host, user, system ? "x86_64-linux" }: nixpkgs.lib.nixosSystem {
+    system = "x86_64-linux";
+
+    mkWorkstation = { host, user }: nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inherit host user inputs; };
       modules = [
@@ -104,9 +111,52 @@
         ./hosts/${host}/configuration.nix
       ];
     };
+
+    mkServer = { host, user }: nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit host user inputs; };
+      modules = [
+        disko.nixosModules.disko
+        impermanence.nixosModules.impermanence
+        sops-nix.nixosModules.sops
+        ./hosts/${host}/disko.nix
+        ./hosts/${host}/hardware-configuration.nix
+        ./hosts/${host}/configuration.nix
+      ];
+    };
   in {
     nixosConfigurations = {
-      nostromo = mkHost { host = "nostromo"; user = "maxwell"; };
+      nostromo = mkWorkstation { host = "nostromo"; user = "maxwell"; };
+      ishimura = mkServer { host = "ishimura"; user = "maxwell"; };
+    };
+
+    colmena = {
+      meta = {
+        nixpkgs = import nixpkgs { inherit system; };
+        specialArgs = { inherit inputs; };
+      };
+
+      nostromo = { ... }: {
+        deployment = {
+          targetHost = "192.168.254.87";
+          targetPort = 36475;
+          targetUser = "maxwell";
+          sudo = true;
+          tags = [ "workstation" ];
+        };
+        imports = [ self.nixosConfigurations.nostromo.config ];
+      };
+
+      ishimura = { ... }: {
+        deployment = {
+          targetHost = "192.168.254.186";
+          targetPort = 36475;
+          targetUser = "maxwell";
+          sudo = true;
+          tags = [ "server" ];
+        };
+        imports = [ self.nixosConfigurations.ishimura.config ];
+      };
     };
   };
 }

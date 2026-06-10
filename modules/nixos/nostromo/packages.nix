@@ -15,6 +15,7 @@ environment.systemPackages = with pkgs; [
   sops
   nvtopPackages.nvidia
   smartmontools
+  colmena
 ];
 
 }

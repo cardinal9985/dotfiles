@@ -1,14 +1,15 @@
 { ... }:
+
 {
+  fileSystems."/persist".neededForBoot = true;
+
   environment.persistence."/persist" = {
     hideMounts = true;
     directories = [
       "/etc/nixos"
-      "/etc/NetworkManager/system-connections"
-      "/var/lib/bluetooth"
       "/var/lib/systemd/coredump"
       "/var/lib/nixos"
-      "/var/lib/libvirt"
+      "/var/lib/tailscale"
     ];
     files = [
       "/etc/machine-id"

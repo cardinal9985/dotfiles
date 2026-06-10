@@ -5,7 +5,6 @@
   imports = [
     # Modules
     ./network.nix
-    ./ai.nix
     ./boot.nix
     ./gpu.nix
     ./audio.nix
@@ -13,16 +12,17 @@
     ./desktop.nix
     ./sops.nix
     ./stylix.nix
+    ./substituters.nix
     ./user.nix
     ./packages.nix
     ./steam.nix
-    ./nix-settings.nix
     ./swap.nix
     ./impermanence.nix
     ./security.nix
     ./power.nix
     ./peripherals.nix
     ./virtualisation.nix
+    ./ssh.nix
     # VMs
     ./vms/zealos.nix
     ./vms/whonix.nix

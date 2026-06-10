@@ -7,6 +7,7 @@
     ./fonts.nix
     ./services.nix
     ./nix-settings.nix
+    ./tailscale.nix
   ];
 
 }

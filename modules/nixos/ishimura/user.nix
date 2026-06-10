@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
   security.sudo.wheelNeedsPassword = true;
@@ -12,7 +12,7 @@
         isNormalUser = true;
         shell = pkgs.zsh;
         extraGroups = [ "wheel" ];
-        hashedPassword = "$y$j9T$e9TjU96OOhsozygzUn2Ek.$B3Ge9v2acnGgsNGPofEtMIt14V/dHmhNR/0fUr.ArN3";
+        hashedPasswordFile = config.sops.secrets."users/maxwell_password".path;
       };
       root.hashedPassword = "!";
     };

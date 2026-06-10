@@ -9,7 +9,6 @@
       allowedTCPPorts = [
         22    # endlessh honeypot
         36475 # real SSH
-        8096  # jellyfin
       ];
     };
   };

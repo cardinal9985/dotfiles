@@ -3,6 +3,7 @@
 {
   imports = [
     ./impermanence.nix
+    ./jellyfin.nix
     ./network.nix
     ./packages.nix
     ./ssh.nix

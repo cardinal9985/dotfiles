@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./gpu.nix
     ./impermanence.nix
     ./jellyfin.nix
     ./network.nix

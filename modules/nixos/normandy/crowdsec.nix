@@ -4,6 +4,11 @@
   services.crowdsec = {
     enable = true;
 
+    settings = {
+      general.api.server.enable = true;
+      lapi.credentialsFile = "/var/lib/crowdsec/local_api_credentials.yaml";
+    };
+
     localConfig.acquisitions = [
       {
         source = "journalctl";

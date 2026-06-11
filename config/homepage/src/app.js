@@ -321,8 +321,18 @@ var CONSTELLATIONS = [
   },
 ];
 
+var lastConstellationIdx = -1;
+
 function spawnConstellation() {
-  var data = CONSTELLATIONS[Math.floor(Math.random() * CONSTELLATIONS.length)];
+  var idx;
+  if (lastConstellationIdx < 0) {
+    idx = Math.floor(Math.random() * CONSTELLATIONS.length);
+  } else {
+    idx = Math.floor(Math.random() * (CONSTELLATIONS.length - 1));
+    if (idx >= lastConstellationIdx) idx++;
+  }
+  lastConstellationIdx = idx;
+  var data = CONSTELLATIONS[idx];
   var size = 180 + Math.random() * 180;
   var pad  = 80;
   var x0   = pad + Math.random() * (starCanvas.width  - size - pad * 2);

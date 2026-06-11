@@ -14,13 +14,14 @@
   };
 
   networking.nftables.enable = true;
+  networking.nftables.checkRuleset = false;
 
   networking.nftables.tables = {
     crowdsec = {
       family = "ip";
       content = ''
         chain crowdsec-chain {
-          type filter hook input priority filter - 5; policy accept;
+          type filter hook input priority -10; policy accept;
         }
       '';
     };
@@ -28,7 +29,7 @@
       family = "ip6";
       content = ''
         chain crowdsec6-chain {
-          type filter hook input priority filter - 5; policy accept;
+          type filter hook input priority -10; policy accept;
         }
       '';
     };

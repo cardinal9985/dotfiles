@@ -13,7 +13,6 @@ environment.systemPackages = with pkgs; [
   usbutils
   age
   sops
-  nvtopPackages.nvidia
   smartmontools
   colmena
 ];

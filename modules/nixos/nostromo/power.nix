@@ -20,5 +20,4 @@
     cpuFreqGovernor = "schedutil";
   };
 
-  boot.kernelParams = [ "usbcore.autosuspend=-1" ];
 }

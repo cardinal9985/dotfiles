@@ -10,7 +10,7 @@
     };
   };
 
-  boot.kernelModules = [ "nbd" "vhost_net" "vhost_vsock" "kvm_amd" ];
+  boot.kernelModules = [ "nbd" "vhost_net" "vhost_vsock" ];
 
   programs.virt-manager.enable = true;
 

@@ -41,6 +41,18 @@ let
 
   traefikDynamicConfig = pkgs.writeText "dynamic_config.yml" ''
     http:
+      middlewares:
+        crowdsec:
+          plugin:
+            crowdsec:
+              enabled: true
+              logLevel: INFO
+              updateIntervalSeconds: 30
+              defaultDecisionSeconds: 60
+              crowdsecMode: live
+              crowdsecLapiHost: host.containers.internal:8081
+              crowdsecLapiScheme: http
+              crowdsecLapiKey: __CROWDSEC_TRAEFIK_API_KEY__
       routers:
         next-router:
           rule: "Host(`${dashboardHost}`)"
@@ -74,6 +86,11 @@ let
     accessLog:
       filePath: "/var/log/traefik/access.log"
       format: json
+    experimental:
+      plugins:
+        crowdsec:
+          moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+          version: v1.4.6
     providers:
       http:
         endpoint: "http://pangolin:3001/api/v1/traefik-config"
@@ -98,6 +115,8 @@ let
         http:
           tls:
             certResolver: letsencrypt
+          middlewares:
+            - crowdsec@file
     certificatesResolvers:
       letsencrypt:
         acme:
@@ -129,15 +148,18 @@ in
     };
     script = ''
       set -euo pipefail
-      SECRET=$(cat ${config.sops.secrets."pangolin/server_secret".path})
+      SERVER_SECRET=$(cat ${config.sops.secrets."pangolin/server_secret".path})
+      CROWDSEC_KEY=$(cat ${config.sops.secrets."crowdsec/traefik_bouncer_api_key".path})
       ${pkgs.gnused}/bin/sed \
-        "s|__SERVER_SECRET__|$SECRET|" \
+        "s|__SERVER_SECRET__|$SERVER_SECRET|" \
         ${configYamlTemplate} \
         > /persist/pangolin/config/config.yml
       install -m 0644 ${traefikStaticConfig} \
         /persist/pangolin/config/traefik/traefik_config.yml
-      install -m 0644 ${traefikDynamicConfig} \
-        /persist/pangolin/config/traefik/dynamic/dynamic_config.yml
+      ${pkgs.gnused}/bin/sed \
+        "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
+        ${traefikDynamicConfig} \
+        > /persist/pangolin/config/traefik/dynamic/dynamic_config.yml
     '';
   };
 
@@ -167,6 +189,7 @@ in
         "--network=pangolin"
         "--cap-add=NET_ADMIN"
         "--cap-add=SYS_MODULE"
+        "--add-host=host.containers.internal:host-gateway"
       ];
     };
 

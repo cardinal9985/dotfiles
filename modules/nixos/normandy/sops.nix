@@ -16,6 +16,9 @@
       "crowdsec/firewall_bouncer_api_key" = {
         mode = "0400";
       };
+      "crowdsec/traefik_bouncer_api_key" = {
+        mode = "0400";
+      };
     };
   };
 }

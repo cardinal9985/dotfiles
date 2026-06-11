@@ -9,7 +9,7 @@
       "/var/lib/systemd/coredump"
       "/var/lib/nixos"
       "/var/lib/tailscale"
-      "/var/lib/crowdsec"
+      { directory = "/var/lib/crowdsec"; user = "crowdsec"; group = "crowdsec"; mode = "0700"; }
     ];
     files = [
       "/etc/machine-id"

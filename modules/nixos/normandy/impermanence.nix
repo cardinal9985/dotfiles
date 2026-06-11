@@ -9,6 +9,7 @@
       "/var/lib/systemd/coredump"
       "/var/lib/nixos"
       "/var/lib/tailscale"
+      "/var/lib/crowdsec"
     ];
     files = [
       "/etc/machine-id"

@@ -3,6 +3,7 @@
 {
   imports = [
     ./boot.nix
+    ./crowdsec.nix
     ./impermanence.nix
     ./network.nix
     ./ntfy.nix

@@ -71,6 +71,9 @@ let
     api:
       insecure: true
       dashboard: true
+    accessLog:
+      filePath: "/var/log/traefik/access.log"
+      format: json
     providers:
       http:
         endpoint: "http://pangolin:3001/api/v1/traefik-config"

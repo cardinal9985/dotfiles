@@ -175,7 +175,6 @@
       normandy = { ... }: {
         deployment = {
           targetHost = "100.108.98.70";
-          targetPort = 36475;
           targetUser = "maxwell";
           tags = [ "server" ];
         };

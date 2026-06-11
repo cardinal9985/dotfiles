@@ -7,6 +7,7 @@
     ./impermanence.nix
     ./jellyfin.nix
     ./network.nix
+    ./newt.nix
     ./packages.nix
     ./ssh.nix
     ./monitoring.nix

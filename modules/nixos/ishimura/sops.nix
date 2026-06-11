@@ -10,6 +10,9 @@
       "users/maxwell_password" = {
         neededForUsers = true;
       };
+      "newt/secret" = {
+        mode = "0400";
+      };
     };
   };
 }

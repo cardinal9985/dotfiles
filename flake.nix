@@ -143,6 +143,7 @@
     nixosConfigurations = {
       nostromo = mkWorkstation { host = "nostromo"; user = "maxwell"; };
       ishimura = mkServer { host = "ishimura"; user = "maxwell"; };
+      normandy = mkServer { host = "normandy"; user = "maxwell"; };
     };
 
     colmena = {
@@ -169,6 +170,15 @@
           tags = [ "server" ];
         };
         imports = serverModules { host = "ishimura"; user = "maxwell"; };
+      };
+
+      normandy = { ... }: {
+        deployment = {
+          targetHost = "100.108.98.70";
+          targetUser = "maxwell";
+          tags = [ "server" ];
+        };
+        imports = serverModules { host = "normandy"; user = "maxwell"; };
       };
     };
   };

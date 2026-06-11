@@ -12,7 +12,9 @@
     eq-flat   = "easyeffects --load-preset flat";
     eq-night  = "easyeffects --load-preset night";
     eq-voice  = "easyeffects --load-preset voice";
-    deploy    = "colmena apply --on @server";
+    deploy-ishimura = "colmena apply --on ishimura";
+    deploy-normandy = "colmena apply --on normandy";
     ishimura  = "TERM=xterm-256color ssh -p 36475 maxwell@192.168.254.186";
+    normandy  = "TERM=xterm-256color ssh maxwell@100.108.98.70";
   };
 }

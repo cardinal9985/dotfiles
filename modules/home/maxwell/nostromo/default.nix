@@ -17,6 +17,7 @@
     ./packages.nix
     ./thunderbird.nix
     ./swaync.nix
+    ./ntfy.nix
     ./rofi.nix
     ./hyprlock.nix
     ./gaming.nix

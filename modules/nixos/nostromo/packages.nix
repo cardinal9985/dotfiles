@@ -11,6 +11,8 @@ environment.systemPackages = with pkgs; [
   curl
   wget
   nano
+  jq
+  bind.dnsutils
   parted
   pciutils
   nh

@@ -27,6 +27,12 @@ let
       url         = "http://normandy:8080";
       icon        = "◈";
     }
+    {
+      name        = "Pangolin";
+      description = "Tunnels";
+      url         = "https://pangolin.ishimura.lol";
+      icon        = "⬡";
+    }
   ];
 
   servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);

@@ -39,6 +39,34 @@ let
       allow_raw_resources: true
   '';
 
+  traefikDynamicConfig = pkgs.writeText "dynamic_config.yml" ''
+    http:
+      routers:
+        next-router:
+          rule: "Host(`${dashboardHost}`)"
+          service: next-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: letsencrypt
+        api-router:
+          rule: "Host(`${dashboardHost}`) && PathPrefix(`/api/v1`)"
+          service: api-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: letsencrypt
+      services:
+        next-service:
+          loadBalancer:
+            servers:
+              - url: "http://pangolin:3002"
+        api-service:
+          loadBalancer:
+            servers:
+              - url: "http://pangolin:3000"
+  '';
+
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''
     api:
       insecure: true
@@ -105,6 +133,8 @@ in
         > /persist/pangolin/config/config.yml
       install -m 0644 ${traefikStaticConfig} \
         /persist/pangolin/config/traefik/traefik_config.yml
+      install -m 0644 ${traefikDynamicConfig} \
+        /persist/pangolin/config/traefik/dynamic/dynamic_config.yml
     '';
   };
 

@@ -1,6 +1,7 @@
 keys:
   - &nostromo age1gydhtrnwnzcxg29rlskh76e2ttvf6r6jsczhpw3m0aw3j7uawq0sgfmxr9
   - &ishimura age1q57d4afwpz9l9r7dgtwvf5ng0q8zpdty49cwp46uu3txqnl5juusmpwe9m
+  - &normandy age19g6jsdkz950vy6dk4k5g4s060msv37fwvnk5tctlj5jx090jqffq3xexnq
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
@@ -8,3 +9,4 @@ creation_rules:
       - age:
         - *nostromo
         - *ishimura
+        - *normandy

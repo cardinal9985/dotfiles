@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DECK NOT FOUND</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23080c14'/><text x='2' y='13' font-family='monospace' font-size='14' fill='%236ec8e6'>I</text></svg>">
+<style>
+  :root {
+    --black: #080c14;
+    --white: #a0aec0;
+    --bright-white: #dce4f0;
+    --cyan: #3a9fbf;
+    --bright-cyan: #6ec8e6;
+    --magenta: #7b68c8;
+    --bright-magenta: #a78bfa;
+    --green: #3d9b8f;
+    --bright-green: #5eead4;
+    --yellow: #b89040;
+    --bright-yellow: #fbbf60;
+    --blue: #4070c8;
+    --bright-blue: #7aa2f7;
+    --red: #8b3a50;
+    --bright-red: #f0708a;
+    --surface: #0e1320;
+    --surface-light: #141a2a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: "Courier New", "Lucida Console", monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .crt::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.06) 2px,
+      rgba(0, 0, 0, 0.06) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #star-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  .container {
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ascii-err {
+    color: var(--bright-red);
+    font-size: 0.7rem;
+    white-space: pre;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 6px rgba(240, 112, 138, 0.3);
+    line-height: 1.2;
+  }
+
+  .error-title {
+    color: var(--bright-cyan);
+    font-size: 1.5rem;
+    letter-spacing: 0.2em;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 8px rgba(110, 200, 230, 0.4);
+  }
+
+  .error-msg {
+    color: var(--white);
+    font-size: 0.9rem;
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .error-msg span { color: var(--bright-yellow); }
+
+  .back-link {
+    display: inline-block;
+    color: var(--bright-green);
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 0.6rem 2rem;
+    border: 1px solid var(--green);
+    transition: all 0.15s;
+    text-shadow: 0 0 6px rgba(94, 234, 212, 0.3);
+  }
+
+  .back-link:hover {
+    background: var(--green);
+    color: var(--black);
+    text-shadow: none;
+    box-shadow: 0 0 12px rgba(94, 234, 212, 0.4);
+  }
+
+  .log {
+    color: var(--yellow);
+    font-size: 0.75rem;
+    margin-top: 2rem;
+    opacity: 0.6;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    96% { opacity: 1; }
+    97% { opacity: 0.9; }
+    98% { opacity: 1; }
+  }
+
+  .container { animation: flicker 12s infinite; }
+</style>
+</head>
+<body class="crt">
+<canvas id="star-canvas"></canvas>
+<div class="container">
+<pre class="ascii-err">
+ ██████╗ ██████╗ ██████╗
+██╔════╝██╔═══██╗╚════██╗
+███████╗██║   ██║ █████╔╝
+██╔═══██╗██║   ██║██╔═══╝
+╚██████╔╝╚██████╔╝███████╗
+ ╚═════╝  ╚═════╝ ╚══════╝
+</pre>
+<div class="error-title">DECK NOT FOUND</div>
+<div class="error-msg">
+  The requested sector does not exist aboard the <span>USG ISHIMURA</span>.<br>
+  Navigation systems cannot locate this deck.<br>
+  <br>
+  This area may have been <span>jettisoned</span>, <span>sealed</span>,<br>
+  or <span>consumed</span> during the incident.<br>
+  <br>
+  [ERROR: DECK_NOT_FOUND - ROUTE_UNAVAILABLE]
+</div>
+<a href="https://ishimura.lol" class="back-link">[RETURN TO BRIDGE]</a>
+<div class="log">CEC NAVIGATION SYSTEM v4.2.0 | USG ISHIMURA</div>
+</div>
+<script>
+  // Randomize the log line
+  var logs = [
+    'WARNING: Hull breach detected near requested sector',
+    'NOTE: Last crew member in this sector: MISSING',
+    'ALERT: Biohazard containment failure in adjacent sector',
+    'INFO: This deck was sealed by order of Capt. Mathius',
+    'WARNING: Marker signal interference detected',
+    'NOTE: Navigation data for this sector is corrupted',
+  ];
+  document.querySelector('.log').textContent += ' | ' + logs[Math.floor(Math.random() * logs.length)];
+
+  // ── Starfield with shooting stars ──
+  var starCanvas = document.getElementById('star-canvas');
+  var sCtx = starCanvas.getContext('2d');
+  var stars = [];
+  var shootingStars = [];
+
+  function initStarfield() {
+    starCanvas.width = window.innerWidth;
+    starCanvas.height = window.innerHeight;
+    stars = [];
+    for (var i = 0; i < 200; i++) {
+      stars.push({
+        x: Math.random() * starCanvas.width,
+        y: Math.random() * starCanvas.height,
+        r: Math.random() * 1.5 + 0.3,
+        brightness: Math.random() * 0.5 + 0.3,
+        twinkleSpeed: Math.random() * 0.02 + 0.005,
+        twinkleOffset: Math.random() * Math.PI * 2
+      });
+    }
+  }
+  initStarfield();
+  window.addEventListener('resize', initStarfield);
+
+  function spawnShootingStar() {
+    shootingStars.push({
+      x: Math.random() * starCanvas.width * 0.8,
+      y: Math.random() * starCanvas.height * 0.4,
+      vx: 4 + Math.random() * 6,
+      vy: 2 + Math.random() * 3,
+      life: 1.0,
+      length: 40 + Math.random() * 60
+    });
+  }
+
+  function drawStarfield(time) {
+    sCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var twinkle = 0.5 + 0.5 * Math.sin(time * s.twinkleSpeed + s.twinkleOffset);
+      var alpha = s.brightness * twinkle;
+      sCtx.beginPath();
+      sCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      sCtx.fillStyle = 'rgba(170, 200, 240, ' + alpha + ')';
+      sCtx.fill();
+    }
+    for (var j = shootingStars.length - 1; j >= 0; j--) {
+      var ss = shootingStars[j];
+      ss.x += ss.vx;
+      ss.y += ss.vy;
+      ss.life -= 0.015;
+      if (ss.life <= 0 || ss.x > starCanvas.width || ss.y > starCanvas.height) {
+        shootingStars.splice(j, 1);
+        continue;
+      }
+      var trail = ss.length / 6;
+      var grad = sCtx.createLinearGradient(
+        ss.x, ss.y,
+        ss.x - ss.vx * trail, ss.y - ss.vy * trail
+      );
+      grad.addColorStop(0, 'rgba(160, 200, 255, ' + ss.life * 0.8 + ')');
+      grad.addColorStop(1, 'rgba(160, 200, 255, 0)');
+      sCtx.beginPath();
+      sCtx.moveTo(ss.x, ss.y);
+      sCtx.lineTo(ss.x - ss.vx * trail, ss.y - ss.vy * trail);
+      sCtx.strokeStyle = grad;
+      sCtx.lineWidth = 1.5;
+      sCtx.stroke();
+    }
+    if (Math.random() < 0.003) spawnShootingStar();
+    requestAnimationFrame(drawStarfield);
+  }
+  requestAnimationFrame(drawStarfield);
+</script>
+</body>
+</html>

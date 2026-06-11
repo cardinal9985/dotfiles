@@ -8,3 +8,6 @@ notes/
 
 # Tmp
 tmp/
+
+# Claude
+.claude/

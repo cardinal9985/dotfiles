@@ -6,6 +6,7 @@
 
     settings = {
       general.api.server.enable = true;
+      general.api.server.listen_uri = "127.0.0.1:8081";
       lapi.credentialsFile = "/var/lib/crowdsec/local_api_credentials.yaml";
     };
 

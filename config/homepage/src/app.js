@@ -186,16 +186,6 @@ var CONSTELLATIONS = [
     lines: [[0,1],[1,2],[2,3],[3,4]],
   },
   {
-    name: 'Crux',
-    stars: [
-      { x: 0.50, y: 1.00, mag: 0.8 },  /* Acrux   */
-      { x: 0.95, y: 0.50, mag: 1.3 },  /* Mimosa  */
-      { x: 0.50, y: 0.00, mag: 1.6 },  /* Gacrux  */
-      { x: 0.10, y: 0.55, mag: 2.8 },  /* Imai    */
-    ],
-    lines: [[0,2],[1,3]],
-  },
-  {
     name: 'Lyra',
     stars: [
       { x: 0.50, y: 0.00, mag: 0.0 },  /* Vega     */
@@ -205,6 +195,129 @@ var CONSTELLATIONS = [
       { x: 0.80, y: 0.90, mag: 3.3 },  /* Sulafat  */
     ],
     lines: [[0,1],[0,2],[1,3],[2,4],[3,4]],
+  },
+  {
+    name: 'Cygnus',  /* Northern Cross */
+    stars: [
+      { x: 0.50, y: 0.00, mag: 1.25 }, /* Deneb     */
+      { x: 0.50, y: 0.45, mag: 2.20 }, /* Sadr      */
+      { x: 0.50, y: 1.00, mag: 3.18 }, /* Albireo   */
+      { x: 0.10, y: 0.50, mag: 2.46 }, /* Gienah    */
+      { x: 0.90, y: 0.40, mag: 2.86 }, /* Delta Cyg */
+    ],
+    lines: [[0,1],[1,2],[3,1],[1,4]],
+  },
+  {
+    name: 'Leo',
+    stars: [
+      { x: 0.05, y: 0.05, mag: 3.50 }, /* Algenubi  */
+      { x: 0.10, y: 0.22, mag: 3.85 }, /* Rasalas   */
+      { x: 0.15, y: 0.38, mag: 3.43 }, /* Adhafera  */
+      { x: 0.22, y: 0.55, mag: 2.28 }, /* Algieba   */
+      { x: 0.30, y: 0.75, mag: 1.36 }, /* Regulus   */
+      { x: 0.65, y: 0.50, mag: 3.34 }, /* Chertan   */
+      { x: 1.00, y: 0.35, mag: 2.14 }, /* Denebola  */
+    ],
+    lines: [[0,1],[1,2],[2,3],[3,4],[3,5],[5,6],[3,6]],
+  },
+  {
+    name: 'Canis Major',
+    stars: [
+      { x: 0.10, y: 0.05, mag: -1.46 },/* Sirius (nose)    */
+      { x: 0.05, y: 0.40, mag:  1.98 },/* Mirzam           */
+      { x: 0.45, y: 0.65, mag:  1.83 },/* Wezen            */
+      { x: 0.60, y: 0.90, mag:  1.50 },/* Adhara           */
+      { x: 0.95, y: 0.55, mag:  2.45 },/* Aludra (tail)    */
+    ],
+    lines: [[0,1],[1,2],[0,2],[2,3],[3,4],[2,4]],
+  },
+  {
+    name: 'Ursa Minor',  /* Little Dipper */
+    stars: [
+      { x: 0.95, y: 0.10, mag: 2.00 }, /* Polaris */
+      { x: 0.80, y: 0.20, mag: 4.36 }, /* Yildun  */
+      { x: 0.62, y: 0.28, mag: 4.23 }, /* Epsilon */
+      { x: 0.45, y: 0.42, mag: 4.35 }, /* Delta   */
+      { x: 0.30, y: 0.62, mag: 3.05 }, /* Pherkad */
+      { x: 0.10, y: 0.72, mag: 2.07 }, /* Kochab  */
+      { x: 0.22, y: 0.48, mag: 4.95 }, /* Anwar   */
+    ],
+    lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]],
+  },
+  {
+    name: 'Taurus',  /* zodiac */
+    stars: [
+      { x: 0.20, y: 0.05, mag: 1.65 }, /* Elnath (N horn)  */
+      { x: 0.50, y: 0.55, mag: 0.86 }, /* Aldebaran (eye)  */
+      { x: 0.80, y: 0.05, mag: 2.97 }, /* Zeta (S horn)    */
+      { x: 0.40, y: 0.85, mag: 3.53 }, /* Epsilon (V tip)  */
+      { x: 0.65, y: 0.80, mag: 3.65 }, /* Gamma (V apex)   */
+    ],
+    lines: [[0,1],[2,1],[1,3],[1,4],[3,4]],
+  },
+  {
+    name: 'Gemini',  /* zodiac */
+    stars: [
+      { x: 0.20, y: 0.05, mag: 1.58 }, /* Castor   */
+      { x: 0.80, y: 0.10, mag: 1.14 }, /* Pollux   */
+      { x: 0.25, y: 0.30, mag: 3.06 }, /* Mebsuta  */
+      { x: 0.15, y: 0.50, mag: 2.87 }, /* Tejat    */
+      { x: 0.35, y: 0.85, mag: 1.93 }, /* Alhena   */
+      { x: 0.55, y: 0.45, mag: 3.50 }, /* Wasat    */
+      { x: 0.70, y: 0.75, mag: 3.57 }, /* Kappa    */
+    ],
+    lines: [[0,1],[0,2],[2,3],[2,4],[1,5],[5,6]],
+  },
+  {
+    name: 'Cancer',  /* zodiac */
+    stars: [
+      { x: 0.45, y: 0.10, mag: 4.02 }, /* Iota Cnc           */
+      { x: 0.40, y: 0.38, mag: 4.66 }, /* Asellus Borealis   */
+      { x: 0.50, y: 0.55, mag: 3.94 }, /* Asellus Australis  */
+      { x: 0.85, y: 0.85, mag: 4.25 }, /* Acubens            */
+      { x: 0.15, y: 0.75, mag: 3.52 }, /* Beta Cnc           */
+    ],
+    lines: [[0,1],[1,2],[2,3],[2,4]],
+  },
+  {
+    name: 'Virgo',  /* zodiac */
+    stars: [
+      { x: 0.50, y: 0.95, mag: 0.98 }, /* Spica         */
+      { x: 0.70, y: 0.55, mag: 3.38 }, /* Heze          */
+      { x: 0.45, y: 0.50, mag: 2.75 }, /* Porrima       */
+      { x: 0.30, y: 0.40, mag: 3.39 }, /* Auva          */
+      { x: 0.90, y: 0.20, mag: 2.83 }, /* Vindemiatrix  */
+      { x: 0.05, y: 0.55, mag: 3.59 }, /* Zavijava      */
+    ],
+    lines: [[0,1],[1,2],[2,3],[1,4],[3,5]],
+  },
+  {
+    name: 'Scorpius',  /* zodiac */
+    stars: [
+      { x: 0.20, y: 0.30, mag: 1.06 }, /* Antares (heart)    */
+      { x: 0.15, y: 0.05, mag: 2.62 }, /* Acrab (head N)     */
+      { x: 0.25, y: 0.10, mag: 2.32 }, /* Dschubba           */
+      { x: 0.10, y: 0.20, mag: 2.89 }, /* Pi Sco             */
+      { x: 0.35, y: 0.50, mag: 2.82 }, /* Tau Sco            */
+      { x: 0.45, y: 0.65, mag: 2.29 }, /* Wei (Epsilon)      */
+      { x: 0.60, y: 0.80, mag: 2.29 }, /* Larawag            */
+      { x: 0.75, y: 0.90, mag: 1.86 }, /* Sargas             */
+      { x: 0.95, y: 0.70, mag: 1.62 }, /* Shaula (stinger)   */
+    ],
+    lines: [[1,2],[2,3],[3,0],[0,4],[4,5],[5,6],[6,7],[7,8]],
+  },
+  {
+    name: 'Sagittarius',  /* zodiac, "Teapot" asterism */
+    stars: [
+      { x: 0.20, y: 0.85, mag: 1.85 }, /* Kaus Australis     */
+      { x: 0.30, y: 0.60, mag: 2.70 }, /* Kaus Media         */
+      { x: 0.40, y: 0.40, mag: 2.81 }, /* Kaus Borealis      */
+      { x: 0.55, y: 0.50, mag: 3.17 }, /* Phi Sgr            */
+      { x: 0.75, y: 0.30, mag: 2.05 }, /* Nunki              */
+      { x: 0.90, y: 0.55, mag: 3.32 }, /* Tau Sgr            */
+      { x: 0.75, y: 0.80, mag: 2.60 }, /* Ascella            */
+    ],
+    lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[3,6]],
   },
 ];
 
@@ -226,7 +339,7 @@ function drawConstellation(time) {
   var c = activeConstellation;
   var elapsed = time - c.phaseStart;
 
-  var FADE_IN = 1800, DRAW_LINES = 3000, HOLD = 5000, FADE_OUT = 2500;
+  var FADE_IN = 1200, DRAW_LINES = 2200, HOLD = 3500, FADE_OUT = 1800;
   var alpha = 1.0, linesProgress = 0;
 
   if (c.phase === 'fadeIn') {
@@ -251,14 +364,14 @@ function drawConstellation(time) {
     var r  = 1.4 + Math.max(0, 3 - s.mag) * 0.55;
 
     var grad = sCtx.createRadialGradient(sx, sy, 0, sx, sy, r * 4);
-    grad.addColorStop(0, 'rgba(220, 232, 255, ' + (alpha * 0.45) + ')');
+    grad.addColorStop(0, 'rgba(220, 232, 255, ' + (alpha * 0.20) + ')');
     grad.addColorStop(1, 'rgba(220, 232, 255, 0)');
     sCtx.fillStyle = grad;
     sCtx.beginPath();
     sCtx.arc(sx, sy, r * 4, 0, Math.PI * 2);
     sCtx.fill();
 
-    sCtx.fillStyle = 'rgba(230, 240, 255, ' + alpha + ')';
+    sCtx.fillStyle = 'rgba(230, 240, 255, ' + (alpha * 0.50) + ')';
     sCtx.beginPath();
     sCtx.arc(sx, sy, r, 0, Math.PI * 2);
     sCtx.fill();
@@ -269,7 +382,7 @@ function drawConstellation(time) {
   var full  = Math.floor(linesProgress * total);
   var partial = linesProgress * total - full;
 
-  sCtx.strokeStyle = 'rgba(110, 200, 230, ' + (alpha * 0.55) + ')';
+  sCtx.strokeStyle = 'rgba(110, 200, 230, ' + (alpha * 0.28) + ')';
   sCtx.lineWidth = 0.8;
   sCtx.lineCap = 'round';
 
@@ -292,7 +405,7 @@ function scheduleConstellation() {
   setTimeout(function () {
     if (!activeConstellation) spawnConstellation();
     scheduleConstellation();
-  }, 20000 + Math.random() * 40000);  /* 20–60s between */
+  }, 8000 + Math.random() * 6000);  /* 8–14s between */
 }
 scheduleConstellation();
 

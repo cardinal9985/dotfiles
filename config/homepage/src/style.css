@@ -122,6 +122,8 @@ header {
   margin: 0 auto 0.5rem;
   animation: shadow-pulse 4s ease-in-out infinite;
   user-select: none;
+  transform: perspective(800px) rotateY(-4deg) skewX(-4deg);
+  transform-origin: center;
 }
 
 .ascii-art.glitch {

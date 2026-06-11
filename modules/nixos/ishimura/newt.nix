@@ -15,14 +15,25 @@ in
       Type = "simple";
       Restart = "on-failure";
       RestartSec = 10;
+      RuntimeDirectory = "newt";
+      RuntimeDirectoryMode = "0700";
     };
 
-    script = ''
+    preStart = ''
+      umask 0077
       SECRET=$(cat ${config.sops.secrets."newt/secret".path})
-      exec ${pkgs.fosrl-newt}/bin/newt \
-        --id "${siteId}" \
-        --secret "$SECRET" \
-        --endpoint "${endpoint}"
+      cat > /run/newt/config.json <<EOF
+      {
+        "id": "${siteId}",
+        "secret": "$SECRET",
+        "endpoint": "${endpoint}",
+        "tlsClientCert": ""
+      }
+      EOF
+    '';
+
+    script = ''
+      exec ${pkgs.fosrl-newt}/bin/newt --config-file /run/newt/config.json
     '';
   };
 }

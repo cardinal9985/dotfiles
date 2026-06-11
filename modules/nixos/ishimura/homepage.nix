@@ -7,7 +7,7 @@ let
     {
       name        = "Jellyfin";
       description = "Media Server";
-      url         = "http://100.124.97.105:8096";
+      url         = "http://ishimura:8096";
       icon        = "▶";
       statusPath  = "/health/jellyfin";
       healthUrl   = "http://127.0.0.1:8096/health";

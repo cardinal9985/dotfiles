@@ -17,7 +17,6 @@
     enable = true;
     settings.Resolve = {
       DNSSEC = "false";
-      Domains = [ "~." ];
       FallbackDNS = [ "9.9.9.9" "149.112.112.112" ];
     };
   };

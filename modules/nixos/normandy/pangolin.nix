@@ -209,7 +209,10 @@ in
         "/persist/pangolin/config/traefik/logs:/var/log/traefik"
         "${crowdsecPluginSrc}:/plugins-local/src/github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin:ro"
       ];
-      extraOptions = [ "--network=container:gerbil" ];
+      extraOptions = [
+        "--network=container:gerbil"
+        "--add-host=host.containers.internal:host-gateway"
+      ];
     };
   };
 

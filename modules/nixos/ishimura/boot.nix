@@ -9,6 +9,8 @@
         services.rollback = {
           description = "Rollback BTRFS root subvolume to blank snapshot";
           wantedBy = [ "initrd.target" ];
+          after = [ "dev-nvme0n1p2.device" ];
+          requires = [ "dev-nvme0n1p2.device" ];
           before = [ "sysroot.mount" ];
           unitConfig.DefaultDependencies = "no";
           serviceConfig.Type = "oneshot";

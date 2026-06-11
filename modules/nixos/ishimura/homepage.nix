@@ -15,8 +15,12 @@ let
   ];
 
   adminServices = [
-    # Empty until Scrutiny / CrowdSec etc. are added.
-    # Shape matches `services` above. statusPath/healthUrl optional.
+    {
+      name        = "Scrutiny";
+      description = "Disk Health";
+      url         = "http://ishimura:47890";
+      icon        = "◉";
+    }
   ];
 
   servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);

@@ -13,6 +13,9 @@
       "pangolin/server_secret" = {
         mode = "0400";
       };
+      "crowdsec/firewall_bouncer_api_key" = {
+        mode = "0400";
+      };
     };
   };
 }

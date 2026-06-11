@@ -4,6 +4,7 @@
   imports = [
     ./boot.nix
     ./crowdsec.nix
+    ./crowdsec-firewall-bouncer.nix
     ./impermanence.nix
     ./network.nix
     ./ntfy.nix

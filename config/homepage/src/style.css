@@ -63,6 +63,9 @@ body {
 
 /* ── Header ── */
 header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2.5rem;
 }
 
@@ -78,6 +81,22 @@ header {
 .github-link:hover {
   color: var(--bright-white);
   text-shadow: 0 0 10px rgba(110, 200, 230, 0.5);
+}
+
+.admin-link,
+.back-link {
+  color: var(--bright-red);
+  text-decoration: none;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  transition: color 0.15s, text-shadow 0.15s;
+  text-shadow: 0 0 6px rgba(240, 112, 138, 0.2);
+}
+
+.admin-link:hover,
+.back-link:hover {
+  color: var(--bright-white);
+  text-shadow: 0 0 10px rgba(240, 112, 138, 0.5);
 }
 
 /* ── ASCII art ── */
@@ -211,6 +230,39 @@ header {
   background: var(--bright-green);
   box-shadow: 0 0 6px rgba(94, 234, 212, 0.6);
   animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ── Admin page theme overrides ── */
+@keyframes shadow-pulse-red {
+  0%, 100% { text-shadow: 0 0 8px rgba(240, 112, 138, 0.4); }
+  50%       { text-shadow: 0 0 12px rgba(167, 139, 250, 0.4); }
+}
+
+body.admin .ascii-art {
+  color: var(--bright-red);
+  animation-name: shadow-pulse-red;
+}
+
+body.admin .section-header {
+  color: var(--bright-red);
+  text-shadow: 0 0 8px rgba(240, 112, 138, 0.3);
+}
+
+body.admin .divider {
+  color: var(--red);
+}
+
+body.admin .service-grid a {
+  color: var(--bright-red);
+  border-color: var(--red);
+  text-shadow: 0 0 6px rgba(240, 112, 138, 0.3);
+}
+
+body.admin .service-grid a:hover {
+  background: var(--red);
+  color: var(--black);
+  text-shadow: none;
+  box-shadow: 0 0 12px rgba(240, 112, 138, 0.3);
 }
 
 /* ── Responsive ── */

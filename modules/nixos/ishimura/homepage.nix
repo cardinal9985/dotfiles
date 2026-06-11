@@ -14,15 +14,23 @@ let
     }
   ];
 
-  servicesJson = pkgs.writeText "services.json" (builtins.toJSON services);
+  adminServices = [
+    # Empty until Scrutiny / CrowdSec etc. are added.
+    # Shape matches `services` above. statusPath/healthUrl optional.
+  ];
+
+  servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);
+  adminServicesJson = pkgs.writeText "admin-services.json" (builtins.toJSON adminServices);
 
   homepage = pkgs.runCommand "ishimura-homepage" {} ''
-    mkdir -p $out
-    cp ${src}/index.html $out/index.html
-    cp ${src}/style.css  $out/style.css
-    cp ${src}/app.js     $out/app.js
-    cp ${src}/404.html   $out/404.html
-    cp ${servicesJson}   $out/services.json
+    mkdir -p $out $out/admin
+    cp ${src}/index.html       $out/index.html
+    cp ${src}/style.css        $out/style.css
+    cp ${src}/app.js           $out/app.js
+    cp ${src}/404.html         $out/404.html
+    cp ${servicesJson}         $out/services.json
+    cp ${src}/admin/index.html $out/admin/index.html
+    cp ${adminServicesJson}    $out/admin/services.json
   '';
 
   healthLocations = builtins.listToAttrs (
@@ -35,7 +43,7 @@ let
           proxy_read_timeout    3s;
         '';
       };
-    }) (builtins.filter (s: s ? statusPath) services)
+    }) (builtins.filter (s: s ? statusPath) (services ++ adminServices))
   );
 in
 {
@@ -44,7 +52,15 @@ in
     virtualHosts."ishimura.lol" = {
       default   = true;
       root      = "${homepage}";
-      locations = healthLocations;
+      locations = healthLocations // {
+        "/admin/" = {
+          index = "index.html";
+          extraConfig = ''
+            allow 100.64.0.0/10;
+            deny all;
+          '';
+        };
+      };
       extraConfig = ''
         error_page 404 /404.html;
       '';

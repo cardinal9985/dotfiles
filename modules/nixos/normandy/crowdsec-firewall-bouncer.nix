@@ -12,4 +12,25 @@
       log_level = "info";
     };
   };
+
+  networking.nftables.enable = true;
+
+  networking.nftables.tables = {
+    crowdsec = {
+      family = "ip";
+      content = ''
+        chain crowdsec-chain {
+          type filter hook input priority filter - 5; policy accept;
+        }
+      '';
+    };
+    crowdsec6 = {
+      family = "ip6";
+      content = ''
+        chain crowdsec6-chain {
+          type filter hook input priority filter - 5; policy accept;
+        }
+      '';
+    };
+  };
 }

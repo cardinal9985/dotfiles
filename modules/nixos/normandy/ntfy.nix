@@ -13,4 +13,9 @@
       auth-default-access = "read-write";
     };
   };
+
+  systemd.tmpfiles.rules = [
+    "d /var/cache/ntfy             0750 ntfy-sh ntfy-sh -"
+    "d /var/cache/ntfy/attachments 0750 ntfy-sh ntfy-sh -"
+  ];
 }

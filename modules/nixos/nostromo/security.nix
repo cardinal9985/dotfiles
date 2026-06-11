@@ -15,22 +15,6 @@
     };
   };
 
-  boot.kernel.sysctl = {
-    "net.ipv4.tcp_syncookies" = 1;
-    "net.ipv4.conf.all.rp_filter" = 1;
-    "net.ipv4.conf.default.rp_filter" = 1;
-    "net.ipv4.conf.all.accept_redirects" = 0;
-    "net.ipv4.conf.default.accept_redirects" = 0;
-    "net.ipv6.conf.all.accept_redirects" = 0;
-    "net.ipv4.conf.all.send_redirects" = 0;
-    "net.ipv4.conf.all.accept_source_route" = 0;
-    "net.ipv6.conf.all.accept_source_route" = 0;
-    "kernel.randomize_va_space" = 2;
-    "kernel.kptr_restrict" = 2;
-    "kernel.dmesg_restrict" = 1;
-    "fs.suid_dumpable" = 0;
-  };
-
   security = {
     polkit.enable = true;
     sudo = {
@@ -43,11 +27,6 @@
       killUnconfinedConfinables = false;
     };
   };
-
-  services.journald.extraConfig = ''
-    SystemMaxUse=500M
-    RuntimeMaxUse=100M
-  '';
 
   environment.systemPackages = [ pkgs.vulnix ];
 

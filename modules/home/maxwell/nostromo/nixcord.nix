@@ -239,9 +239,8 @@
         plainFolderIcon.enable = true;
         readAllNotificationsButton.enable = true;
         volumeBooster.enable = true;
-        ClearURLs.enable = true;
+        clearUrls.enable = true;
         biggerStreamPreview.enable = true;
-        petpet.enable = true;
       };
     };
   };

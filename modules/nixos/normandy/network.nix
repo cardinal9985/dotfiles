@@ -15,7 +15,10 @@
     nameservers = [ "1.1.1.1" "9.9.9.9" ];
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 22 ];
+      allowedTCPPorts = [
+        22    # endlessh honeypot
+        36475 # real SSH
+      ];
     };
   };
 }

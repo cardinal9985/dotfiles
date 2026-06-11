@@ -15,6 +15,6 @@
     deploy-ishimura = "colmena apply --on ishimura";
     deploy-normandy = "colmena apply --on normandy";
     ishimura  = "TERM=xterm-256color ssh -p 36475 maxwell@192.168.254.186";
-    normandy  = "TERM=xterm-256color ssh maxwell@100.108.98.70";
+    normandy  = "TERM=xterm-256color ssh -p 36475 maxwell@100.108.98.70";
   };
 }

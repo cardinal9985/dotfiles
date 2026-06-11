@@ -13,7 +13,7 @@
     options = [ "defaults" "nofail" ];
   };
 
-  fileSystems."/mnt/media" = {
+  fileSystems."/mnt/storage" = {
     device = "/mnt/disk1:/mnt/disk2";
     fsType = "fuse.mergerfs";
     options = [

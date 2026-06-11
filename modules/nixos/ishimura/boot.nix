@@ -16,7 +16,7 @@
             set -x
 
             mkdir -p /btrfs_tmp
-            mount -t btrfs -o subvol=/ /dev/disk/by-id/nvme-SAMCO_RX1_1TB_SSD_08092223A0122-part2 /btrfs_tmp
+            mount -t btrfs -o subvol=/ /dev/nvme0n1p2 /btrfs_tmp
 
             if [[ -e /btrfs_tmp/@ ]]; then
               mkdir -p /btrfs_tmp/old_roots

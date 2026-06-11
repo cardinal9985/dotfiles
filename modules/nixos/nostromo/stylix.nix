@@ -1,6 +1,8 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 
 {
+  disabledModules = [ "${inputs.stylix}/modules/kmscon/nixos.nix" ];
+
   stylix = {
     enable = true;
 

@@ -155,7 +155,7 @@
         deployment = {
           targetHost = "192.168.254.87";
           targetPort = 36475;
-          targetUser = "root";
+          targetUser = "maxwell";
           tags = [ "workstation" ];
         };
         imports = workstationModules { host = "nostromo"; user = "maxwell"; };
@@ -165,7 +165,7 @@
         deployment = {
           targetHost = "192.168.254.186";
           targetPort = 36475;
-          targetUser = "root";
+          targetUser = "maxwell";
           tags = [ "server" ];
         };
         imports = serverModules { host = "ishimura"; user = "maxwell"; };

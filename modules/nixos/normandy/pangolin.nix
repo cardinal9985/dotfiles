@@ -5,6 +5,13 @@ let
   dashboardHost  = "pangolin.${domain}";
   acmeEmail      = "fanatical.despise915@simplelogin.com";
 
+  crowdsecPluginSrc = pkgs.fetchFromGitHub {
+    owner = "maxlerebourg";
+    repo  = "crowdsec-bouncer-traefik-plugin";
+    rev   = "v1.4.6";
+    hash  = "sha256-r4T+0mT9YHmfu/nFhvjpyiz/Z7ViF3yLJKmOuwbnK60=";
+  };
+
   configYamlTemplate = pkgs.writeText "pangolin-config.yml.tmpl" ''
     app:
       dashboard_url: "https://${dashboardHost}"
@@ -87,10 +94,9 @@ let
       filePath: "/var/log/traefik/access.log"
       format: json
     experimental:
-      plugins:
+      localPlugins:
         crowdsec:
           moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
-          version: v1.4.6
     providers:
       http:
         endpoint: "http://pangolin:3001/api/v1/traefik-config"
@@ -201,6 +207,7 @@ in
         "/persist/pangolin/config/traefik:/etc/traefik:ro"
         "/persist/pangolin/config/letsencrypt:/letsencrypt"
         "/persist/pangolin/config/traefik/logs:/var/log/traefik"
+        "${crowdsecPluginSrc}:/plugins-local/src/github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin:ro"
       ];
       extraOptions = [ "--network=container:gerbil" ];
     };

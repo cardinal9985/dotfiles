@@ -21,6 +21,12 @@ let
       url         = "http://ishimura:47890";
       icon        = "◉";
     }
+    {
+      name        = "ntfy";
+      description = "Notifications";
+      url         = "http://normandy:8080";
+      icon        = "◈";
+    }
   ];
 
   servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);

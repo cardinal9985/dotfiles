@@ -18,6 +18,12 @@
       allowedTCPPorts = [
         22    # endlessh honeypot
         36475 # real SSH
+        80    # Pangolin / Traefik (HTTP, ACME challenges)
+        443   # Pangolin / Traefik (HTTPS)
+      ];
+      allowedUDPPorts = [
+        51820 # Pangolin / Gerbil (WireGuard, primary)
+        21820 # Pangolin / Gerbil (WireGuard, secondary)
       ];
     };
   };

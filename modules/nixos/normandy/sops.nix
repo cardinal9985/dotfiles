@@ -10,6 +10,9 @@
       "users/maxwell_password" = {
         neededForUsers = true;
       };
+      "pangolin/server_secret" = {
+        mode = "0400";
+      };
     };
   };
 }

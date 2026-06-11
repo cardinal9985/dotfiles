@@ -10,18 +10,6 @@
       mode = "nftables";
       update_frequency = "10s";
       log_level = "info";
-      nftables = {
-        ipv4 = {
-          enabled = true;
-          table = "crowdsec";
-          chain = "crowdsec-chain";
-        };
-        ipv6 = {
-          enabled = true;
-          table = "crowdsec6";
-          chain = "crowdsec6-chain";
-        };
-      };
     };
   };
 }

@@ -9,6 +9,5 @@
     btop
     lsof
     smartmontools
-    colmena
   ];
 }

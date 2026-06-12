@@ -16,8 +16,8 @@
   --usg-bright-red: #f0708a;
 }
 
-body#top,
-html:has(body#top) {
+/* Body styles — scoped to body#top, which only exists on Anubis pages. */
+body#top {
   background: var(--usg-black) !important;
   color: var(--usg-white) !important;
   font-family: "Courier New", "Lucida Console", monospace !important;
@@ -29,6 +29,19 @@ html:has(body#top) {
   align-items: center !important;
   position: relative !important;
   overflow-x: hidden !important;
+}
+
+/* Same styles on <html> via :has() so the viewport fills. Modern Firefox/Chrome
+ * support :has(), but if not the body styles above still apply (graceful degrade).
+ * Avoids relying on :has() being supported on the same selector as the fallback.
+ */
+@supports selector(html:has(body)) {
+  html:has(body#top) {
+    background: var(--usg-black) !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 body#top::before {

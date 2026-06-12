@@ -4,7 +4,6 @@
   imports = [
     ./crowdsec.nix
     ./gpu.nix
-    ./homepage.nix
     ./impermanence.nix
     ./jellyfin.nix
     ./network.nix

@@ -78,14 +78,20 @@
 /* ── Base ────────────────────────────────────────── */
 html {
   background: var(--usg-black) !important;
+  background-color: #080c14 !important;
   color: var(--usg-white) !important;
   font-family: "Courier New", "Lucida Console", monospace !important;
+  min-height: 100vh !important;
+  color-scheme: dark !important;
 }
 
 body {
-  background: transparent !important;
+  background: var(--usg-black) !important;
+  background-color: #080c14 !important;
   color: var(--usg-white) !important;
   font-family: "Courier New", "Lucida Console", monospace !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
 }
 
 /* Let the stars show through Material's outer containers */

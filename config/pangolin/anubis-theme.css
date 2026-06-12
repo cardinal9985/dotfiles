@@ -31,17 +31,17 @@ body#top {
   overflow-x: hidden !important;
 }
 
-/* Same styles on <html> via :has() so the viewport fills. Modern Firefox/Chrome
- * support :has(), but if not the body styles above still apply (graceful degrade).
- * Avoids relying on :has() being supported on the same selector as the fallback.
+/* The CSS is injected into every auth-router response (both Anubis challenge
+ * and post-PoW voidauth). Setting <html> styles here unconditionally is safe
+ * because voidauth's own custom.css already sets the same html background.
+ * Avoids :has() which Zen's older Firefox base doesn't support.
  */
-@supports selector(html:has(body)) {
-  html:has(body#top) {
-    background: var(--usg-black) !important;
-    min-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
+html {
+  background: var(--usg-black) !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color-scheme: dark !important;
 }
 
 body#top::before {

@@ -7,6 +7,7 @@
     ./crowdsec.nix
     ./crowdsec-firewall-bouncer.nix
     ./crowdsec-ntfy.nix
+    ./homepage.nix
     ./impermanence.nix
     ./network.nix
     ./ntfy.nix

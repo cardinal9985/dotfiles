@@ -90,6 +90,18 @@ let
               rewrites:
                 - regex: '</head>'
                   replacement: '<link rel="stylesheet" href="/anubis-theme.css"></head>'
+        voidauth-forwardauth:
+          forwardAuth:
+            address: "http://127.0.0.1:3030/api/authz/forward-auth"
+            trustForwardHeader: true
+            authResponseHeaders:
+              - Remote-User
+              - Remote-Name
+              - Remote-Email
+              - Remote-Groups
+        rewrite-jellyfin-health:
+          replacePath:
+            path: "/health"
       routers:
         robots-router:
           rule: "Path(`/robots.txt`)"
@@ -140,7 +152,7 @@ let
             - error-pages
             - tailnet-only
         anubis-theme-css-router:
-          rule: "Host(`auth.${domain}`) && Path(`/anubis-theme.css`)"
+          rule: "(Host(`auth.${domain}`) || Host(`${domain}`)) && Path(`/anubis-theme.css`)"
           service: errors-service
           entryPoints:
             - websecure
@@ -157,6 +169,54 @@ let
           tls:
             certResolver: letsencrypt
           priority: 10
+          middlewares:
+            - noindex-headers
+            - anubis-theme
+            - error-pages
+        homepage-health-jellyfin-router:
+          rule: "Host(`${domain}`) && Path(`/health/jellyfin`)"
+          service: ishimura-jellyfin-health-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-jellyfin-health
+        homepage-admin-router:
+          rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
+          service: homepage-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 20
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
+            - anubis-theme
+            - error-pages
+        homepage-router:
+          rule: "Host(`${domain}`)"
+          service: homepage-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 5
           middlewares:
             - noindex-headers
             - anubis-theme
@@ -193,6 +253,14 @@ let
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:8085"
+        homepage-service:
+          loadBalancer:
+            servers:
+              - url: "http://127.0.0.1:8925"
+        ishimura-jellyfin-health-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8096"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

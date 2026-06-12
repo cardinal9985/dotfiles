@@ -5,10 +5,26 @@ let
 in
 {
   systemd.tmpfiles.rules = [
-    "d /persist/voidauth          0750 root root -"
-    "d /persist/voidauth/config   0750 root root -"
-    "d /persist/voidauth/postgres 0700 999  999  -"
+    "d /persist/voidauth                  0750 root root -"
+    "d /persist/voidauth/config           0750 root root -"
+    "d /persist/voidauth/config/branding  0750 root root -"
+    "d /persist/voidauth/postgres         0700 999  999  -"
   ];
+
+  systemd.services.voidauth-install-theme = {
+    description = "Install custom VoidAuth theme CSS";
+    wantedBy = [ "podman-voidauth.service" ];
+    before   = [ "podman-voidauth.service" ];
+    after    = [ "systemd-tmpfiles-setup.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      install -m 0644 ${../../../config/voidauth/custom.css} \
+        /persist/voidauth/config/branding/custom.css
+    '';
+  };
 
   sops.templates."voidauth.env" = {
     content = ''

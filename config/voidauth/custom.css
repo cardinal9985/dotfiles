@@ -1,0 +1,169 @@
+/* USG Ishimura - VoidAuth custom theme
+ * Matches the homepage Dead Space palette + CRT vibe.
+ */
+
+:root {
+  --usg-black:          #080c14;
+  --usg-surface:        #0e1320;
+  --usg-surface-light:  #141a2a;
+  --usg-white:          #a0aec0;
+  --usg-bright-white:   #dce4f0;
+  --usg-cyan:           #3a9fbf;
+  --usg-bright-cyan:    #6ec8e6;
+  --usg-magenta:        #7b68c8;
+  --usg-bright-magenta: #a78bfa;
+  --usg-green:          #3d9b8f;
+  --usg-bright-green:   #5eead4;
+  --usg-yellow:         #b89040;
+  --usg-bright-yellow:  #fbbf60;
+  --usg-red:            #8b3a50;
+  --usg-bright-red:     #f0708a;
+}
+
+/* ── Base ────────────────────────────────────────── */
+html, body {
+  background: var(--usg-black) !important;
+  color: var(--usg-white) !important;
+  font-family: "Courier New", "Lucida Console", monospace !important;
+  min-height: 100vh;
+}
+
+/* CRT scanline overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Card / container ────────────────────────────── */
+.mat-mdc-card,
+.mdc-card,
+[class*="card"],
+main > div,
+.container {
+  background: var(--usg-surface) !important;
+  border: 1px solid var(--usg-cyan) !important;
+  box-shadow: 0 0 24px rgba(58, 159, 191, 0.15) !important;
+  color: var(--usg-white) !important;
+}
+
+/* ── Headings ────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6, .mat-mdc-card-title, .mdc-card__title {
+  color: var(--usg-bright-cyan) !important;
+  letter-spacing: 0.15em !important;
+  text-shadow: 0 0 8px rgba(110, 200, 230, 0.4) !important;
+  font-family: "Courier New", monospace !important;
+}
+
+/* ── Labels & body text ──────────────────────────── */
+label, p, span, div, .mat-mdc-form-field-label,
+.mdc-floating-label {
+  color: var(--usg-white) !important;
+  font-family: "Courier New", monospace !important;
+}
+
+/* ── Inputs ──────────────────────────────────────── */
+input, textarea, select,
+.mat-mdc-input-element,
+.mdc-text-field__input {
+  background: var(--usg-black) !important;
+  color: var(--usg-bright-white) !important;
+  border: 1px solid var(--usg-cyan) !important;
+  font-family: "Courier New", monospace !important;
+  caret-color: var(--usg-bright-cyan) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--usg-bright-cyan) !important;
+  box-shadow: 0 0 8px rgba(110, 200, 230, 0.5) !important;
+  outline: none !important;
+}
+
+/* MDC floating label box outline */
+.mdc-text-field--outlined .mdc-notched-outline__leading,
+.mdc-text-field--outlined .mdc-notched-outline__notch,
+.mdc-text-field--outlined .mdc-notched-outline__trailing {
+  border-color: var(--usg-cyan) !important;
+}
+
+.mdc-text-field--focused .mdc-notched-outline__leading,
+.mdc-text-field--focused .mdc-notched-outline__notch,
+.mdc-text-field--focused .mdc-notched-outline__trailing {
+  border-color: var(--usg-bright-cyan) !important;
+}
+
+/* ── Buttons ─────────────────────────────────────── */
+button, .mat-mdc-button, .mdc-button,
+.mat-mdc-raised-button, .mat-mdc-unelevated-button {
+  background: transparent !important;
+  color: var(--usg-bright-green) !important;
+  border: 1px solid var(--usg-green) !important;
+  font-family: "Courier New", monospace !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 6px rgba(94, 234, 212, 0.3) !important;
+  transition: all 0.15s !important;
+  box-shadow: none !important;
+}
+
+button:hover, .mat-mdc-button:hover, .mdc-button:hover {
+  background: var(--usg-green) !important;
+  color: var(--usg-black) !important;
+  text-shadow: none !important;
+  box-shadow: 0 0 12px rgba(94, 234, 212, 0.5) !important;
+}
+
+/* Primary / submit accent */
+button[type="submit"], .mat-primary, [color="primary"] {
+  color: var(--usg-bright-cyan) !important;
+  border-color: var(--usg-cyan) !important;
+  text-shadow: 0 0 6px rgba(110, 200, 230, 0.3) !important;
+}
+
+button[type="submit"]:hover, .mat-primary:hover {
+  background: var(--usg-cyan) !important;
+  color: var(--usg-black) !important;
+  box-shadow: 0 0 12px rgba(110, 200, 230, 0.5) !important;
+}
+
+/* ── Links ───────────────────────────────────────── */
+a, .mat-mdc-button.mat-mdc-button-link {
+  color: var(--usg-bright-magenta) !important;
+  text-decoration: none !important;
+}
+
+a:hover {
+  color: var(--usg-magenta) !important;
+  text-shadow: 0 0 6px rgba(167, 139, 250, 0.5) !important;
+}
+
+/* ── Errors / alerts ─────────────────────────────── */
+.mat-mdc-form-field-error, .error, [class*="error"],
+.mdc-text-field--invalid .mdc-floating-label {
+  color: var(--usg-bright-red) !important;
+  text-shadow: 0 0 6px rgba(240, 112, 138, 0.3) !important;
+}
+
+/* ── Selection ───────────────────────────────────── */
+::selection {
+  background: var(--usg-cyan);
+  color: var(--usg-black);
+}
+
+/* ── Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--usg-surface); }
+::-webkit-scrollbar-thumb {
+  background: var(--usg-cyan);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--usg-bright-cyan); }

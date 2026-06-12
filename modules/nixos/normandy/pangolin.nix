@@ -72,7 +72,25 @@ let
               - "404"
             service: errors-service
             query: /{status}.html
+        noindex-headers:
+          headers:
+            customResponseHeaders:
+              X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
       routers:
+        robots-router:
+          rule: "Path(`/robots.txt`)"
+          service: errors-service
+          entryPoints:
+            - websecure
+          priority: 1000
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          middlewares:
+            - noindex-headers
         next-router:
           rule: "Host(`${dashboardHost}`)"
           service: next-service
@@ -81,6 +99,7 @@ let
           tls:
             certResolver: letsencrypt
           middlewares:
+            - noindex-headers
             - error-pages
             - tailnet-only
         api-router:
@@ -91,6 +110,7 @@ let
           tls:
             certResolver: letsencrypt
           middlewares:
+            - noindex-headers
             - error-pages
             - tailnet-only
         auth-admin-router:
@@ -102,6 +122,7 @@ let
             certResolver: letsencrypt
           priority: 20
           middlewares:
+            - noindex-headers
             - error-pages
             - tailnet-only
         auth-router:
@@ -113,6 +134,7 @@ let
             certResolver: letsencrypt
           priority: 10
           middlewares:
+            - noindex-headers
             - error-pages
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
@@ -127,6 +149,7 @@ let
                 sans:
                   - "*.${domain}"
           middlewares:
+            - noindex-headers
             - error-pages
       services:
         next-service:
@@ -244,6 +267,8 @@ in
         /persist/pangolin/errors/403.html
       install -m 0644 ${../../../config/pangolin/404.html} \
         /persist/pangolin/errors/404.html
+      install -m 0644 ${../../../config/pangolin/robots.txt} \
+        /persist/pangolin/errors/robots.txt
       ${pkgs.gnused}/bin/sed \
         "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
         ${traefikDynamicConfig} \

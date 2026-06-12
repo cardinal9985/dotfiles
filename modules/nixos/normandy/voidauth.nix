@@ -7,7 +7,7 @@ in
   systemd.tmpfiles.rules = [
     "d /persist/voidauth          0750 root root -"
     "d /persist/voidauth/config   0750 root root -"
-    "d /persist/voidauth/postgres 0700 root root -"
+    "d /persist/voidauth/postgres 0700 999  999  -"
   ];
 
   sops.templates."voidauth.env" = {

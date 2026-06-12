@@ -26,7 +26,7 @@
           action = "CHALLENGE";
           challenge = {
             algorithm = "fast";
-            difficulty = 7;
+            difficulty = 5;
           };
         }
         {
@@ -35,7 +35,7 @@
           action = "CHALLENGE";
           challenge = {
             algorithm = "fast";
-            difficulty = 8;
+            difficulty = 6;
           };
         }
         {
@@ -44,7 +44,7 @@
           action = "CHALLENGE";
           challenge = {
             algorithm = "fast";
-            difficulty = 10;
+            difficulty = 7;
           };
         }
       ];

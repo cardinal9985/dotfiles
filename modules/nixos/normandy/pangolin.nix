@@ -114,6 +114,20 @@ let
           priority: 10
           middlewares:
             - error-pages
+        catchall-router:
+          rule: "HostRegexp(`^.+\\.${builtins.replaceStrings ["."] ["\\."] domain}$`)"
+          service: errors-service
+          entryPoints:
+            - websecure
+          priority: 1
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          middlewares:
+            - error-pages
       services:
         next-service:
           loadBalancer:
@@ -175,9 +189,26 @@ let
           email: ${acmeEmail}
           storage: "/letsencrypt/acme.json"
           caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      porkbun:
+        acme:
+          dnsChallenge:
+            provider: porkbun
+            resolvers:
+              - "1.1.1.1:53"
+              - "8.8.8.8:53"
+          email: ${acmeEmail}
+          storage: "/letsencrypt/porkbun.json"
+          caServer: "https://acme-v02.api.letsencrypt.org/directory"
   '';
 in
 {
+  sops.templates."porkbun.env" = {
+    content = ''
+      PORKBUN_API_KEY=${config.sops.placeholder."porkbun/api_key"}
+      PORKBUN_SECRET_API_KEY=${config.sops.placeholder."porkbun/secret_api_key"}
+    '';
+  };
+
   systemd.tmpfiles.rules = [
     "d /persist/pangolin                       0750 root root -"
     "d /persist/pangolin/config                0750 root root -"
@@ -260,6 +291,7 @@ in
       image = "docker.io/traefik:v3.6";
       dependsOn = [ "pangolin" "gerbil" ];
       cmd = [ "--configFile=/etc/traefik/traefik_config.yml" ];
+      environmentFiles = [ config.sops.templates."porkbun.env".path ];
       volumes = [
         "/persist/pangolin/config/traefik:/etc/traefik:ro"
         "/persist/pangolin/config/letsencrypt:/letsencrypt"

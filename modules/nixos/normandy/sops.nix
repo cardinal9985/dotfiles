@@ -25,6 +25,12 @@
       "voidauth/db_password" = {
         mode = "0400";
       };
+      "porkbun/api_key" = {
+        mode = "0400";
+      };
+      "porkbun/secret_api_key" = {
+        mode = "0400";
+      };
     };
   };
 }

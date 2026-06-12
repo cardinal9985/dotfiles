@@ -73,8 +73,6 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
-          middlewares:
-            - tailnet-only
         api-router:
           rule: "Host(`${dashboardHost}`) && PathPrefix(`/api/v1`)"
           service: api-service
@@ -82,18 +80,6 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
-          middlewares:
-            - tailnet-only
-        auth-admin-router:
-          rule: "Host(`auth.${domain}`) && PathPrefix(`/admin`)"
-          service: auth-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: letsencrypt
-          priority: 20
-          middlewares:
-            - tailnet-only
         auth-router:
           rule: "Host(`auth.${domain}`)"
           service: auth-service
@@ -101,7 +87,6 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
-          priority: 10
       services:
         next-service:
           loadBalancer:

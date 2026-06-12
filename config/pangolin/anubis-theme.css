@@ -1,20 +1,25 @@
+/* All selectors scoped to body#top so the styles only fire on the Anubis
+ * challenge page. Voidauth's body has no id="top", so its layout is untouched.
+ */
+
 :root {
-  --black: #080c14;
-  --white: #a0aec0;
-  --bright-white: #dce4f0;
-  --cyan: #3a9fbf;
-  --bright-cyan: #6ec8e6;
-  --yellow: #b89040;
-  --bright-yellow: #fbbf60;
-  --green: #3d9b8f;
-  --bright-green: #5eead4;
-  --red: #8b3a50;
-  --bright-red: #f0708a;
+  --usg-black: #080c14;
+  --usg-white: #a0aec0;
+  --usg-bright-white: #dce4f0;
+  --usg-cyan: #3a9fbf;
+  --usg-bright-cyan: #6ec8e6;
+  --usg-yellow: #b89040;
+  --usg-bright-yellow: #fbbf60;
+  --usg-green: #3d9b8f;
+  --usg-bright-green: #5eead4;
+  --usg-red: #8b3a50;
+  --usg-bright-red: #f0708a;
 }
 
-html, body {
-  background: var(--black) !important;
-  color: var(--white) !important;
+body#top,
+html:has(body#top) {
+  background: var(--usg-black) !important;
+  color: var(--usg-white) !important;
   font-family: "Courier New", "Lucida Console", monospace !important;
   min-height: 100vh !important;
   margin: 0 !important;
@@ -26,7 +31,7 @@ html, body {
   overflow-x: hidden !important;
 }
 
-body::before {
+body#top::before {
   content: "" !important;
   position: fixed !important;
   top: 0; left: 0;
@@ -42,20 +47,20 @@ body::before {
   z-index: 10 !important;
 }
 
-main {
+body#top main {
   text-align: center !important;
   padding: 2rem !important;
   position: relative !important;
   z-index: 1 !important;
   max-width: 720px !important;
-  animation: flicker 12s infinite !important;
+  animation: usg-flicker 12s infinite !important;
 }
 
-main::before {
+body#top main::before {
   content: "\A  ██╗ ███████╗██╗  ██╗██╗███╗   ███╗██╗   ██╗██████╗  █████╗ \A  ██║ ██╔════╝██║  ██║██║████╗ ████║██║   ██║██╔══██╗██╔══██╗\A  ██║ ███████╗███████║██║██╔████╔██║██║   ██║██████╔╝███████║\A  ██║ ╚════██║██╔══██║██║██║╚██╔╝██║██║   ██║██╔══██╗██╔══██║\A  ██║ ███████║██║  ██║██║██║ ╚═╝ ██║╚██████╔╝██║  ██║██║  ██║\A  ╚═╝ ╚══════╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝\A" !important;
   display: block !important;
   white-space: pre !important;
-  color: var(--bright-cyan) !important;
+  color: var(--usg-bright-cyan) !important;
   font-size: 0.65rem !important;
   line-height: 1.1 !important;
   text-shadow: 0 0 6px rgba(110, 200, 230, 0.4) !important;
@@ -63,8 +68,8 @@ main::before {
   font-family: "Courier New", monospace !important;
 }
 
-#title {
-  color: var(--bright-yellow) !important;
+body#top #title {
+  color: var(--usg-bright-yellow) !important;
   font-size: 1.3rem !important;
   letter-spacing: 0.2em !important;
   margin-bottom: 2rem !important;
@@ -73,52 +78,52 @@ main::before {
   text-transform: uppercase !important;
 }
 
-#title::before {
+body#top #title::before {
   content: "VERIFYING TRANSPONDER SIGNATURE :: " !important;
   display: block !important;
   font-size: 0.8rem !important;
-  color: var(--bright-cyan) !important;
+  color: var(--usg-bright-cyan) !important;
   letter-spacing: 0.3em !important;
   margin-bottom: 0.5rem !important;
   opacity: 0.8 !important;
 }
 
-#image {
+body#top #image {
   display: none !important;
 }
 
-main > div.centered-div > p,
-#status {
-  color: var(--bright-cyan) !important;
+body#top main > div.centered-div > p,
+body#top #status {
+  color: var(--usg-bright-cyan) !important;
   font-size: 0.95rem !important;
   letter-spacing: 0.1em !important;
   text-shadow: 0 0 4px rgba(110, 200, 230, 0.3) !important;
   margin: 1rem 0 !important;
 }
 
-#progress {
-  border-color: var(--cyan) !important;
+body#top #progress {
+  border-color: var(--usg-cyan) !important;
   border-radius: 0 !important;
-  outline-color: var(--cyan) !important;
+  outline-color: var(--usg-cyan) !important;
   background: rgba(58, 159, 191, 0.1) !important;
   margin: 1.5rem auto !important;
 }
 
-.bar-inner {
-  background-color: var(--bright-green) !important;
+body#top .bar-inner {
+  background-color: var(--usg-bright-green) !important;
   box-shadow: 0 0 12px rgba(94, 234, 212, 0.5) !important;
 }
 
-details {
-  color: var(--white) !important;
+body#top details {
+  color: var(--usg-white) !important;
   margin: 2rem 0 1rem !important;
   font-size: 0.85rem !important;
   text-align: left !important;
   opacity: 0.7 !important;
 }
 
-details summary {
-  color: var(--bright-yellow) !important;
+body#top details summary {
+  color: var(--usg-bright-yellow) !important;
   cursor: pointer !important;
   font-size: 0.8rem !important;
   letter-spacing: 0.1em !important;
@@ -126,45 +131,53 @@ details summary {
   padding: 0.5rem 0 !important;
 }
 
-details p {
-  color: var(--white) !important;
+body#top details p {
+  color: var(--usg-white) !important;
   line-height: 1.6 !important;
   margin: 0.8rem 0 !important;
 }
 
-noscript p {
-  color: var(--bright-red) !important;
-  border: 1px solid var(--red) !important;
+body#top noscript p {
+  color: var(--usg-bright-red) !important;
+  border: 1px solid var(--usg-red) !important;
   padding: 1rem !important;
   margin: 1rem 0 !important;
   background: rgba(139, 58, 80, 0.1) !important;
 }
 
-footer {
-  color: var(--yellow) !important;
+body#top footer {
+  color: var(--usg-yellow) !important;
   font-size: 0.7rem !important;
   margin-top: 2rem !important;
   opacity: 0.5 !important;
 }
 
-footer a {
-  color: var(--bright-yellow) !important;
+body#top footer a {
+  color: var(--usg-bright-yellow) !important;
   text-decoration: none !important;
 }
 
-footer a:hover {
+body#top footer a:hover {
   text-shadow: 0 0 6px rgba(251, 191, 96, 0.5) !important;
 }
 
-footer p {
+body#top footer p {
   margin: 0.3rem 0 !important;
 }
 
-a {
-  color: var(--bright-cyan) !important;
+/* Hide "Mascot design by CELPHASE" — the second <p> in the footer.
+ * The mascot itself was removed via #image { display: none }, so the
+ * credit no longer makes sense.
+ */
+body#top footer .centered-div p:nth-of-type(2) {
+  display: none !important;
 }
 
-@keyframes flicker {
+body#top a {
+  color: var(--usg-bright-cyan) !important;
+}
+
+@keyframes usg-flicker {
   0%, 100% { opacity: 1; }
   96% { opacity: 1; }
   97% { opacity: 0.92; }
@@ -172,7 +185,7 @@ a {
 }
 
 @media (max-width: 600px) {
-  main::before {
+  body#top main::before {
     font-size: 0.45rem !important;
   }
 }

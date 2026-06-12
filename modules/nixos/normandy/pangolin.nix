@@ -219,6 +219,7 @@ let
           priority: 5
           middlewares:
             - noindex-headers
+            - voidauth-forwardauth
             - anubis-theme
             - error-pages
         catchall-router:

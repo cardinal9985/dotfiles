@@ -65,12 +65,13 @@ let
           ipAllowList:
             sourceRange:
               - 100.64.0.0/10
-        forbidden-page:
+        error-pages:
           errors:
             status:
               - "403"
+              - "404"
             service: errors-service
-            query: /forbidden.html
+            query: /{status}.html
       routers:
         next-router:
           rule: "Host(`${dashboardHost}`)"
@@ -80,7 +81,7 @@ let
           tls:
             certResolver: letsencrypt
           middlewares:
-            - forbidden-page
+            - error-pages
             - tailnet-only
         api-router:
           rule: "Host(`${dashboardHost}`) && PathPrefix(`/api/v1`)"
@@ -90,7 +91,7 @@ let
           tls:
             certResolver: letsencrypt
           middlewares:
-            - forbidden-page
+            - error-pages
             - tailnet-only
         auth-admin-router:
           rule: "Host(`auth.${domain}`) && PathPrefix(`/admin`)"
@@ -101,7 +102,7 @@ let
             certResolver: letsencrypt
           priority: 20
           middlewares:
-            - forbidden-page
+            - error-pages
             - tailnet-only
         auth-router:
           rule: "Host(`auth.${domain}`)"
@@ -111,6 +112,8 @@ let
           tls:
             certResolver: letsencrypt
           priority: 10
+          middlewares:
+            - error-pages
       services:
         next-service:
           loadBalancer:
@@ -206,8 +209,10 @@ in
         /persist/pangolin/config/traefik/traefik_config.yml
       install -m 0644 ${../../../config/pangolin/ban.html} \
         /persist/pangolin/config/traefik/ban.html
-      install -m 0644 ${../../../config/pangolin/forbidden.html} \
-        /persist/pangolin/errors/forbidden.html
+      install -m 0644 ${../../../config/pangolin/403.html} \
+        /persist/pangolin/errors/403.html
+      install -m 0644 ${../../../config/pangolin/404.html} \
+        /persist/pangolin/errors/404.html
       ${pkgs.gnused}/bin/sed \
         "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
         ${traefikDynamicConfig} \

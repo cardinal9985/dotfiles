@@ -1,9 +1,7 @@
 { ... }:
 
 {
-  networking.firewall.extraInputRules = ''
-    iifname "podman*" tcp dport 8081 accept comment "podman containers -> CrowdSec LAPI"
-  '';
+  networking.firewall.interfaces.podman1.allowedTCPPorts = [ 8081 ];
 
   services.crowdsec = {
     enable = true;

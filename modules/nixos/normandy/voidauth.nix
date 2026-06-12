@@ -36,7 +36,7 @@ in
       image = "docker.io/postgres:18";
       environmentFiles = [ config.sops.templates."voidauth-db.env".path ];
       volumes = [
-        "/persist/voidauth/postgres:/var/lib/postgresql/data"
+        "/persist/voidauth/postgres:/var/lib/postgresql"
       ];
       extraOptions = [ "--network=pangolin" ];
     };

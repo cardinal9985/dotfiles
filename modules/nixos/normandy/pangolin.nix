@@ -140,7 +140,7 @@ let
         auth-service:
           loadBalancer:
             servers:
-              - url: "http://127.0.0.1:3030"
+              - url: "http://127.0.0.1:8923"
         errors-service:
           loadBalancer:
             servers:

@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./anubis.nix
     ./boot.nix
     ./crowdsec.nix
     ./crowdsec-firewall-bouncer.nix

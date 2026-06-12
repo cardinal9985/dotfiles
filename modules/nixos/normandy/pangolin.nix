@@ -134,14 +134,14 @@ let
         watch: true
     entryPoints:
       web:
-        address: ":80"
+        address: "0.0.0.0:80"
         http:
           redirections:
             entryPoint:
               to: websecure
               scheme: https
       websecure:
-        address: ":443"
+        address: "0.0.0.0:443"
         transport:
           respondingTimeouts:
             readTimeout: "30m"

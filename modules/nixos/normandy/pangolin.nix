@@ -57,7 +57,7 @@ let
               updateIntervalSeconds: 30
               defaultDecisionSeconds: 60
               crowdsecMode: live
-              crowdsecLapiHost: host.containers.internal:8081
+              crowdsecLapiHost: 127.0.0.1:8081
               crowdsecLapiScheme: http
               crowdsecLapiKey: __CROWDSEC_TRAEFIK_API_KEY__
               banHTMLFilePath: /etc/traefik/ban.html
@@ -73,6 +73,8 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
+          middlewares:
+            - tailnet-only
         api-router:
           rule: "Host(`${dashboardHost}`) && PathPrefix(`/api/v1`)"
           service: api-service
@@ -80,6 +82,18 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
+          middlewares:
+            - tailnet-only
+        auth-admin-router:
+          rule: "Host(`auth.${domain}`) && PathPrefix(`/admin`)"
+          service: auth-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: letsencrypt
+          priority: 20
+          middlewares:
+            - tailnet-only
         auth-router:
           rule: "Host(`auth.${domain}`)"
           service: auth-service
@@ -87,19 +101,20 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
+          priority: 10
       services:
         next-service:
           loadBalancer:
             servers:
-              - url: "http://pangolin:3002"
+              - url: "http://127.0.0.1:3002"
         api-service:
           loadBalancer:
             servers:
-              - url: "http://pangolin:3000"
+              - url: "http://127.0.0.1:3000"
         auth-service:
           loadBalancer:
             servers:
-              - url: "http://voidauth:3000"
+              - url: "http://127.0.0.1:3030"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''
@@ -115,7 +130,7 @@ let
           moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
     providers:
       http:
-        endpoint: "http://pangolin:3001/api/v1/traefik-config"
+        endpoint: "http://127.0.0.1:3001/api/v1/traefik-config"
         pollInterval: "5s"
       file:
         directory: "/etc/traefik/dynamic"
@@ -191,6 +206,11 @@ in
     pangolin = {
       image = "docker.io/fosrl/pangolin:latest";
       volumes = [ "/persist/pangolin/config:/app/config" ];
+      ports = [
+        "127.0.0.1:3000:3000"
+        "127.0.0.1:3001:3001"
+        "127.0.0.1:3002:3002"
+      ];
       extraOptions = [ "--network=pangolin" ];
     };
 
@@ -198,22 +218,15 @@ in
       image = "docker.io/fosrl/gerbil:latest";
       dependsOn = [ "pangolin" ];
       cmd = [
-        "--reachableAt=http://gerbil:3004"
+        "--reachableAt=http://host.containers.internal:3004"
         "--generateAndSaveKeyTo=/var/config/key"
-        "--remoteConfig=http://pangolin:3001/api/v1/"
+        "--remoteConfig=http://127.0.0.1:3001/api/v1/"
       ];
       volumes = [ "/persist/pangolin/config:/var/config" ];
-      ports = [
-        "51820:51820/udp"
-        "21820:21820/udp"
-        "443:443"
-        "80:80"
-      ];
       extraOptions = [
-        "--network=pangolin"
+        "--network=host"
         "--cap-add=NET_ADMIN"
         "--cap-add=SYS_MODULE"
-        "--add-host=host.containers.internal:host-gateway"
       ];
     };
 

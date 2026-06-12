@@ -60,6 +60,7 @@ in
       volumes = [
         "/persist/voidauth/config:/app/config"
       ];
+      ports = [ "127.0.0.1:3030:3000" ];
       extraOptions = [ "--network=pangolin" ];
     };
   };

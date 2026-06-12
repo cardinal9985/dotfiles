@@ -200,67 +200,76 @@ h1::before {
   overflow-x: auto;
 }
 
-/* ── Loading spinner: replace Material rotating ring with ASCII frames ─────
- * The Material spinner element stays in the DOM (so layout doesn't shift),
- * but its SVG is hidden and we render text frames via pseudo-elements that
- * animate through |, /, -, \ using `content` keyframes.
+/* ── Loading spinner: replace ngx-spinner (square-jelly-box) with ASCII frames ──
+ * Voidauth uses ngx-spinner, not Material. Selectors target ngx-spinner's
+ * .overlay container and .la-* (Load Awesome) animation children.
  */
-mat-spinner,
-mat-progress-spinner,
-.mat-mdc-progress-spinner,
-.mdc-circular-progress {
-  position: relative !important;
-  display: inline-flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-width: 4rem !important;
-  min-height: 4rem !important;
-  background: transparent !important;
+ngx-spinner .overlay,
+ngx-spinner .loading-cover {
+  background-color: var(--usg-black) !important;
 }
 
-mat-spinner svg,
-mat-progress-spinner svg,
-.mat-mdc-progress-spinner svg,
-.mdc-circular-progress svg,
-mat-spinner circle,
-mat-progress-spinner circle,
-.mat-mdc-progress-spinner circle,
-.mdc-circular-progress circle {
+/* Hide the default jelly-box / Load Awesome animation children */
+ngx-spinner .la-square-jelly-box,
+ngx-spinner .la-square-jelly-box > div,
+ngx-spinner [class*="la-"],
+ngx-spinner .wrapper > .spinner,
+ngx-spinner .wrapper > div:not(.usg-loader) {
   display: none !important;
   visibility: hidden !important;
 }
 
-mat-spinner::after,
-mat-progress-spinner::after,
-.mat-mdc-progress-spinner::after,
-.mdc-circular-progress::after {
-  content: "|";
-  display: block !important;
-  text-align: center !important;
-  font-family: "Courier New", "Lucida Console", monospace !important;
-  font-size: 2rem !important;
-  font-weight: bold !important;
-  line-height: 1 !important;
-  color: var(--usg-bright-yellow) !important;
-  text-shadow: 0 0 8px rgba(251, 191, 96, 0.5) !important;
-  animation: usg-ascii-spin 0.6s steps(1) infinite !important;
-}
-
-mat-spinner::before,
-mat-progress-spinner::before,
-.mat-mdc-progress-spinner::before,
-.mdc-circular-progress::before {
+/* Pseudo-element loader hung off the overlay */
+ngx-spinner .overlay::before,
+ngx-spinner .loading-cover::before {
   content: "INITIALIZING SYSTEMS";
+  position: absolute !important;
+  top: calc(50% - 2rem) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
   display: block !important;
   font-family: "Courier New", "Lucida Console", monospace !important;
-  font-size: 0.7rem !important;
+  font-size: 0.9rem !important;
   letter-spacing: 0.25em !important;
   color: var(--usg-bright-cyan) !important;
   text-shadow: 0 0 6px rgba(110, 200, 230, 0.4) !important;
-  margin-bottom: 0.6rem !important;
-  opacity: 0.85 !important;
   animation: usg-ascii-pulse 1.8s ease-in-out infinite !important;
+  z-index: 100000 !important;
+  white-space: nowrap !important;
+}
+
+ngx-spinner .overlay::after,
+ngx-spinner .loading-cover::after {
+  content: "|";
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  display: block !important;
+  font-family: "Courier New", "Lucida Console", monospace !important;
+  font-size: 3rem !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+  color: var(--usg-bright-yellow) !important;
+  text-shadow: 0 0 12px rgba(251, 191, 96, 0.6) !important;
+  animation: usg-ascii-spin 0.6s steps(1) infinite !important;
+  z-index: 100000 !important;
+}
+
+/* The translated "Loading..." text emitted as ng-content inside ngx-spinner */
+ngx-spinner p {
+  position: absolute !important;
+  top: calc(50% + 3rem) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  color: var(--usg-yellow) !important;
+  font-family: "Courier New", "Lucida Console", monospace !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase !important;
+  opacity: 0.6 !important;
+  white-space: nowrap !important;
+  z-index: 100000 !important;
 }
 
 @keyframes usg-ascii-spin {
@@ -272,6 +281,6 @@ mat-progress-spinner::before,
 }
 
 @keyframes usg-ascii-pulse {
-  0%, 100% { opacity: 0.85; }
+  0%, 100% { opacity: 0.9; }
   50%      { opacity: 0.4; }
 }

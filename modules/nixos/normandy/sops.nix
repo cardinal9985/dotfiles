@@ -19,6 +19,12 @@
       "crowdsec/traefik_bouncer_api_key" = {
         mode = "0400";
       };
+      "voidauth/storage_key" = {
+        mode = "0400";
+      };
+      "voidauth/db_password" = {
+        mode = "0400";
+      };
     };
   };
 }

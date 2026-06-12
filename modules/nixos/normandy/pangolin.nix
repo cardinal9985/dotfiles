@@ -76,6 +76,13 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
+        auth-router:
+          rule: "Host(`auth.${domain}`)"
+          service: auth-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: letsencrypt
       services:
         next-service:
           loadBalancer:
@@ -85,6 +92,10 @@ let
           loadBalancer:
             servers:
               - url: "http://pangolin:3000"
+        auth-service:
+          loadBalancer:
+            servers:
+              - url: "http://voidauth:3000"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

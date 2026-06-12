@@ -14,5 +14,6 @@
     ./sops.nix
     ./ssh.nix
     ./user.nix
+    ./voidauth.nix
   ];
 }

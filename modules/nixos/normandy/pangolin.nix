@@ -57,10 +57,14 @@ let
               updateIntervalSeconds: 30
               defaultDecisionSeconds: 60
               crowdsecMode: live
-              crowdsecLapiHost: host.containers.internal:8081
+              crowdsecLapiHost: 127.0.0.1:8081
               crowdsecLapiScheme: http
               crowdsecLapiKey: __CROWDSEC_TRAEFIK_API_KEY__
               banHTMLFilePath: /etc/traefik/ban.html
+        tailnet-only:
+          ipAllowList:
+            sourceRange:
+              - 100.64.0.0/10
       routers:
         next-router:
           rule: "Host(`${dashboardHost}`)"
@@ -69,6 +73,8 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
+          middlewares:
+            - tailnet-only
         api-router:
           rule: "Host(`${dashboardHost}`) && PathPrefix(`/api/v1`)"
           service: api-service
@@ -76,6 +82,18 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
+          middlewares:
+            - tailnet-only
+        auth-admin-router:
+          rule: "Host(`auth.${domain}`) && PathPrefix(`/admin`)"
+          service: auth-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: letsencrypt
+          priority: 20
+          middlewares:
+            - tailnet-only
         auth-router:
           rule: "Host(`auth.${domain}`)"
           service: auth-service
@@ -83,6 +101,7 @@ let
             - websecure
           tls:
             certResolver: letsencrypt
+          priority: 10
       services:
         next-service:
           loadBalancer:

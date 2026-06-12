@@ -33,6 +33,12 @@ let
       url         = "https://pangolin.ishimura.lol";
       icon        = "⬡";
     }
+    {
+      name        = "VoidAuth";
+      description = "Auth Provider";
+      url         = "https://auth.ishimura.lol";
+      icon        = "⊕";
+    }
   ];
 
   servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);

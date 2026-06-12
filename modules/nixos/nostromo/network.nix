@@ -8,6 +8,9 @@
       enable = true;
       allowedTCPPorts = [ 36475 43122 39387 ]; # 36475 = SSH 43122 = Nicotine
     };
+    hosts = {
+      "100.108.98.70" = [ "pangolin.ishimura.lol" "auth.ishimura.lol" ];
+    };
   };
 
   services.resolved = {

@@ -38,10 +38,25 @@ body#top {
  */
 html {
   background: var(--usg-black) !important;
+  background-color: #080c14 !important;
   min-height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
   color-scheme: dark !important;
+}
+
+/* Sledgehammer: fixed-position backdrop behind everything. If any browser
+ * fails to paint html/body backgrounds correctly (Zen-Firefox edge cases,
+ * iframe contexts, split-view modes), this catches it. z-index: -1000 keeps
+ * it below all real content. Safe on voidauth too — its UI sits above this.
+ */
+html::after {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background-color: #080c14 !important;
+  z-index: -1000 !important;
+  pointer-events: none !important;
 }
 
 body#top::before {

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QUARANTINE PROTOCOL</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23080c14'/><text x='2' y='13' font-family='monospace' font-size='14' fill='%23f0708a'>!</text></svg>">
+<style>
+  :root {
+    --black: #080c14;
+    --white: #a0aec0;
+    --bright-white: #dce4f0;
+    --cyan: #3a9fbf;
+    --bright-cyan: #6ec8e6;
+    --magenta: #7b68c8;
+    --bright-magenta: #a78bfa;
+    --green: #3d9b8f;
+    --bright-green: #5eead4;
+    --yellow: #b89040;
+    --bright-yellow: #fbbf60;
+    --blue: #4070c8;
+    --bright-blue: #7aa2f7;
+    --red: #8b3a50;
+    --bright-red: #f0708a;
+    --surface: #0e1320;
+    --surface-light: #141a2a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: "Courier New", "Lucida Console", monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .crt::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.06) 2px,
+      rgba(0, 0, 0, 0.06) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #star-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  .container {
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ascii-err {
+    color: var(--bright-red);
+    font-size: 0.7rem;
+    white-space: pre;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 6px rgba(240, 112, 138, 0.4);
+    line-height: 1.2;
+  }
+
+  .error-title {
+    color: var(--bright-red);
+    font-size: 1.5rem;
+    letter-spacing: 0.2em;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 8px rgba(240, 112, 138, 0.5);
+  }
+
+  .error-msg {
+    color: var(--white);
+    font-size: 0.9rem;
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .error-msg span { color: var(--bright-yellow); }
+  .error-msg .crit { color: var(--bright-red); }
+
+  .ip-line {
+    color: var(--bright-cyan);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    letter-spacing: 0.1em;
+  }
+
+  .log {
+    color: var(--yellow);
+    font-size: 0.75rem;
+    margin-top: 2rem;
+    opacity: 0.6;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    96% { opacity: 1; }
+    97% { opacity: 0.85; }
+    98% { opacity: 1; }
+  }
+
+  @keyframes pulse-red {
+    0%, 100% { text-shadow: 0 0 8px rgba(240, 112, 138, 0.5); }
+    50% { text-shadow: 0 0 16px rgba(240, 112, 138, 0.9); }
+  }
+
+  .container { animation: flicker 12s infinite; }
+  .error-title { animation: pulse-red 2.5s ease-in-out infinite; }
+</style>
+</head>
+<body class="crt">
+<canvas id="star-canvas"></canvas>
+<div class="container">
+<pre class="ascii-err">
+██╗  ██╗ ██████╗ ██████╗
+██║  ██║██╔═████╗╚════██╗
+███████║██║██╔██║ █████╔╝
+██╔══██║████╔╝██║ ╚═══██╗
+██║  ██║╚██████╔╝██████╔╝
+╚═╝  ╚═╝ ╚═════╝ ╚═════╝
+</pre>
+<div class="error-title">QUARANTINE PROTOCOL ENGAGED</div>
+<div class="error-msg">
+  Your transponder signature has been flagged by the<br>
+  <span>USG ISHIMURA</span> defense matrix.<br>
+  <br>
+  All access to this sector has been <span class="crit">REVOKED</span>.<br>
+  Repeated attempts will result in <span class="crit">PERMANENT DECONTAMINATION</span>.<br>
+  <br>
+  [QUARANTINE_REASON: HOSTILE_SIGNAL_PATTERN_DETECTED]
+</div>
+<div class="log">CEC SECURITY MATRIX v4.2.0 | USG ISHIMURA | CROWDSEC DEFENSE GRID</div>
+</div>
+<script>
+  var logs = [
+    'WARNING: Necromorph signal detected from transponder',
+    'ALERT: Unitologist propaganda detected in packet stream',
+    'INFO: Pattern matches known marker carrier signature',
+    'NOTE: Quarantine initiated by USG SECURITY PROTOCOL',
+    'WARNING: Vital signs consistent with Stage 2 infection',
+    'ALERT: Hostile crew pattern matched - lockdown engaged',
+    'INFO: Reference: Capt. Mathius emergency order 7.2',
+  ];
+  document.querySelector('.log').textContent += ' | ' + logs[Math.floor(Math.random() * logs.length)];
+
+  var starCanvas = document.getElementById('star-canvas');
+  var sCtx = starCanvas.getContext('2d');
+  var stars = [];
+  var shootingStars = [];
+
+  function initStarfield() {
+    starCanvas.width = window.innerWidth;
+    starCanvas.height = window.innerHeight;
+    stars = [];
+    for (var i = 0; i < 200; i++) {
+      stars.push({
+        x: Math.random() * starCanvas.width,
+        y: Math.random() * starCanvas.height,
+        r: Math.random() * 1.5 + 0.3,
+        brightness: Math.random() * 0.5 + 0.3,
+        twinkleSpeed: Math.random() * 0.02 + 0.005,
+        twinkleOffset: Math.random() * Math.PI * 2
+      });
+    }
+  }
+  initStarfield();
+  window.addEventListener('resize', initStarfield);
+
+  function spawnShootingStar() {
+    shootingStars.push({
+      x: Math.random() * starCanvas.width * 0.8,
+      y: Math.random() * starCanvas.height * 0.4,
+      vx: 4 + Math.random() * 6,
+      vy: 2 + Math.random() * 3,
+      life: 1.0,
+      length: 40 + Math.random() * 60
+    });
+  }
+
+  function drawStarfield(time) {
+    sCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var twinkle = 0.5 + 0.5 * Math.sin(time * s.twinkleSpeed + s.twinkleOffset);
+      var alpha = s.brightness * twinkle;
+      sCtx.beginPath();
+      sCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      sCtx.fillStyle = 'rgba(170, 120, 140, ' + alpha + ')';
+      sCtx.fill();
+    }
+    for (var j = shootingStars.length - 1; j >= 0; j--) {
+      var ss = shootingStars[j];
+      ss.x += ss.vx;
+      ss.y += ss.vy;
+      ss.life -= 0.015;
+      if (ss.life <= 0 || ss.x > starCanvas.width || ss.y > starCanvas.height) {
+        shootingStars.splice(j, 1);
+        continue;
+      }
+      var trail = ss.length / 6;
+      var grad = sCtx.createLinearGradient(
+        ss.x, ss.y,
+        ss.x - ss.vx * trail, ss.y - ss.vy * trail
+      );
+      grad.addColorStop(0, 'rgba(240, 112, 138, ' + ss.life * 0.8 + ')');
+      grad.addColorStop(1, 'rgba(240, 112, 138, 0)');
+      sCtx.beginPath();
+      sCtx.moveTo(ss.x, ss.y);
+      sCtx.lineTo(ss.x - ss.vx * trail, ss.y - ss.vy * trail);
+      sCtx.strokeStyle = grad;
+      sCtx.lineWidth = 1.5;
+      sCtx.stroke();
+    }
+    if (Math.random() < 0.003) spawnShootingStar();
+    requestAnimationFrame(drawStarfield);
+  }
+  requestAnimationFrame(drawStarfield);
+</script>
+</body>
+</html>

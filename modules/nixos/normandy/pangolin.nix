@@ -60,6 +60,7 @@ let
               crowdsecLapiHost: host.containers.internal:8081
               crowdsecLapiScheme: http
               crowdsecLapiKey: __CROWDSEC_TRAEFIK_API_KEY__
+              banHTMLFilePath: /etc/traefik/ban.html
       routers:
         next-router:
           rule: "Host(`${dashboardHost}`)"
@@ -162,6 +163,8 @@ in
         > /persist/pangolin/config/config.yml
       install -m 0644 ${traefikStaticConfig} \
         /persist/pangolin/config/traefik/traefik_config.yml
+      install -m 0644 ${../../../config/pangolin/ban.html} \
+        /persist/pangolin/config/traefik/ban.html
       ${pkgs.gnused}/bin/sed \
         "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
         ${traefikDynamicConfig} \

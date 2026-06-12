@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   services.crowdsec-firewall-bouncer = {
@@ -13,4 +13,12 @@
     };
   };
 
+  systemd.services.crowdsec-firewall-bouncer.serviceConfig.ExecStartPre = lib.mkBefore [
+    (pkgs.writeShellScript "crowdsec-bouncer-tables" ''
+      ${pkgs.nftables}/bin/nft add table ip crowdsec 2>/dev/null || true
+      ${pkgs.nftables}/bin/nft 'add chain ip crowdsec crowdsec-chain { type filter hook input priority -10; policy accept; }' 2>/dev/null || true
+      ${pkgs.nftables}/bin/nft add table ip6 crowdsec6 2>/dev/null || true
+      ${pkgs.nftables}/bin/nft 'add chain ip6 crowdsec6 crowdsec6-chain { type filter hook input priority -10; policy accept; }' 2>/dev/null || true
+    '')
+  ];
 }

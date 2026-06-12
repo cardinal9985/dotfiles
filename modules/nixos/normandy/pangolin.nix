@@ -118,9 +118,6 @@ let
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''
-    api:
-      insecure: true
-      dashboard: true
     accessLog:
       filePath: "/var/log/traefik/access.log"
       format: json

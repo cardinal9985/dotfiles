@@ -15,11 +15,16 @@ in
     mkdir -p /persist/voidauth/config/branding
     install -m 0644 ${../../../config/voidauth/custom.css} \
       /persist/voidauth/config/branding/custom.css
+    install -m 0644 ${../../../config/voidauth/favicon.svg} \
+      /persist/voidauth/config/branding/favicon.svg
+    install -m 0644 ${../../../config/voidauth/logo.svg} \
+      /persist/voidauth/config/branding/logo.svg
   '';
 
   sops.templates."voidauth.env" = {
     content = ''
       APP_URL=https://${authHost}
+      APP_TITLE=USG ISHIMURA :: AUTH
       PORT=3000
       STORAGE_KEY=${config.sops.placeholder."voidauth/storage_key"}
       DB_HOST=voidauth-db

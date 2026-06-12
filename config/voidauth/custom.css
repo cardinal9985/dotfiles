@@ -1,8 +1,9 @@
 /* USG Ishimura - VoidAuth custom theme
- * Matches the homepage Dead Space palette + CRT vibe.
+ * Overrides Angular Material Design 3 system tokens.
  */
 
 :root {
+  /* Ishimura palette */
   --usg-black:          #080c14;
   --usg-surface:        #0e1320;
   --usg-surface-light:  #141a2a;
@@ -18,18 +19,90 @@
   --usg-bright-yellow:  #fbbf60;
   --usg-red:            #8b3a50;
   --usg-bright-red:     #f0708a;
+
+  /* ── MD3 system token overrides ─────────────────── */
+  --mat-sys-surface:           var(--usg-black);
+  --mat-sys-surface-container:           var(--usg-surface);
+  --mat-sys-surface-container-low:       var(--usg-surface);
+  --mat-sys-surface-container-high:      var(--usg-surface-light);
+  --mat-sys-surface-container-highest:   var(--usg-surface-light);
+  --mat-sys-surface-variant:             var(--usg-surface-light);
+  --mat-sys-on-surface:                  var(--usg-white);
+  --mat-sys-on-surface-variant:          var(--usg-white);
+  --mat-sys-background:                  var(--usg-black);
+  --mat-sys-on-background:               var(--usg-white);
+  --mat-sys-outline:                     var(--usg-cyan);
+  --mat-sys-outline-variant:             var(--usg-cyan);
+
+  --mat-sys-primary:                     var(--usg-bright-cyan);
+  --mat-sys-on-primary:                  var(--usg-black);
+  --mat-sys-primary-container:           var(--usg-cyan);
+  --mat-sys-on-primary-container:        var(--usg-black);
+
+  --mat-sys-secondary:                   var(--usg-bright-green);
+  --mat-sys-on-secondary:                var(--usg-black);
+  --mat-sys-secondary-container:         var(--usg-green);
+  --mat-sys-on-secondary-container:      var(--usg-black);
+
+  --mat-sys-tertiary:                    var(--usg-bright-magenta);
+  --mat-sys-on-tertiary:                 var(--usg-black);
+  --mat-sys-tertiary-container:          var(--usg-magenta);
+  --mat-sys-on-tertiary-container:       var(--usg-black);
+
+  --mat-sys-error:                       var(--usg-bright-red);
+  --mat-sys-on-error:                    var(--usg-black);
+  --mat-sys-error-container:             var(--usg-red);
+  --mat-sys-on-error-container:          var(--usg-bright-white);
+
+  --mat-sys-inverse-surface:             var(--usg-bright-cyan);
+  --mat-sys-inverse-on-surface:          var(--usg-black);
+
+  /* Fonts — push the whole UI to Courier */
+  --mat-sys-body-medium-font:    "Courier New", "Lucida Console", monospace;
+  --mat-sys-body-large-font:     "Courier New", "Lucida Console", monospace;
+  --mat-sys-body-small-font:     "Courier New", "Lucida Console", monospace;
+  --mat-sys-label-large-font:    "Courier New", "Lucida Console", monospace;
+  --mat-sys-label-medium-font:   "Courier New", "Lucida Console", monospace;
+  --mat-sys-label-small-font:    "Courier New", "Lucida Console", monospace;
+  --mat-sys-title-large-font:    "Courier New", "Lucida Console", monospace;
+  --mat-sys-title-medium-font:   "Courier New", "Lucida Console", monospace;
+  --mat-sys-title-small-font:    "Courier New", "Lucida Console", monospace;
+  --mat-sys-headline-large-font: "Courier New", "Lucida Console", monospace;
+  --mat-sys-headline-medium-font:"Courier New", "Lucida Console", monospace;
+  --mat-sys-headline-small-font: "Courier New", "Lucida Console", monospace;
+  --mat-sys-display-large-font:  "Courier New", "Lucida Console", monospace;
+  --mat-sys-display-medium-font: "Courier New", "Lucida Console", monospace;
+  --mat-sys-display-small-font:  "Courier New", "Lucida Console", monospace;
 }
 
 /* ── Base ────────────────────────────────────────── */
-html, body {
+html {
   background: var(--usg-black) !important;
   color: var(--usg-white) !important;
   font-family: "Courier New", "Lucida Console", monospace !important;
-  min-height: 100vh;
 }
 
-/* CRT scanline overlay */
-body::before {
+body {
+  background: transparent !important;
+  color: var(--usg-white) !important;
+  font-family: "Courier New", "Lucida Console", monospace !important;
+}
+
+/* Let the stars show through Material's outer containers */
+mat-sidenav-container,
+mat-drawer-container,
+.mat-sidenav-container,
+.mat-drawer-container,
+mat-drawer-content,
+.mat-drawer-content,
+app-root {
+  background: transparent !important;
+}
+
+/* Stars disabled — flickered, revisit later */
+
+/* ── CRT scanline overlay ────────────────────────── */
+body::after {
   content: "";
   position: fixed;
   inset: 0;
@@ -44,126 +117,85 @@ body::before {
   z-index: 9999;
 }
 
-/* ── Card / container ────────────────────────────── */
+/* ── Glow on primary buttons + headings ──────────── */
+button.mat-mdc-raised-button.mat-primary,
+button.mat-mdc-unelevated-button.mat-primary,
+.mdc-button--raised.mat-primary {
+  text-shadow: 0 0 6px rgba(110, 200, 230, 0.4) !important;
+  box-shadow: 0 0 12px rgba(110, 200, 230, 0.2) !important;
+}
+
 .mat-mdc-card,
-.mdc-card,
-[class*="card"],
-main > div,
-.container {
+mat-card {
   background: var(--usg-surface) !important;
   border: 1px solid var(--usg-cyan) !important;
   box-shadow: 0 0 24px rgba(58, 159, 191, 0.15) !important;
-  color: var(--usg-white) !important;
 }
 
-/* ── Headings ────────────────────────────────────── */
-h1, h2, h3, h4, h5, h6, .mat-mdc-card-title, .mdc-card__title {
-  color: var(--usg-bright-cyan) !important;
-  letter-spacing: 0.15em !important;
-  text-shadow: 0 0 8px rgba(110, 200, 230, 0.4) !important;
-  font-family: "Courier New", monospace !important;
-}
-
-/* ── Labels & body text ──────────────────────────── */
-label, p, span, div, .mat-mdc-form-field-label,
-.mdc-floating-label {
-  color: var(--usg-white) !important;
-  font-family: "Courier New", monospace !important;
-}
-
-/* ── Inputs ──────────────────────────────────────── */
-input, textarea, select,
-.mat-mdc-input-element,
-.mdc-text-field__input {
-  background: var(--usg-black) !important;
-  color: var(--usg-bright-white) !important;
-  border: 1px solid var(--usg-cyan) !important;
-  font-family: "Courier New", monospace !important;
-  caret-color: var(--usg-bright-cyan) !important;
-}
-
-input:focus, textarea:focus, select:focus {
-  border-color: var(--usg-bright-cyan) !important;
-  box-shadow: 0 0 8px rgba(110, 200, 230, 0.5) !important;
-  outline: none !important;
-}
-
-/* MDC floating label box outline */
-.mdc-text-field--outlined .mdc-notched-outline__leading,
-.mdc-text-field--outlined .mdc-notched-outline__notch,
-.mdc-text-field--outlined .mdc-notched-outline__trailing {
-  border-color: var(--usg-cyan) !important;
-}
-
-.mdc-text-field--focused .mdc-notched-outline__leading,
-.mdc-text-field--focused .mdc-notched-outline__notch,
-.mdc-text-field--focused .mdc-notched-outline__trailing {
-  border-color: var(--usg-bright-cyan) !important;
-}
-
-/* ── Buttons ─────────────────────────────────────── */
-button, .mat-mdc-button, .mdc-button,
-.mat-mdc-raised-button, .mat-mdc-unelevated-button {
-  background: transparent !important;
-  color: var(--usg-bright-green) !important;
-  border: 1px solid var(--usg-green) !important;
-  font-family: "Courier New", monospace !important;
-  letter-spacing: 0.1em !important;
-  text-transform: uppercase !important;
-  text-shadow: 0 0 6px rgba(94, 234, 212, 0.3) !important;
-  transition: all 0.15s !important;
-  box-shadow: none !important;
-}
-
-button:hover, .mat-mdc-button:hover, .mdc-button:hover {
-  background: var(--usg-green) !important;
-  color: var(--usg-black) !important;
-  text-shadow: none !important;
-  box-shadow: 0 0 12px rgba(94, 234, 212, 0.5) !important;
-}
-
-/* Primary / submit accent */
-button[type="submit"], .mat-primary, [color="primary"] {
-  color: var(--usg-bright-cyan) !important;
-  border-color: var(--usg-cyan) !important;
-  text-shadow: 0 0 6px rgba(110, 200, 230, 0.3) !important;
-}
-
-button[type="submit"]:hover, .mat-primary:hover {
-  background: var(--usg-cyan) !important;
-  color: var(--usg-black) !important;
-  box-shadow: 0 0 12px rgba(110, 200, 230, 0.5) !important;
-}
-
-/* ── Links ───────────────────────────────────────── */
-a, .mat-mdc-button.mat-mdc-button-link {
-  color: var(--usg-bright-magenta) !important;
-  text-decoration: none !important;
-}
-
-a:hover {
-  color: var(--usg-magenta) !important;
-  text-shadow: 0 0 6px rgba(167, 139, 250, 0.5) !important;
-}
-
-/* ── Errors / alerts ─────────────────────────────── */
-.mat-mdc-form-field-error, .error, [class*="error"],
-.mdc-text-field--invalid .mdc-floating-label {
-  color: var(--usg-bright-red) !important;
-  text-shadow: 0 0 6px rgba(240, 112, 138, 0.3) !important;
-}
-
-/* ── Selection ───────────────────────────────────── */
 ::selection {
   background: var(--usg-cyan);
   color: var(--usg-black);
 }
 
-/* ── Scrollbar ───────────────────────────────────── */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--usg-surface); }
-::-webkit-scrollbar-thumb {
-  background: var(--usg-cyan);
-  border-radius: 0;
-}
+::-webkit-scrollbar-thumb { background: var(--usg-cyan); }
 ::-webkit-scrollbar-thumb:hover { background: var(--usg-bright-cyan); }
+
+/* ── Hide theme toggle (we have our own theme) ───── */
+app-theme-toggle {
+  display: none !important;
+}
+
+/* ── Hide passkey/WebAuthn buttons ───────────────── */
+/* Targets unthemed mat-flat-buttons that contain a mat-icon
+ * (which is what VoidAuth renders for the Passkey action). */
+button.mat-mdc-unelevated-button.mat-unthemed:has(mat-icon) {
+  display: none !important;
+}
+
+/* ── Header logo: replace with USG monogram ──────── */
+a.header-logo img {
+  display: none !important;
+}
+
+a.header-logo::after {
+  content: "USG";
+  font-family: "Courier New", "Lucida Console", monospace;
+  font-weight: bold;
+  font-size: 1.6rem;
+  letter-spacing: 0.25em;
+  color: var(--usg-bright-cyan);
+  text-shadow: 0 0 10px rgba(110, 200, 230, 0.5);
+}
+
+/* ── Replace "Login" h1 with ISHIMURA ASCII art ──── */
+h1 {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-align: center;
+  overflow: visible;
+}
+
+h1::before {
+  content:
+    " ██▓  ██████  ██░ ██  ██▓ ███▄ ▄███▓ █    ██  ██▀███   ▄▄▄    \A"
+    "▓██▒▒██    ▒ ▓██░ ██▒▓██▒▓██▒▀█▀ ██▒ ██  ▓██▒▓██ ▒ ██▒▒████▄  \A"
+    "▒██▒░ ▓██▄   ▒██▀▀██░▒██▒▓██    ▓██░▓██  ▒██░▓██ ░▄█ ▒▒██  ▀█▄\A"
+    "░██░  ▒   ██▒░▓█ ░██ ░██░▒██    ▒██ ▓▓█  ░██░▒██▀▀█▄  ░██▄▄▄▄██\A"
+    "░██░▒██████▒▒░▓█▒░██▓░██░▒██▒   ░██▒▒▒█████▓ ░██▓ ▒██▒ ▓█   ▓██▒\A"
+    "░▓  ▒ ▒▓▒ ▒ ░ ▒ ░░▒░▒░▓  ░ ▒░   ░  ░░▒▓▒ ▒ ▒ ░ ▒▓ ░▒▓░ ▒▒   ▓▒█░\A"
+    " ▒ ░░ ░▒  ░ ░ ▒ ░▒░ ░ ▒ ░░  ░      ░░░▒░ ░ ░   ░▒ ░ ▒░  ▒   ▒▒ ░\A"
+    " ▒ ░░  ░  ░   ░  ░░ ░ ▒ ░░      ░    ░░░ ░ ░   ░░   ░   ░   ▒  \A"
+    " ░        ░   ░  ░  ░ ░         ░      ░        ░           ░  ░";
+  white-space: pre;
+  display: block;
+  font-family: "Courier New", "Lucida Console", monospace;
+  font-size: 0.55rem;
+  line-height: 1.1;
+  color: var(--usg-bright-cyan);
+  text-shadow: 0 0 6px rgba(110, 200, 230, 0.4);
+  letter-spacing: 0;
+  margin: 0 auto 1rem;
+  overflow-x: auto;
+}

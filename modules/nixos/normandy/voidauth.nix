@@ -11,20 +11,11 @@ in
     "d /persist/voidauth/postgres         0700 999  999  -"
   ];
 
-  systemd.services.voidauth-install-theme = {
-    description = "Install custom VoidAuth theme CSS";
-    wantedBy = [ "podman-voidauth.service" ];
-    before   = [ "podman-voidauth.service" ];
-    after    = [ "systemd-tmpfiles-setup.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      install -m 0644 ${../../../config/voidauth/custom.css} \
-        /persist/voidauth/config/branding/custom.css
-    '';
-  };
+  system.activationScripts.voidauth-theme = ''
+    mkdir -p /persist/voidauth/config/branding
+    install -m 0644 ${../../../config/voidauth/custom.css} \
+      /persist/voidauth/config/branding/custom.css
+  '';
 
   sops.templates."voidauth.env" = {
     content = ''

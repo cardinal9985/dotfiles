@@ -27,14 +27,18 @@ let
     {
       name        = "Scrutiny";
       description = "Disk Health";
-      url         = "http://ishimura:47890";
+      url         = "https://scrutiny.ishimura.lol";
       icon        = "◉";
+      statusPath  = "/health/scrutiny";
+      healthUrl   = "http://${ishimuraTailnetIP}:47890/api/health";
     }
     {
       name        = "ntfy";
       description = "Notifications";
-      url         = "http://normandy:8080";
+      url         = "https://ntfy.ishimura.lol";
       icon        = "◈";
+      statusPath  = "/health/ntfy";
+      healthUrl   = "http://127.0.0.1:8080/v1/health";
     }
     {
       name        = "Pangolin";
@@ -47,6 +51,8 @@ let
       description = "Auth Provider";
       url         = "https://auth.ishimura.lol";
       icon        = "⊕";
+      statusPath  = "/health/voidauth";
+      healthUrl   = "http://127.0.0.1:3030/api/health";
     }
   ];
 

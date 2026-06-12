@@ -102,6 +102,15 @@ let
         rewrite-jellyfin-health:
           replacePath:
             path: "/health"
+        rewrite-scrutiny-health:
+          replacePath:
+            path: "/api/health"
+        rewrite-ntfy-health:
+          replacePath:
+            path: "/v1/health"
+        rewrite-voidauth-health:
+          replacePath:
+            path: "/oidc/jwks"
       routers:
         robots-router:
           rule: "Path(`/robots.txt`)"
@@ -188,6 +197,51 @@ let
           middlewares:
             - noindex-headers
             - rewrite-jellyfin-health
+        homepage-health-scrutiny-router:
+          rule: "Host(`${domain}`) && Path(`/health/scrutiny`)"
+          service: scrutiny-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-scrutiny-health
+        homepage-health-ntfy-router:
+          rule: "Host(`${domain}`) && Path(`/health/ntfy`)"
+          service: ntfy-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-ntfy-health
+        homepage-health-voidauth-router:
+          rule: "Host(`${domain}`) && Path(`/health/voidauth`)"
+          service: auth-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-voidauth-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service
@@ -221,6 +275,38 @@ let
             - noindex-headers
             - voidauth-forwardauth
             - anubis-theme
+            - error-pages
+        scrutiny-router:
+          rule: "Host(`scrutiny.${domain}`)"
+          service: scrutiny-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - tailnet-only
+            - error-pages
+        ntfy-router:
+          rule: "Host(`ntfy.${domain}`)"
+          service: ntfy-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - tailnet-only
             - error-pages
         jellyfin-router:
           rule: "Host(`jellyfin.${domain}`)"
@@ -280,6 +366,14 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:8096"
+        scrutiny-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:47890"
+        ntfy-service:
+          loadBalancer:
+            servers:
+              - url: "http://127.0.0.1:8080"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

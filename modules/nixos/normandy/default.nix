@@ -15,6 +15,7 @@
     ./podman.nix
     ./sops.nix
     ./ssh.nix
+    ./substituters.nix
     ./user.nix
     ./voidauth.nix
   ];

@@ -5,6 +5,7 @@
     ./boot.nix
     ./crowdsec.nix
     ./crowdsec-firewall-bouncer.nix
+    ./crowdsec-ntfy.nix
     ./impermanence.nix
     ./network.nix
     ./ntfy.nix

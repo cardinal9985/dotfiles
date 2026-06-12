@@ -10,6 +10,7 @@
       "/var/lib/nixos"
       "/var/lib/tailscale"
       { directory = "/var/lib/crowdsec"; user = "crowdsec"; group = "crowdsec"; mode = "0700"; }
+      "/var/lib/crowdsec-ntfy"
     ];
     files = [
       "/etc/machine-id"

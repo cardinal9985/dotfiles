@@ -31,7 +31,7 @@
         name = "default_ip_remediation";
         filters = [ ''Alert.Remediation == true && Alert.GetScope() == "Ip"'' ];
         decisions = [{ type = "ban"; duration = "4h"; }];
-        notifications = [ "ntfy-default" ];
+        notifications = [ "http_default" ];
         on_success = "break";
       }
     ];
@@ -39,7 +39,7 @@
 
   environment.etc."crowdsec/notifications/ntfy.yaml".text = ''
     type: http
-    name: ntfy-default
+    name: http_default
     log_level: info
     format: |
       {{range . -}}

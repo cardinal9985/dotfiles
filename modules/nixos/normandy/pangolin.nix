@@ -115,7 +115,7 @@ let
           middlewares:
             - error-pages
         catchall-router:
-          rule: "HostRegexp(`^.+\\.${builtins.replaceStrings ["."] ["\\."] domain}$`)"
+          rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
           entryPoints:
             - websecure

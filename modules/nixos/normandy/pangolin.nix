@@ -12,6 +12,13 @@ let
     hash  = "sha256-r4T+0mT9YHmfu/nFhvjpyiz/Z7ViF3yLJKmOuwbnK60=";
   };
 
+  rewriteBodyPluginSrc = pkgs.fetchFromGitHub {
+    owner = "packruler";
+    repo  = "rewrite-body";
+    rev   = "v1.2.0";
+    hash  = "sha256-dl+FYEoUMYlodg9xp8e/RQAt0wuBwLICyVwgKR+/1ZQ=";
+  };
+
   configYamlTemplate = pkgs.writeText "pangolin-config.yml.tmpl" ''
     app:
       dashboard_url: "https://${dashboardHost}"
@@ -76,6 +83,13 @@ let
           headers:
             customResponseHeaders:
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
+        anubis-theme:
+          plugin:
+            rewriteBody:
+              lastModified: true
+              rewrites:
+                - regex: '</head>'
+                  replacement: '<link rel="stylesheet" href="/anubis-theme.css"></head>'
       routers:
         robots-router:
           rule: "Path(`/robots.txt`)"
@@ -125,6 +139,16 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+        anubis-theme-css-router:
+          rule: "Host(`auth.${domain}`) && Path(`/anubis-theme.css`)"
+          service: errors-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: letsencrypt
+          priority: 100
+          middlewares:
+            - noindex-headers
         auth-router:
           rule: "Host(`auth.${domain}`)"
           service: auth-service
@@ -135,6 +159,7 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+            - anubis-theme
             - error-pages
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
@@ -178,6 +203,8 @@ let
       localPlugins:
         crowdsec:
           moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+        rewriteBody:
+          moduleName: github.com/packruler/rewrite-body
     providers:
       http:
         endpoint: "http://127.0.0.1:3001/api/v1/traefik-config"
@@ -269,6 +296,8 @@ in
         /persist/pangolin/errors/404.html
       install -m 0644 ${../../../config/pangolin/robots.txt} \
         /persist/pangolin/errors/robots.txt
+      install -m 0644 ${../../../config/pangolin/anubis-theme.css} \
+        /persist/pangolin/errors/anubis-theme.css
       ${pkgs.gnused}/bin/sed \
         "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
         ${traefikDynamicConfig} \
@@ -322,6 +351,7 @@ in
         "/persist/pangolin/config/letsencrypt:/letsencrypt"
         "/persist/pangolin/config/traefik/logs:/var/log/traefik"
         "${crowdsecPluginSrc}:/plugins-local/src/github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin:ro"
+        "${rewriteBodyPluginSrc}:/plugins-local/src/github.com/packruler/rewrite-body:ro"
       ];
       extraOptions = [ "--network=container:gerbil" ];
     };

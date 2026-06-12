@@ -14,7 +14,7 @@ let
     {
       name        = "Jellyfin";
       description = "Media Server";
-      url         = "http://ishimura:8096";
+      url         = "https://jellyfin.ishimura.lol";
       icon        = "▶";
       statusPath  = "/health/jellyfin";
       healthUrl   = "http://${ishimuraTailnetIP}:8096/health";

@@ -199,3 +199,79 @@ h1::before {
   margin: 0 auto 1rem;
   overflow-x: auto;
 }
+
+/* ── Loading spinner: replace Material rotating ring with ASCII frames ─────
+ * The Material spinner element stays in the DOM (so layout doesn't shift),
+ * but its SVG is hidden and we render text frames via pseudo-elements that
+ * animate through |, /, -, \ using `content` keyframes.
+ */
+mat-spinner,
+mat-progress-spinner,
+.mat-mdc-progress-spinner,
+.mdc-circular-progress {
+  position: relative !important;
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 4rem !important;
+  min-height: 4rem !important;
+  background: transparent !important;
+}
+
+mat-spinner svg,
+mat-progress-spinner svg,
+.mat-mdc-progress-spinner svg,
+.mdc-circular-progress svg,
+mat-spinner circle,
+mat-progress-spinner circle,
+.mat-mdc-progress-spinner circle,
+.mdc-circular-progress circle {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+mat-spinner::after,
+mat-progress-spinner::after,
+.mat-mdc-progress-spinner::after,
+.mdc-circular-progress::after {
+  content: "|";
+  display: block !important;
+  text-align: center !important;
+  font-family: "Courier New", "Lucida Console", monospace !important;
+  font-size: 2rem !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+  color: var(--usg-bright-yellow) !important;
+  text-shadow: 0 0 8px rgba(251, 191, 96, 0.5) !important;
+  animation: usg-ascii-spin 0.6s steps(1) infinite !important;
+}
+
+mat-spinner::before,
+mat-progress-spinner::before,
+.mat-mdc-progress-spinner::before,
+.mdc-circular-progress::before {
+  content: "INITIALIZING SYSTEMS";
+  display: block !important;
+  font-family: "Courier New", "Lucida Console", monospace !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.25em !important;
+  color: var(--usg-bright-cyan) !important;
+  text-shadow: 0 0 6px rgba(110, 200, 230, 0.4) !important;
+  margin-bottom: 0.6rem !important;
+  opacity: 0.85 !important;
+  animation: usg-ascii-pulse 1.8s ease-in-out infinite !important;
+}
+
+@keyframes usg-ascii-spin {
+  0%   { content: "|"; }
+  25%  { content: "/"; }
+  50%  { content: "-"; }
+  75%  { content: "\\"; }
+  100% { content: "|"; }
+}
+
+@keyframes usg-ascii-pulse {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 0.4; }
+}

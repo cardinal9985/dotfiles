@@ -1,11 +1,6 @@
 { ... }:
 
 {
-  networking.firewall.extraForwardRules = ''
-    iifname "podman*" accept comment "podman containers -> outbound"
-    oifname "podman*" ct state established,related accept comment "outbound replies -> podman containers"
-  '';
-
   virtualisation = {
     podman = {
       enable = true;

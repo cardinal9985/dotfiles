@@ -13,6 +13,4 @@
     };
   };
 
-  networking.nftables.enable = true;
-  networking.nftables.checkRuleset = false;
 }

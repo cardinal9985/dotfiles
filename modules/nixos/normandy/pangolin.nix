@@ -222,6 +222,20 @@ let
             - voidauth-forwardauth
             - anubis-theme
             - error-pages
+        jellyfin-router:
+          rule: "Host(`jellyfin.${domain}`)"
+          service: jellyfin-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
@@ -259,6 +273,10 @@ let
             servers:
               - url: "http://127.0.0.1:8925"
         ishimura-jellyfin-health-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8096"
+        jellyfin-service:
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:8096"

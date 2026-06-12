@@ -13,6 +13,9 @@
       "newt/secret" = {
         mode = "0400";
       };
+      "crowdsec/ishimura_machine_password" = {
+        mode = "0400";
+      };
     };
   };
 }

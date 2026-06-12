@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./crowdsec.nix
     ./gpu.nix
     ./homepage.nix
     ./impermanence.nix

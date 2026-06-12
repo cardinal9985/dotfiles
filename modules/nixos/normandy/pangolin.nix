@@ -65,6 +65,12 @@ let
           ipAllowList:
             sourceRange:
               - 100.64.0.0/10
+        forbidden-page:
+          errors:
+            status:
+              - "403"
+            service: errors-service
+            query: /forbidden.html
       routers:
         next-router:
           rule: "Host(`${dashboardHost}`)"
@@ -74,6 +80,7 @@ let
           tls:
             certResolver: letsencrypt
           middlewares:
+            - forbidden-page
             - tailnet-only
         api-router:
           rule: "Host(`${dashboardHost}`) && PathPrefix(`/api/v1`)"
@@ -83,6 +90,7 @@ let
           tls:
             certResolver: letsencrypt
           middlewares:
+            - forbidden-page
             - tailnet-only
         auth-admin-router:
           rule: "Host(`auth.${domain}`) && PathPrefix(`/admin`)"
@@ -93,6 +101,7 @@ let
             certResolver: letsencrypt
           priority: 20
           middlewares:
+            - forbidden-page
             - tailnet-only
         auth-router:
           rule: "Host(`auth.${domain}`)"
@@ -115,6 +124,10 @@ let
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:3030"
+        errors-service:
+          loadBalancer:
+            servers:
+              - url: "http://127.0.0.1:8085"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''
@@ -169,6 +182,7 @@ in
     "d /persist/pangolin/config/traefik/dynamic 0750 root root -"
     "d /persist/pangolin/config/traefik/logs   0750 root root -"
     "d /persist/pangolin/config/letsencrypt    0750 root root -"
+    "d /persist/pangolin/errors                0755 root root -"
   ];
 
   systemd.services.pangolin-render-config = {
@@ -192,6 +206,8 @@ in
         /persist/pangolin/config/traefik/traefik_config.yml
       install -m 0644 ${../../../config/pangolin/ban.html} \
         /persist/pangolin/config/traefik/ban.html
+      install -m 0644 ${../../../config/pangolin/forbidden.html} \
+        /persist/pangolin/errors/forbidden.html
       ${pkgs.gnused}/bin/sed \
         "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
         ${traefikDynamicConfig} \
@@ -225,6 +241,14 @@ in
         "--cap-add=NET_ADMIN"
         "--cap-add=SYS_MODULE"
       ];
+    };
+
+    errorpages = {
+      image = "docker.io/library/busybox:latest";
+      cmd = [ "httpd" "-f" "-p" "80" "-h" "/www" ];
+      volumes = [ "/persist/pangolin/errors:/www:ro" ];
+      ports = [ "127.0.0.1:8085:80" ];
+      extraOptions = [ "--network=pangolin" ];
     };
 
     traefik = {

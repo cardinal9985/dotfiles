@@ -8,6 +8,7 @@
     htop
     btop
     lsof
+    nftables
     smartmontools
   ];
 }

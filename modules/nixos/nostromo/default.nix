@@ -5,6 +5,7 @@
   imports = [
     # Modules
     ./network.nix
+    ./nfs.nix
     ./boot.nix
     ./gpu.nix
     ./audio.nix

@@ -29,7 +29,13 @@
       serverIP = "100.92.76.121";
       serverPort = "8266";
       inContainer = "true";
-      NVIDIA_DRIVER_CAPABILITIES = "all";
+      # `all` includes the `utility` capability which mounts host nvidia-smi
+      # into the container. Host's nvidia-smi is linked against host glibc;
+      # container's glibc is older. Result: symbol lookup error every time
+      # Tdarr probes the GPU (cosmetic but log spam).
+      # `video,compute` is enough for NVENC/NVDEC. Tdarr falls back to ffmpeg
+      # encoder probes when nvidia-smi is missing, which is what we want.
+      NVIDIA_DRIVER_CAPABILITIES = "video,compute";
       NVIDIA_VISIBLE_DEVICES = "all";
     };
     volumes = [

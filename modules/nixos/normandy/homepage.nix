@@ -27,7 +27,7 @@ let
     {
       name        = "Scrutiny";
       description = "Disk Health";
-      url         = "https://scrutiny.ishimura.lol";
+      url         = "http://ishimura:47890";
       icon        = "◉";
       statusPath  = "/health/scrutiny";
       healthUrl   = "http://${ishimuraTailnetIP}:47890/api/health";
@@ -35,7 +35,7 @@ let
     {
       name        = "Tdarr";
       description = "Transcoding";
-      url         = "https://tdarr.ishimura.lol";
+      url         = "http://ishimura:8265";
       icon        = "⟳";
       statusPath  = "/health/tdarr";
       healthUrl   = "http://${ishimuraTailnetIP}:8265/api/v2/status";
@@ -43,7 +43,7 @@ let
     {
       name        = "ntfy";
       description = "Notifications";
-      url         = "https://ntfy.ishimura.lol";
+      url         = "http://normandy:8080";
       icon        = "◈";
       statusPath  = "/health/ntfy";
       healthUrl   = "http://127.0.0.1:8080/v1/health";

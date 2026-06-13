@@ -1,6 +1,10 @@
 { ... }:
 
 {
+  # Ensure the NFSv4 kernel module + userspace are present. Without this,
+  # mounts fail with "No such device" because no driver claims `nfs4` fsType.
+  boot.supportedFilesystems = [ "nfs" ];
+
   # NFS client mount of ishimura's /mnt/storage over the tailnet.
   # Encrypted by tailscale; NFSv4 simple auth is sufficient since the
   # ishimura export pins to nostromo's tailnet IP.

@@ -4,6 +4,7 @@
   imports = [
     ./crowdsec.nix
     ./crowdsec-firewall-bouncer.nix
+    ./dns.nix
     ./gpu.nix
     ./impermanence.nix
     ./jellyfin.nix

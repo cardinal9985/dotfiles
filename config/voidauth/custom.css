@@ -154,11 +154,10 @@ app-theme-toggle {
 }
 
 /* ── Hide passkey/WebAuthn buttons ───────────────── */
-/* Targets unthemed mat-flat-buttons that contain a mat-icon
- * (which is what VoidAuth renders for the Passkey action). */
-button.mat-mdc-unelevated-button.mat-unthemed:has(mat-icon) {
-  display: none !important;
-}
+/* Previously hid ALL unthemed mat-flat-buttons with mat-icon, which also
+ * caught the TOTP enrollment button. Disabled until we have a precise
+ * selector that targets only the Passkey action.
+ */
 
 /* ── Header logo: replace with USG monogram ──────── */
 a.header-logo img {

@@ -5,11 +5,14 @@ let
 in
 {
   systemd.tmpfiles.rules = [
-    "d /persist/tdarr                  0755 maxwell users -"
-    "d /persist/tdarr/server           0755 maxwell users -"
-    "d /persist/tdarr/configs          0755 maxwell users -"
-    "d /persist/tdarr/logs             0755 maxwell users -"
-    "d /persist/tdarr/transcode_cache  0755 maxwell users -"
+    "d /persist/tdarr          0755 maxwell users -"
+    "d /persist/tdarr/server   0755 maxwell users -"
+    "d /persist/tdarr/configs  0755 maxwell users -"
+    "d /persist/tdarr/logs     0755 maxwell users -"
+    # Shared transcode cache on the mergerfs union, NFS-exported to nostromo.
+    # Both tdarr-server (here) and tdarr-node (nostromo) mount this as /temp
+    # so the server can read worker output to run mediaInfo + replace-original.
+    "d /mnt/storage/tdarr-cache  0755 maxwell users -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -35,7 +38,9 @@ in
       "/persist/tdarr/server:/app/server"
       "/persist/tdarr/configs:/app/configs"
       "/persist/tdarr/logs:/app/logs"
-      "/persist/tdarr/transcode_cache:/temp"
+      # Shared with nostromo's tdarr-node via NFS so the server can see the
+      # worker's output cache for mediaInfo + replace-original post-steps.
+      "/mnt/storage/tdarr-cache:/temp"
       "/mnt/storage:/media"
     ];
     ports = [

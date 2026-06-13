@@ -7,10 +7,9 @@
   hardware.nvidia-container-toolkit.enable = true;
 
   systemd.tmpfiles.rules = [
-    "d /persist/tdarr-node                  0755 maxwell users -"
-    "d /persist/tdarr-node/configs          0755 maxwell users -"
-    "d /persist/tdarr-node/logs             0755 maxwell users -"
-    "d /persist/tdarr-node/transcode_cache  0755 maxwell users -"
+    "d /persist/tdarr-node          0755 maxwell users -"
+    "d /persist/tdarr-node/configs  0755 maxwell users -"
+    "d /persist/tdarr-node/logs     0755 maxwell users -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -41,7 +40,10 @@
     volumes = [
       "/persist/tdarr-node/configs:/app/configs"
       "/persist/tdarr-node/logs:/app/logs"
-      "/persist/tdarr-node/transcode_cache:/temp"
+      # Shared transcode cache on ishimura's NFS export. Server reads worker
+      # output here for mediaInfo + replace-original post-steps. Distinct
+      # workDir name per job (tdarr-workDirN-XXX) avoids cross-node collisions.
+      "/mnt/storage/tdarr-cache:/temp"
       # NFS mount from ishimura over tailnet. Worker reads source files
       # and writes transcoded output to the same shared filesystem,
       # avoiding any copy step.

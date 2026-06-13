@@ -39,6 +39,21 @@
     openFirewall = true;
   };
 
+  # Override AGH's DynamicUser=true so impermanence bind mounts work cleanly.
+  # DynamicUser symlinks /var/lib/AdGuardHome to /var/lib/private/AdGuardHome
+  # at runtime, which conflicts with the bind mount from /persist.
+  users.users.adguardhome = {
+    isSystemUser = true;
+    group = "adguardhome";
+    home = "/var/lib/AdGuardHome";
+  };
+  users.groups.adguardhome = { };
+  systemd.services.adguardhome.serviceConfig = {
+    DynamicUser = lib.mkForce false;
+    User = "adguardhome";
+    Group = "adguardhome";
+  };
+
   # Web UI port 3000 is not auto-opened by openFirewall.
   networking.firewall.allowedTCPPorts = [ 3000 ];
 
@@ -46,7 +61,7 @@
   services.resolved.enable = lib.mkForce false;
 
   environment.persistence."/persist".directories = [
-    { directory = "/var/lib/AdGuardHome"; user = "adguardhome"; group = "adguardhome"; mode = "0755"; }
-    { directory = "/var/lib/unbound";     user = "unbound";     group = "unbound";     mode = "0755"; }
+    { directory = "/var/lib/AdGuardHome"; user = "adguardhome"; group = "adguardhome"; mode = "0700"; }
+    "/var/lib/unbound"
   ];
 }

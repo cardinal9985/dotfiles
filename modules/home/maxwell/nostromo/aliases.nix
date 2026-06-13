@@ -14,7 +14,7 @@
     eq-voice  = "easyeffects --load-preset voice";
     deploy-ishimura = "colmena apply --on ishimura";
     deploy-normandy = "colmena apply --on normandy";
-    deploy-all = "colmena apply";
+    deploy-all = "colmena apply --on ishimura,normandy";
     ishimura  = "TERM=xterm-256color ssh -p 36475 maxwell@192.168.254.186";
     normandy  = "TERM=xterm-256color ssh -p 36475 maxwell@100.108.98.70";
 

@@ -153,11 +153,20 @@ app-theme-toggle {
   display: none !important;
 }
 
-/* ── Hide passkey/WebAuthn buttons ───────────────── */
-/* Previously hid ALL unthemed mat-flat-buttons with mat-icon, which also
- * caught the TOTP enrollment button. Disabled until we have a precise
- * selector that targets only the Passkey action.
+/* ── Hide passkey/WebAuthn post-login prompt ─────── */
+/* Voidauth pops up a "register a security key" dialog after sign-in.
+ * No one in this household uses hardware keys. Target the Angular Material
+ * dialog container by the icons/components voidauth likely uses.
  */
+.cdk-overlay-pane:has(mat-icon[fontIcon="fingerprint"]),
+.cdk-overlay-pane:has(mat-icon[fontIcon="key"]),
+.cdk-overlay-pane:has(mat-icon[fontIcon="vpn_key"]),
+.cdk-overlay-pane:has(mat-icon[fontIcon="security"]),
+.cdk-overlay-pane:has(mat-icon[fontIcon="passkey"]),
+.cdk-overlay-backdrop:has(+ .cdk-overlay-pane mat-icon[fontIcon="fingerprint"]),
+.cdk-overlay-backdrop:has(+ .cdk-overlay-pane mat-icon[fontIcon="key"]) {
+  display: none !important;
+}
 
 /* ── Header logo: replace with USG monogram ──────── */
 a.header-logo img {

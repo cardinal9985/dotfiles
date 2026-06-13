@@ -292,10 +292,10 @@ let
           priority: 20
           middlewares:
             - noindex-headers
+            - error-pages
             - tailnet-only
             - voidauth-forwardauth
             - anubis-theme
-            - error-pages
         homepage-router:
           rule: "Host(`${domain}`)"
           service: homepage-service
@@ -327,8 +327,8 @@ let
           priority: 10
           middlewares:
             - noindex-headers
-            - tailnet-only
             - error-pages
+            - tailnet-only
         tdarr-router:
           rule: "Host(`tdarr.${domain}`)"
           service: tdarr-service
@@ -343,8 +343,8 @@ let
           priority: 10
           middlewares:
             - noindex-headers
-            - tailnet-only
             - error-pages
+            - tailnet-only
         ntfy-router:
           rule: "Host(`ntfy.${domain}`)"
           service: ntfy-service
@@ -359,8 +359,8 @@ let
           priority: 10
           middlewares:
             - noindex-headers
-            - tailnet-only
             - error-pages
+            - tailnet-only
         adguard-router:
           rule: "Host(`adguard.${domain}`)"
           service: adguard-service
@@ -375,8 +375,8 @@ let
           priority: 10
           middlewares:
             - noindex-headers
-            - tailnet-only
             - error-pages
+            - tailnet-only
         jellyfin-router:
           rule: "Host(`jellyfin.${domain}`)"
           service: jellyfin-service

@@ -10,5 +10,6 @@
     lsof
     nftables
     smartmontools
+    unzip
   ];
 }

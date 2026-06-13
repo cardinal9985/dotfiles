@@ -17,13 +17,23 @@
   # with NETAVARK- or nv_ (netavark's own prefixes). System chains
   # (prerouting, postrouting, etc.) are untouched.
   systemd.services.netavark-stale-flush = {
-    description = "Flush stale netavark NAT chains before podman starts";
-    wantedBy = [ "multi-user.target" ];
+    description = "Flush stale netavark NAT chains at boot only";
+    wantedBy = [ "podman.service" ];
     before = [ "podman.service" "create-pangolin-network.service" ];
     after = [ "network-pre.target" ];
+
+    # Only run on boot, not on every config reload (`systemctl restart`
+    # after a nixos-rebuild switch would otherwise re-flush chains that
+    # active containers are currently using, breaking their NAT until
+    # the container itself restarts).
+    unitConfig = {
+      ConditionPathExists = "!/run/netavark-stale-flush.done";
+    };
+
     serviceConfig = {
       Type = "oneshot";
-      RemainAfterExit = false;
+      RemainAfterExit = true;
+      ExecStartPost = "${pkgs.coreutils}/bin/touch /run/netavark-stale-flush.done";
       ExecStart = pkgs.writeShellScript "flush-stale-netavark-nat" ''
         set -uo pipefail
         nft="${pkgs.nftables}/bin/nft"

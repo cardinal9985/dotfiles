@@ -62,6 +62,14 @@ let
       statusPath  = "/health/voidauth";
       healthUrl   = "http://127.0.0.1:3030/api/health";
     }
+    {
+      name        = "AdGuard Home";
+      description = "DNS + Ad Block";
+      url         = "http://ishimura:3000";
+      icon        = "⊘";
+      statusPath  = "/health/adguard";
+      healthUrl   = "http://${ishimuraTailnetIP}:3000/";
+    }
   ];
 
   servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);

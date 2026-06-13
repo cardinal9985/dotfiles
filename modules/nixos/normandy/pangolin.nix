@@ -114,6 +114,9 @@ let
         rewrite-tdarr-health:
           replacePath:
             path: "/api/v2/status"
+        rewrite-adguard-health:
+          replacePath:
+            path: "/"
       routers:
         robots-router:
           rule: "Path(`/robots.txt`)"
@@ -260,6 +263,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-voidauth-health
+        homepage-health-adguard-router:
+          rule: "Host(`${domain}`) && Path(`/health/adguard`)"
+          service: adguard-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-adguard-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service
@@ -329,6 +347,22 @@ let
         ntfy-router:
           rule: "Host(`ntfy.${domain}`)"
           service: ntfy-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - tailnet-only
+            - error-pages
+        adguard-router:
+          rule: "Host(`adguard.${domain}`)"
+          service: adguard-service
           entryPoints:
             - websecure
           tls:
@@ -412,6 +446,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:8265"
+        adguard-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:3000"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

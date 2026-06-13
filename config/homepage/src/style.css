@@ -83,7 +83,14 @@ header {
   text-shadow: 0 0 10px rgba(110, 200, 230, 0.5);
 }
 
+.header-right {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .admin-link,
+.account-link,
 .back-link {
   color: var(--bright-cyan);
   text-decoration: none;
@@ -94,6 +101,7 @@ header {
 }
 
 .admin-link:hover,
+.account-link:hover,
 .back-link:hover {
   color: var(--bright-white);
   text-shadow: 0 0 10px rgba(110, 200, 230, 0.5);

@@ -9,6 +9,7 @@
     ./crowdsec-ntfy.nix
     ./homepage.nix
     ./impermanence.nix
+    ./netavark-cleanup.nix
     ./network.nix
     ./ntfy.nix
     ./pangolin.nix

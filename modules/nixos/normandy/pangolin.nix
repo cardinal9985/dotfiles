@@ -292,6 +292,7 @@ let
           priority: 20
           middlewares:
             - noindex-headers
+            - tailnet-only
             - voidauth-forwardauth
             - anubis-theme
             - error-pages

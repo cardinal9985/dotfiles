@@ -5,7 +5,7 @@ let
 
   # ishimura tailnet IP. Used for both click-through URLs (resolves for tailnet
   # visitors) and Normandy-side health-check proxies. Public visitors can't reach
-  # this IP — that's intentional; status dot reflects reality.
+  # this IP, that's intentional; status dot reflects reality.
   ishimuraTailnetIP = "100.92.76.121";
 
   # Services the public homepage advertises. Currently just Jellyfin; status is

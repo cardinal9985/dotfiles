@@ -5,7 +5,7 @@
 
   environment.etc."crowdsec/parsers/s02-enrich/tailnet-whitelist.yaml".source = pkgs.writeText "tailnet-whitelist.yaml" ''
     name: maxwell/tailnet-whitelist
-    description: "Whitelist tailnet sources (100.64.0.0/10) — operator traffic, not threats"
+    description: "Whitelist tailnet sources (100.64.0.0/10): operator traffic, not threats"
     whitelist:
       reason: "tailnet operator traffic"
       cidr:

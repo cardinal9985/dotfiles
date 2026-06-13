@@ -26,7 +26,7 @@ in
       APP_URL=https://${authHost}
       APP_TITLE=USG ISHIMURA :: AUTH
       APP_COLOR=#3a9fbf
-      APP_FONT="Courier New, Lucida Console, monospace"
+      APP_FONT=Courier New, Lucida Console, monospace
       PORT=3000
       DEFAULT_REDIRECT=https://ishimura.lol
       SIGNUP=true

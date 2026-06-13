@@ -166,10 +166,10 @@ a.header-logo img {
 }
 
 a.header-logo::after {
-  content: "USG";
+  content: "[ HOME ]";
   font-family: "Courier New", "Lucida Console", monospace;
   font-weight: bold;
-  font-size: 1.6rem;
+  font-size: 1.1rem;
   letter-spacing: 0.25em;
   color: var(--usg-bright-cyan);
   text-shadow: 0 0 10px rgba(110, 200, 230, 0.5);

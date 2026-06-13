@@ -117,6 +117,9 @@ let
         rewrite-adguard-health:
           replacePath:
             path: "/"
+        rewrite-approval-required:
+          replacePath:
+            path: "/approval_required.html"
       routers:
         robots-router:
           rule: "Path(`/robots.txt`)"
@@ -154,6 +157,21 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+        auth-approval-router:
+          rule: "Host(`auth.${domain}`) && Path(`/approval_required`)"
+          service: errors-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 30
+          middlewares:
+            - noindex-headers
+            - rewrite-approval-required
         auth-admin-router:
           rule: "Host(`auth.${domain}`) && PathPrefix(`/admin`)"
           service: auth-service
@@ -552,6 +570,8 @@ in
         /persist/pangolin/errors/403.html
       install -m 0644 ${../../../config/pangolin/404.html} \
         /persist/pangolin/errors/404.html
+      install -m 0644 ${../../../config/pangolin/approval_required.html} \
+        /persist/pangolin/errors/approval_required.html
       install -m 0644 ${../../../config/pangolin/robots.txt} \
         /persist/pangolin/errors/robots.txt
       install -m 0644 ${../../../config/pangolin/anubis-theme.css} \

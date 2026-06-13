@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACCOUNT PENDING APPROVAL</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23080c14'/><text x='8' y='8' font-family='Courier New, monospace' font-size='13' font-weight='bold' fill='%236ec8e6' text-anchor='middle' dominant-baseline='central'>I</text></svg>">
+<style>
+  :root {
+    --black: #080c14;
+    --white: #a0aec0;
+    --bright-white: #dce4f0;
+    --cyan: #3a9fbf;
+    --bright-cyan: #6ec8e6;
+    --magenta: #7b68c8;
+    --bright-magenta: #a78bfa;
+    --green: #3d9b8f;
+    --bright-green: #5eead4;
+    --yellow: #b89040;
+    --bright-yellow: #fbbf60;
+    --blue: #4070c8;
+    --bright-blue: #7aa2f7;
+    --red: #8b3a50;
+    --bright-red: #f0708a;
+    --surface: #0e1320;
+    --surface-light: #141a2a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: "Courier New", "Lucida Console", monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .crt::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.06) 2px,
+      rgba(0, 0, 0, 0.06) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #star-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  .container {
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ascii-err {
+    color: var(--bright-cyan);
+    font-size: 0.7rem;
+    white-space: pre;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 6px rgba(110, 200, 230, 0.3);
+    line-height: 1.2;
+  }
+
+  .error-title {
+    color: var(--bright-cyan);
+    font-size: 1.5rem;
+    letter-spacing: 0.2em;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 8px rgba(110, 200, 230, 0.4);
+  }
+
+  .error-msg {
+    color: var(--white);
+    font-size: 0.9rem;
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .error-msg span { color: var(--bright-cyan); }
+  .error-msg .crit { color: var(--bright-yellow); }
+
+  .log {
+    color: var(--cyan);
+    font-size: 0.75rem;
+    margin-top: 2rem;
+    opacity: 0.6;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    96% { opacity: 1; }
+    97% { opacity: 0.9; }
+    98% { opacity: 1; }
+  }
+
+  .container { animation: flicker 12s infinite; }
+</style>
+</head>
+<body class="crt">
+<canvas id="star-canvas"></canvas>
+<div class="container">
+<pre class="ascii-err">
+██████╗ ███████╗███╗   ██╗██████╗ ██╗███╗   ██╗ ██████╗
+██╔══██╗██╔════╝████╗  ██║██╔══██╗██║████╗  ██║██╔════╝
+██████╔╝█████╗  ██╔██╗ ██║██║  ██║██║██╔██╗ ██║██║  ███╗
+██╔═══╝ ██╔══╝  ██║╚██╗██║██║  ██║██║██║╚██╗██║██║   ██║
+██║     ███████╗██║ ╚████║██████╔╝██║██║ ╚████║╚██████╔╝
+╚═╝     ╚══════╝╚═╝  ╚═══╝╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝
+</pre>
+<div class="error-title">ACCOUNT PENDING APPROVAL</div>
+<div class="error-msg">
+  Your <span>USG ISHIMURA</span> credentials have been received.<br>
+  Awaiting <span class="crit">CAPTAIN AUTHORIZATION</span> for crew onboarding.<br>
+  <br>
+  You will be notified once clearance is granted.<br>
+  Until then, system access is <span class="crit">restricted</span>.<br>
+  <br>
+  [STATUS: AWAITING_REVIEW]
+</div>
+<div class="log">CEC SECURITY MATRIX v4.2.0 | USG ISHIMURA | CREW ONBOARDING</div>
+</div>
+<script>
+  var logs = [
+    'INFO: Capt. Mathius reviews all crew onboarding requests',
+    'NOTE: Approval typically processed within 24 hours',
+    'INFO: You will receive notification via secure channel',
+    'NOTE: Contact ship administration for urgent access requests',
+    'INFO: Background verification in progress',
+  ];
+  document.querySelector('.log').textContent += ' | ' + logs[Math.floor(Math.random() * logs.length)];
+
+  var starCanvas = document.getElementById('star-canvas');
+  var sCtx = starCanvas.getContext('2d');
+  var stars = [];
+
+  function initStarfield() {
+    starCanvas.width = window.innerWidth;
+    starCanvas.height = window.innerHeight;
+    stars = [];
+    for (var i = 0; i < 150; i++) {
+      stars.push({
+        x: Math.random() * starCanvas.width,
+        y: Math.random() * starCanvas.height,
+        r: Math.random() * 1.5 + 0.3,
+        brightness: Math.random() * 0.5 + 0.3,
+        twinkleSpeed: Math.random() * 0.02 + 0.005,
+        twinkleOffset: Math.random() * Math.PI * 2
+      });
+    }
+  }
+  initStarfield();
+  window.addEventListener('resize', initStarfield);
+
+  function drawStarfield(time) {
+    sCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var twinkle = 0.5 + 0.5 * Math.sin(time * s.twinkleSpeed + s.twinkleOffset);
+      var alpha = s.brightness * twinkle;
+      sCtx.beginPath();
+      sCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      sCtx.fillStyle = 'rgba(170, 200, 240, ' + alpha + ')';
+      sCtx.fill();
+    }
+    requestAnimationFrame(drawStarfield);
+  }
+  requestAnimationFrame(drawStarfield);
+</script>
+</body>
+</html>

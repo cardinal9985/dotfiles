@@ -12,6 +12,7 @@
     ./newt.nix
     ./packages.nix
     ./ssh.nix
+    ./tdarr.nix
     ./monitoring.nix
     ./sops.nix
     ./storage.nix

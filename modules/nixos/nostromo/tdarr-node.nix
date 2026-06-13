@@ -1,0 +1,57 @@
+{ ... }:
+
+{
+  # NVIDIA Container Toolkit + CDI for podman GPU passthrough.
+  # Lets the Tdarr worker invoke NVENC/NVDEC for hardware-accelerated
+  # transcoding via the dGPU.
+  hardware.nvidia-container-toolkit.enable = true;
+
+  systemd.tmpfiles.rules = [
+    "d /persist/tdarr-node                  0755 maxwell users -"
+    "d /persist/tdarr-node/configs          0755 maxwell users -"
+    "d /persist/tdarr-node/logs             0755 maxwell users -"
+    "d /persist/tdarr-node/transcode_cache  0755 maxwell users -"
+  ];
+
+  environment.persistence."/persist".directories = [
+    { directory = "/persist/tdarr-node"; user = "maxwell"; group = "users"; mode = "0755"; }
+  ];
+
+  virtualisation.oci-containers.containers.tdarr-node = {
+    image = "ghcr.io/haveagitgat/tdarr_node:latest";
+    environment = {
+      TZ = "America/New_York";
+      PUID = "1000";
+      PGID = "100";
+      UMASK_SET = "002";
+      nodeName = "Nostromo-NVENC";
+      # ishimura tailnet IP. Worker connects to server on port 8266.
+      serverIP = "100.92.76.121";
+      serverPort = "8266";
+      inContainer = "true";
+      NVIDIA_DRIVER_CAPABILITIES = "all";
+      NVIDIA_VISIBLE_DEVICES = "all";
+    };
+    volumes = [
+      "/persist/tdarr-node/configs:/app/configs"
+      "/persist/tdarr-node/logs:/app/logs"
+      "/persist/tdarr-node/transcode_cache:/temp"
+      # NFS mount from ishimura over tailnet. Worker reads source files
+      # and writes transcoded output to the same shared filesystem,
+      # avoiding any copy step.
+      "/mnt/storage:/media"
+    ];
+    extraOptions = [
+      # CDI device passthrough for NVIDIA GPU. Requires
+      # hardware.nvidia-container-toolkit.enable.
+      "--device=nvidia.com/gpu=all"
+    ];
+  };
+
+  # Tdarr node systemd unit must wait until the NFS automount has fired,
+  # otherwise the worker starts with an empty /media and errors on every job.
+  systemd.services.podman-tdarr-node = {
+    after = [ "mnt-storage.automount" ];
+    requires = [ "mnt-storage.automount" ];
+  };
+}

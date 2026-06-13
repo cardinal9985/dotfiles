@@ -111,6 +111,9 @@ let
         rewrite-voidauth-health:
           replacePath:
             path: "/oidc/jwks"
+        rewrite-tdarr-health:
+          replacePath:
+            path: "/api/v2/status"
       routers:
         robots-router:
           rule: "Path(`/robots.txt`)"
@@ -227,6 +230,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-ntfy-health
+        homepage-health-tdarr-router:
+          rule: "Host(`${domain}`) && Path(`/health/tdarr`)"
+          service: tdarr-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-tdarr-health
         homepage-health-voidauth-router:
           rule: "Host(`${domain}`) && Path(`/health/voidauth`)"
           service: auth-service
@@ -279,6 +297,22 @@ let
         scrutiny-router:
           rule: "Host(`scrutiny.${domain}`)"
           service: scrutiny-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - tailnet-only
+            - error-pages
+        tdarr-router:
+          rule: "Host(`tdarr.${domain}`)"
+          service: tdarr-service
           entryPoints:
             - websecure
           tls:
@@ -374,6 +408,10 @@ let
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:8080"
+        tdarr-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8265"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

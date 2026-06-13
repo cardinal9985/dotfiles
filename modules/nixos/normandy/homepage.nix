@@ -33,6 +33,14 @@ let
       healthUrl   = "http://${ishimuraTailnetIP}:47890/api/health";
     }
     {
+      name        = "Tdarr";
+      description = "Transcoding";
+      url         = "https://tdarr.ishimura.lol";
+      icon        = "⟳";
+      statusPath  = "/health/tdarr";
+      healthUrl   = "http://${ishimuraTailnetIP}:8265/api/v2/status";
+    }
+    {
       name        = "ntfy";
       description = "Notifications";
       url         = "https://ntfy.ishimura.lol";

@@ -54,8 +54,9 @@
     Group = "adguardhome";
   };
 
-  # Web UI port 3000 is not auto-opened by openFirewall.
-  networking.firewall.allowedTCPPorts = [ 3000 ];
+  # AGH's openFirewall only handles its web UI; DNS port 53 is not auto-opened.
+  networking.firewall.allowedTCPPorts = [ 53 3000 ];
+  networking.firewall.allowedUDPPorts = [ 53 ];
 
   # Disable systemd-resolved so it does not fight AGH for port 53.
   services.resolved.enable = lib.mkForce false;

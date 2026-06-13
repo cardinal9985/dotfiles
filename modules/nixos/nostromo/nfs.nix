@@ -3,7 +3,11 @@
 {
   # Ensure the NFSv4 kernel module + userspace are present. Without this,
   # mounts fail with "No such device" because no driver claims `nfs4` fsType.
+  # `supportedFilesystems` adds initrd support; `kernelModules` makes it load
+  # on every boot of the running system (needed for late-binding fileSystems
+  # entries like /mnt/storage that aren't mounted at boot).
   boot.supportedFilesystems = [ "nfs" ];
+  boot.kernelModules = [ "nfsv4" ];
 
   # NFS client mount of ishimura's /mnt/storage over the tailnet.
   # Encrypted by tailscale; NFSv4 simple auth is sufficient since the

@@ -6,6 +6,7 @@
     # Modules
     ./network.nix
     ./nfs.nix
+    ./ntfy.nix
     ./tdarr-node.nix
     ./boot.nix
     ./gpu.nix

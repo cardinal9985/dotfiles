@@ -11,6 +11,7 @@
     ./network.nix
     ./nfs.nix
     ./newt.nix
+    ./ntfy.nix
     ./packages.nix
     ./ssh.nix
     ./tdarr.nix

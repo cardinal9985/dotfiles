@@ -1,28 +1,28 @@
 { ... }:
 
 let
-  # Tailnet IPs of clients permitted to mount /mnt/storage.
-  # Keep the export tightly scoped: even though the tailnet is private,
-  # NFSv4 simple auth is identity-by-IP for us, so listing exact peers
-  # avoids accidental exposure if a new tailnet node is added later.
-  nostromoTailnetIP = "100.106.24.59";
+  # Tailnet CGNAT range. Pinning a single IP burned us when nostromo's
+  # tailscaled was restarted and got a new IP from the control plane.
+  # CIDR scope is safe because the tailnet is private and only trusted
+  # nodes ever receive 100.64.0.0/10 addresses.
+  tailnetCIDR = "100.64.0.0/10";
 in
 {
   services.nfs.server = {
     enable = true;
 
     # NFSv4-only (skip RPC portmapper exposure). Single export root with
-    # fsid=0 so nostromo mounts `/mnt/storage` as the NFSv4 pseudo-root.
+    # fsid=0 so clients mount `/mnt/storage` as the NFSv4 pseudo-root.
     #
-    # rw                : read/write from nostromo
+    # rw                : read/write from tailnet clients
     # sync              : write through, slower but safer (kills risk of silent
-    #                     data loss on ishimura power blip while nostromo cached)
+    #                     data loss on ishimura power blip while client cached)
     # no_subtree_check  : recommended for whole-filesystem exports
-    # no_root_squash    : preserve UIDs from nostromo; needed since both hosts
+    # no_root_squash    : preserve UIDs from clients; needed since hosts
     #                     share the user `maxwell` (uid 1000) and we want files
-    #                     created on nostromo to land owned by maxwell on ishimura
+    #                     created on clients to land owned by maxwell on ishimura
     exports = ''
-      /mnt/storage  ${nostromoTailnetIP}(rw,sync,no_subtree_check,no_root_squash,fsid=0)
+      /mnt/storage  ${tailnetCIDR}(rw,sync,no_subtree_check,no_root_squash,fsid=0)
     '';
   };
 

@@ -12,6 +12,7 @@
     ./netavark-cleanup.nix
     ./network.nix
     ./ntfy.nix
+    ./packages.nix
     ./pangolin.nix
     ./podman.nix
     ./sops.nix

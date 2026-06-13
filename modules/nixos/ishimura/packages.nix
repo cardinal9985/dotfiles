@@ -11,5 +11,12 @@
     nftables
     smartmontools
     unzip
+    iotop
+    iftop
+    nethogs
+    ncdu
+    jq
+    mtr
+    mediainfo
   ];
 }

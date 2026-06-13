@@ -21,6 +21,12 @@ environment.systemPackages = with pkgs; [
   sops
   smartmontools
   colmena
+  unzip
+  iotop
+  iftop
+  ncdu
+  nethogs
+  mtr
 ];
 
 }

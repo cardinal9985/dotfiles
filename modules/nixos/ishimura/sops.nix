@@ -16,6 +16,9 @@
       "crowdsec/ishimura_machine_password" = {
         mode = "0400";
       };
+      "crowdsec/ishimura_firewall_bouncer_api_key" = {
+        mode = "0400";
+      };
     };
   };
 }

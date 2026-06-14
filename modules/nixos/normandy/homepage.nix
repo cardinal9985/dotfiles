@@ -70,6 +70,22 @@ let
       statusPath  = "/health/adguard";
       healthUrl   = "http://${ishimuraTailnetIP}:3000/";
     }
+    {
+      name        = "Grafana";
+      description = "Dashboards";
+      url         = "http://ishimura:3001";
+      icon        = "▦";
+      statusPath  = "/health/grafana";
+      healthUrl   = "http://${ishimuraTailnetIP}:3001/api/health";
+    }
+    {
+      name        = "Prometheus";
+      description = "Metrics";
+      url         = "http://ishimura:9090";
+      icon        = "◔";
+      statusPath  = "/health/prometheus";
+      healthUrl   = "http://${ishimuraTailnetIP}:9090/-/healthy";
+    }
   ];
 
   servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);

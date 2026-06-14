@@ -117,6 +117,12 @@ let
         rewrite-adguard-health:
           replacePath:
             path: "/"
+        rewrite-grafana-health:
+          replacePath:
+            path: "/api/health"
+        rewrite-prometheus-health:
+          replacePath:
+            path: "/-/healthy"
         rewrite-approval-required:
           replacePath:
             path: "/approval_required.html"
@@ -296,6 +302,36 @@ let
           middlewares:
             - noindex-headers
             - rewrite-adguard-health
+        homepage-health-grafana-router:
+          rule: "Host(`${domain}`) && Path(`/health/grafana`)"
+          service: grafana-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-grafana-health
+        homepage-health-prometheus-router:
+          rule: "Host(`${domain}`) && Path(`/health/prometheus`)"
+          service: prometheus-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-prometheus-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service
@@ -395,6 +431,38 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+        grafana-router:
+          rule: "Host(`grafana.${domain}`)"
+          service: grafana-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - error-pages
+            - tailnet-only
+        prometheus-router:
+          rule: "Host(`prometheus.${domain}`)"
+          service: prometheus-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - error-pages
+            - tailnet-only
         jellyfin-router:
           rule: "Host(`jellyfin.${domain}`)"
           service: jellyfin-service
@@ -469,6 +537,14 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:3000"
+        grafana-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:3001"
+        prometheus-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:9090"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

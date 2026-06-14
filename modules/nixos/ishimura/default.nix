@@ -6,6 +6,9 @@
     ./crowdsec-firewall-bouncer.nix
     ./dns.nix
     ./gpu.nix
+    ./grafana.nix
+    ./loki.nix
+    ./prometheus.nix
     ./impermanence.nix
     ./jellyfin.nix
     ./network.nix

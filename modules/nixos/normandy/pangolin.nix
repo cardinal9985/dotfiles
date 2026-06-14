@@ -95,6 +95,10 @@ let
           plugin:
             rewriteBody:
               lastModified: true
+              monitoring:
+                types:
+                  - "application/json"
+                  - "text/html"
               rewrites:
                 - regex: '"LocalAddress":"http://[^"]*"'
                   replacement: '"LocalAddress":""'

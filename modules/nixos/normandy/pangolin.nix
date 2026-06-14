@@ -91,6 +91,19 @@ let
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
               X-XSS-Protection: "0"
               Permissions-Policy: "interest-cohort=()"
+        jellyfin-info-sanitize:
+          plugin:
+            rewriteBody:
+              lastModified: true
+              rewrites:
+                - regex: '"LocalAddress":"http://[^"]*"'
+                  replacement: '"LocalAddress":""'
+                - regex: '"Version":"[0-9.]+"'
+                  replacement: '"Version":"hidden"'
+                - regex: '"Id":"[a-f0-9]+"'
+                  replacement: '"Id":"hidden"'
+                - regex: '"OperatingSystem":"[^"]*"'
+                  replacement: '"OperatingSystem":""'
         anubis-theme:
           plugin:
             rewriteBody:
@@ -391,6 +404,7 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+            - voidauth-forwardauth
         tdarr-router:
           rule: "Host(`tdarr.${domain}`)"
           service: tdarr-service
@@ -407,6 +421,7 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+            - voidauth-forwardauth
         ntfy-router:
           rule: "Host(`ntfy.${domain}`)"
           service: ntfy-service
@@ -423,6 +438,7 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+            - voidauth-forwardauth
         adguard-router:
           rule: "Host(`adguard.${domain}`)"
           service: adguard-service
@@ -439,6 +455,7 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+            - voidauth-forwardauth
         grafana-router:
           rule: "Host(`grafana.${domain}`)"
           service: grafana-service
@@ -455,6 +472,7 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+            - voidauth-forwardauth
         prometheus-router:
           rule: "Host(`prometheus.${domain}`)"
           service: prometheus-service
@@ -471,6 +489,22 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+            - voidauth-forwardauth
+        jellyfin-info-public-router:
+          rule: "Host(`jellyfin.${domain}`) && Path(`/System/Info/Public`)"
+          service: jellyfin-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - jellyfin-info-sanitize
         jellyfin-router:
           rule: "Host(`jellyfin.${domain}`)"
           service: jellyfin-service

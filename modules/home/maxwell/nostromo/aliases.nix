@@ -12,9 +12,9 @@
     eq-flat   = "easyeffects --load-preset flat";
     eq-night  = "easyeffects --load-preset night";
     eq-voice  = "easyeffects --load-preset voice";
-    deploy-ishimura = "colmena apply --on ishimura";
-    deploy-normandy = "colmena apply --on normandy";
-    deploy-all = "colmena apply --on ishimura,normandy";
+    deploy-ishimura = ''colmena apply --on ishimura && curl -s -H "X-Title: Deploy ishimura ✓" -H "X-Tags: rocket" -d "ok" http://normandy:8080/deploy || curl -s -H "X-Title: Deploy ishimura ✗" -H "X-Priority: high" -H "X-Tags: x" -d "failed" http://normandy:8080/deploy'';
+    deploy-normandy = ''colmena apply --on normandy && curl -s -H "X-Title: Deploy normandy ✓" -H "X-Tags: rocket" -d "ok" http://normandy:8080/deploy || curl -s -H "X-Title: Deploy normandy ✗" -H "X-Priority: high" -H "X-Tags: x" -d "failed" http://normandy:8080/deploy'';
+    deploy-all      = ''colmena apply --on ishimura,normandy && curl -s -H "X-Title: Deploy all ✓" -H "X-Tags: rocket" -d "ok" http://normandy:8080/deploy || curl -s -H "X-Title: Deploy all ✗" -H "X-Priority: high" -H "X-Tags: x" -d "failed" http://normandy:8080/deploy'';
     ishimura  = "TERM=xterm-256color ssh -p 36475 maxwell@192.168.254.186";
     normandy  = "TERM=xterm-256color ssh -p 36475 maxwell@100.108.98.70";
 

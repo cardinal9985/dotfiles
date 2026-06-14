@@ -1,6 +1,12 @@
-{ ... }:
+{ config, ... }:
 
 {
+  sops.secrets."grafana/secret_key" = {
+    owner = "grafana";
+    group = "grafana";
+    mode = "0400";
+  };
+
   services.grafana = {
     enable = true;
     settings = {
@@ -27,10 +33,9 @@
         # First-run admin password. CHANGE after first login via UI.
         # Future hardening: move to sops template + admin_password_file.
         admin_password = "ishimura";
-        # NixOS 26.05 removed the secret_key default. Fresh install, no
-        # existing encrypted secrets in the DB, so any random fixed string
-        # is safe. Hardcoded here; sops it later if you want.
-        secret_key = "ishimura-grafana-secret-not-encrypting-real-secrets";
+        # secret_key encrypts DB-stored values (API keys, OAuth tokens).
+        # Read from sops at runtime via Grafana's built-in $__file syntax.
+        secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
       };
     };
 

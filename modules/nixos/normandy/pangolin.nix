@@ -95,10 +95,12 @@ let
           plugin:
             rewriteBody:
               lastModified: true
+              logLevel: debug
               monitoring:
                 types:
                   - "application/json"
                   - "text/html"
+                  - "text/plain"
               rewrites:
                 - regex: '"LocalAddress":"http://[^"]*"'
                   replacement: '"LocalAddress":""'

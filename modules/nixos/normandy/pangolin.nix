@@ -81,8 +81,16 @@ let
             query: /{status}.html
         noindex-headers:
           headers:
+            stsSeconds: 31536000
+            stsIncludeSubdomains: true
+            stsPreload: false
+            contentTypeNosniff: true
+            customFrameOptionsValue: "SAMEORIGIN"
+            referrerPolicy: "no-referrer"
             customResponseHeaders:
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
+              X-XSS-Protection: "0"
+              Permissions-Policy: "interest-cohort=()"
         anubis-theme:
           plugin:
             rewriteBody:
@@ -661,7 +669,7 @@ in
 
   virtualisation.oci-containers.containers = {
     pangolin = {
-      image = "docker.io/fosrl/pangolin:latest";
+      image = "docker.io/fosrl/pangolin@sha256:894dcb2c684f27103adf1a26406b48c641d1e7e32eeda2fe2c7b9a0372322bf1";
       volumes = [ "/persist/pangolin/config:/app/config" ];
       ports = [
         "127.0.0.1:3000:3000"
@@ -672,7 +680,7 @@ in
     };
 
     gerbil = {
-      image = "docker.io/fosrl/gerbil:latest";
+      image = "docker.io/fosrl/gerbil@sha256:4e0f14b60098207db9ecb574de06ef91a3cfe8b2494019c111d126881a94ae04";
       dependsOn = [ "pangolin" ];
       cmd = [
         "--reachableAt=http://host.containers.internal:3004"
@@ -688,7 +696,7 @@ in
     };
 
     errorpages = {
-      image = "docker.io/library/busybox:latest";
+      image = "docker.io/library/busybox@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8";
       cmd = [ "httpd" "-f" "-p" "80" "-h" "/www" ];
       volumes = [ "/persist/pangolin/errors:/www:ro" ];
       ports = [ "127.0.0.1:8085:80" ];
@@ -696,7 +704,7 @@ in
     };
 
     traefik = {
-      image = "docker.io/traefik:v3.6";
+      image = "docker.io/traefik@sha256:2ffe22bff6ac72572a3f6a06c4c5730dd7235bc1cc77a3bd872479827b3fae96";
       dependsOn = [ "pangolin" "gerbil" ];
       cmd = [ "--configFile=/etc/traefik/traefik_config.yml" ];
       environmentFiles = [ config.sops.templates."porkbun.env".path ];

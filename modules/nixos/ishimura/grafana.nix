@@ -7,6 +7,12 @@
     mode = "0400";
   };
 
+  sops.secrets."grafana/admin_password" = {
+    owner = "grafana";
+    group = "grafana";
+    mode = "0400";
+  };
+
   services.grafana = {
     enable = true;
     settings = {
@@ -39,11 +45,7 @@
 
       security = {
         admin_user = "admin";
-        # First-run admin password. CHANGE after first login via UI.
-        # Future hardening: move to sops template + admin_password_file.
-        admin_password = "ishimura";
-        # secret_key encrypts DB-stored values (API keys, OAuth tokens).
-        # Read from sops at runtime via Grafana's built-in $__file syntax.
+        admin_password = "$__file{${config.sops.secrets."grafana/admin_password".path}}";
         secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
       };
     };

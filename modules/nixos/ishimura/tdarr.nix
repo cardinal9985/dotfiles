@@ -20,7 +20,7 @@ in
   ];
 
   virtualisation.oci-containers.containers.tdarr-server = {
-    image = "ghcr.io/haveagitgat/tdarr:latest";
+    image = "ghcr.io/haveagitgat/tdarr@sha256:61af2de3245dc71da0038f80452eb2d3b960a2f76634ded108227c6ba293aee2";
     environment = {
       TZ = "America/New_York";
       PUID = "1000";

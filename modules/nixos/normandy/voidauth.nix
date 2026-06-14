@@ -50,7 +50,7 @@ in
 
   virtualisation.oci-containers.containers = {
     voidauth-db = {
-      image = "docker.io/postgres:18";
+      image = "docker.io/postgres@sha256:c27c01f74af25bde5f4f0f69d01944c4fc7f0376ea53c72aa1180dd593ce1d52";
       environmentFiles = [ config.sops.templates."voidauth-db.env".path ];
       volumes = [
         "/persist/voidauth/postgres:/var/lib/postgresql"
@@ -59,7 +59,7 @@ in
     };
 
     voidauth = {
-      image = "docker.io/voidauth/voidauth:latest";
+      image = "docker.io/voidauth/voidauth@sha256:0e6947bfa17aed8345a070d1d960a8268fddb8af085508f8c4a21c61fe0608d5";
       dependsOn = [ "voidauth-db" ];
       environmentFiles = [ config.sops.templates."voidauth.env".path ];
       volumes = [

@@ -91,25 +91,13 @@ let
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
               X-XSS-Protection: "0"
               Permissions-Policy: "interest-cohort=()"
-        jellyfin-info-sanitize:
-          plugin:
-            rewriteBody:
-              lastModified: true
-              logLevel: debug
-              monitoring:
-                types:
-                  - "application/json"
-                  - "text/html"
-                  - "text/plain"
-              rewrites:
-                - regex: '"LocalAddress":"http://[^"]*"'
-                  replacement: '"LocalAddress":""'
-                - regex: '"Version":"[0-9.]+"'
-                  replacement: '"Version":"hidden"'
-                - regex: '"Id":"[a-f0-9]+"'
-                  replacement: '"Id":"hidden"'
-                - regex: '"OperatingSystem":"[^"]*"'
-                  replacement: '"OperatingSystem":""'
+        rewrite-jellyfin-system-info:
+          replacePath:
+            path: "/jellyfin-system-info.json"
+        jellyfin-info-headers:
+          headers:
+            customResponseHeaders:
+              Content-Type: "application/json"
         anubis-theme:
           plugin:
             rewriteBody:
@@ -498,7 +486,7 @@ let
             - voidauth-forwardauth
         jellyfin-info-public-router:
           rule: "Host(`jellyfin.${domain}`) && Path(`/System/Info/Public`)"
-          service: jellyfin-service
+          service: errors-service
           entryPoints:
             - websecure
           tls:
@@ -510,7 +498,8 @@ let
           priority: 50
           middlewares:
             - noindex-headers
-            - jellyfin-info-sanitize
+            - rewrite-jellyfin-system-info
+            - jellyfin-info-headers
         jellyfin-router:
           rule: "Host(`jellyfin.${domain}`)"
           service: jellyfin-service
@@ -696,6 +685,8 @@ in
         /persist/pangolin/errors/404.html
       install -m 0644 ${../../../config/pangolin/approval_required.html} \
         /persist/pangolin/errors/approval_required.html
+      install -m 0644 ${../../../config/pangolin/jellyfin-system-info.json} \
+        /persist/pangolin/errors/jellyfin-system-info.json
       install -m 0644 ${../../../config/pangolin/robots.txt} \
         /persist/pangolin/errors/robots.txt
       install -m 0644 ${../../../config/pangolin/anubis-theme.css} \

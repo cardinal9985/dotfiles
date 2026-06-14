@@ -24,6 +24,15 @@
         check_for_updates = false;
       };
 
+      # Grafana 13 stores dashboards via a new Kubernetes-style API
+      # (dashboard.grafana.app) which doesn't always populate the legacy
+      # Dashboards listing UI. Disable the new apiserver toggle so dashboards
+      # round-trip through the classic SQL store and show in the list.
+      feature_toggles = {
+        kubernetesDashboards = false;
+        unifiedStorage = false;
+      };
+
       "auth.anonymous" = {
         enabled = false;
       };

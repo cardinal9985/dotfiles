@@ -55,4 +55,10 @@
   };
 
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 3001 ];
+
+  # Persist Grafana's sqlite DB so dashboards, users, password changes, and
+  # imported visualizations survive reboots.
+  environment.persistence."/persist".directories = [
+    { directory = "/var/lib/grafana"; user = "grafana"; group = "grafana"; mode = "0750"; }
+  ];
 }

@@ -42,4 +42,11 @@
   };
 
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 9090 ];
+
+  # Persist Prometheus's TSDB so the 30d of metrics retention actually survives
+  # reboots. Without this, every restart wipes /var/lib/prometheus2 and we
+  # start the metric history from zero.
+  environment.persistence."/persist".directories = [
+    { directory = "/var/lib/prometheus2"; user = "prometheus"; group = "prometheus"; mode = "0755"; }
+  ];
 }

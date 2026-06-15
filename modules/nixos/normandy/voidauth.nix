@@ -69,6 +69,10 @@ in
       DB_NAME=voidauth
       DB_USER=voidauth
       DB_PASSWORD=${config.sops.placeholder."voidauth/db_password"}
+      LDAP_ENABLED=true
+      LDAP_PORT=3890
+      LDAP_BIND_DN=cn=ldap_bind,dc=voidauth
+      LDAP_BIND_PASSWORD=${config.sops.placeholder."voidauth/ldap_bind_password"}
     '';
   };
 
@@ -97,7 +101,10 @@ in
       volumes = [
         "/persist/voidauth/config:/app/config"
       ];
-      ports = [ "127.0.0.1:3030:3000" ];
+      ports = [
+        "127.0.0.1:3030:3000"
+        "3890:3890"
+      ];
       extraOptions = [ "--network=pangolin" ];
     };
   };

@@ -25,6 +25,9 @@
         51820 # Pangolin / Gerbil (WireGuard, primary)
         21820 # Pangolin / Gerbil (WireGuard, secondary)
       ];
+      interfaces.tailscale0.allowedTCPPorts = [
+        3890 # voidauth LDAP (tailnet-only, jellyfin-plugin-ldap connects here)
+      ];
     };
   };
 }

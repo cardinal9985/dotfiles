@@ -91,13 +91,8 @@ let
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
               X-XSS-Protection: "0"
               Permissions-Policy: "interest-cohort=()"
-        rewrite-jellyfin-system-info:
-          replacePath:
-            path: "/jellyfin-system-info.json"
-        jellyfin-info-headers:
-          headers:
-            customResponseHeaders:
-              Content-Type: "application/json"
+        # rewrite-jellyfin-system-info + jellyfin-info-headers removed - see
+        # jellyfin-info-public-router removal note below for context.
         anubis-theme:
           plugin:
             rewriteBody:
@@ -484,22 +479,10 @@ let
             - error-pages
             - tailnet-only
             - voidauth-forwardauth
-        jellyfin-info-public-router:
-          rule: "Host(`jellyfin.${domain}`) && Path(`/System/Info/Public`)"
-          service: errors-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: porkbun
-            domains:
-              - main: "${domain}"
-                sans:
-                  - "*.${domain}"
-          priority: 50
-          middlewares:
-            - noindex-headers
-            - rewrite-jellyfin-system-info
-            - jellyfin-info-headers
+        # jellyfin-info-public-router removed - the static substitute broke JF web
+        # client startup, causing 30s page loads. The information disclosure
+        # (LocalAddress reveals tailnet IP) is accepted as a known design choice
+        # of Jellyfin's client discovery endpoint.
         jellyfin-router:
           rule: "Host(`jellyfin.${domain}`)"
           service: jellyfin-service

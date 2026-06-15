@@ -1,9 +1,41 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 
 let
   authHost = "auth.ishimura.lol";
 in
 {
+  # Voidauth has shown a tendency to wedge its event loop after hours of
+  # uptime - container stays running, postgres healthy, but API endpoint
+  # times out. The whole reverse-proxy chain breaks because forwardauth
+  # never gets a response. This watchdog probes the forwardauth endpoint
+  # every 2 minutes; if it doesn't respond within 4s, restart the container.
+  # When voidauth upstream fixes the underlying bug this whole block can go.
+  systemd.services.voidauth-watchdog = {
+    description = "Probe voidauth API; restart container if hung";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "voidauth-watchdog" ''
+        set -uo pipefail
+        code=$(${pkgs.curl}/bin/curl -s --max-time 4 \
+          -o /dev/null -w '%{http_code}' \
+          http://127.0.0.1:3030/api/authz/forward-auth || echo "000")
+        if [ "$code" = "000" ]; then
+          ${pkgs.systemd}/bin/systemctl restart podman-voidauth
+        fi
+      '';
+    };
+  };
+
+  systemd.timers.voidauth-watchdog = {
+    description = "Run voidauth watchdog every 2 minutes";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "3m";
+      OnUnitActiveSec = "2m";
+      Unit = "voidauth-watchdog.service";
+    };
+  };
+
   systemd.tmpfiles.rules = [
     "d /persist/voidauth                  0750 root root -"
     "d /persist/voidauth/config           0750 root root -"

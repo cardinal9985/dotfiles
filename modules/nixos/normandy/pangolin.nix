@@ -101,7 +101,7 @@ let
         voidauth-forwardauth:
           forwardAuth:
             address: "http://127.0.0.1:3030/api/authz/forward-auth"
-            trustForwardHeader: true
+            trustForwardHeader: false
             authResponseHeaders:
               - Remote-User
               - Remote-Name

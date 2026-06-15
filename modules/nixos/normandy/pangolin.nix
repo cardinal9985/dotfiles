@@ -83,28 +83,23 @@ let
           headers:
             customResponseHeaders:
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
-        # OLD anubis-theme middleware (rewriteBody injecting <link>) is kept
-        # commented for reference. It worked when voidauth had a permissive
-        # CSP but broke when voidauth tightened to strict-dynamic + sha256
-        # hashes - any HTML body modification invalidated the script hashes,
-        # so the Angular SPA refused to bootstrap (blank page).
+        # Inject the stylesheet only on Anubis-served pages. auth-router
+        # proxies BOTH Anubis challenge pages and voidauth's Angular SPA
+        # responses, so matching a universal HTML anchor like </head>
+        # tears up voidauth's strict-dynamic + sha256 CSP hashes and the
+        # SPA refuses to bootstrap.
         #
-        # anubis-theme:
-        #   plugin:
-        #     rewriteBody:
-        #       lastModified: true
-        #       rewrites:
-        #         - regex: '</head>'
-        #           replacement: '<link rel="stylesheet" href="/anubis-theme.css"></head>'
-        #
-        # New approach: add the stylesheet via HTTP Link header, which
-        # doesn't touch the HTML body. CSS is scoped to body#top so it
-        # only paints the Anubis challenge page; voidauth's body has no
-        # id="top" so the stylesheet loads but has no matching selectors.
+        # The anchor here, <script id="anubis_version", appears on every
+        # Anubis page (challenge AND error) and on zero voidauth pages,
+        # so this rewrite is a no-op on voidauth responses and the CSP
+        # hashes survive intact.
         anubis-theme:
-          headers:
-            customResponseHeaders:
-              Link: "</anubis-theme.css>; rel=\"stylesheet\""
+          plugin:
+            rewriteBody:
+              lastModified: true
+              rewrites:
+                - regex: '<script id="anubis_version"'
+                  replacement: '<link rel="stylesheet" href="/anubis-theme.css"><script id="anubis_version"'
         voidauth-forwardauth:
           forwardAuth:
             address: "http://127.0.0.1:3030/api/authz/forward-auth"

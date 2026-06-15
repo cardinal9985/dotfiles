@@ -1,11 +1,25 @@
-{ ... }:
+{ config, ... }:
 
 {
+  sops.secrets."anubis/ed25519_key" = {
+    owner = "anubis";
+    group = "anubis";
+    mode = "0400";
+  };
+
   services.anubis = {
     defaultOptions = {
       # Shared cookie domain so passing the challenge on auth.ishimura.lol
-      # also covers ishimura.lol (and any other future subdomain).
+      # also covers ishimura.lol (and any other future subdomain). For this
+      # to actually work, both instances must use the SAME ED25519 signing
+      # key. Without ED25519_PRIVATE_KEY_HEX_FILE each instance generates
+      # a random key at startup, making cross-instance cookies invalid
+      # and forcing the user to solve PoW per-subdomain.
       extraFlags = [ "-cookie-domain" ".ishimura.lol" ];
+
+      settings = {
+        ED25519_PRIVATE_KEY_HEX_FILE = config.sops.secrets."anubis/ed25519_key".path;
+      };
 
       policy.settings = {
         thresholds = [

@@ -91,7 +91,7 @@ in
     };
 
     voidauth = {
-      image = "docker.io/voidauth/voidauth@sha256:0e6947bfa17aed8345a070d1d960a8268fddb8af085508f8c4a21c61fe0608d5";
+      image = "docker.io/voidauth/voidauth@sha256:37f9b21bba348c08aaa326ec614db82b5575ce4bbd9dceaf0f6ea604f345ff25";
       dependsOn = [ "voidauth-db" ];
       environmentFiles = [ config.sops.templates."voidauth.env".path ];
       volumes = [

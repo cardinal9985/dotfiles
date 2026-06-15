@@ -210,6 +210,7 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+            - anubis-theme
             - error-pages
         homepage-health-jellyfin-router:
           rule: "Host(`${domain}`) && Path(`/health/jellyfin`)"

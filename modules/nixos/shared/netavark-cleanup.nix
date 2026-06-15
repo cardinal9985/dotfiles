@@ -19,7 +19,10 @@
   systemd.services.netavark-stale-flush = {
     description = "Flush stale netavark NAT chains at boot only";
     wantedBy = [ "podman.service" ];
-    before = [ "podman.service" "create-pangolin-network.service" ];
+    # create-pangolin-network.service only exists on normandy; listing
+    # it here would produce systemd warnings on the other hosts. The
+    # cleanup runs early enough via network-pre.target + before podman.
+    before = [ "podman.service" ];
     after = [ "network-pre.target" ];
 
     # Only run on boot, not on every config reload (`systemctl restart`

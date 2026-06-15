@@ -16,7 +16,7 @@ in
         "waybar"
         "swaync"
         "hyprpolkitagent"
-        "swww-daemon"
+        "awww-daemon"
         "wl-paste --type text --watch cliphist store"
         "wl-paste --type image --watch cliphist store"
         "nm-applet --indicator"

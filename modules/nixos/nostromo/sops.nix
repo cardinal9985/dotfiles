@@ -14,11 +14,13 @@
         group = "users";
         mode  = "0400";
       };
+      # Backup SSH key. Daily key lives in gpg-agent (use `ssh-add -L`).
+      # Materialized at /run/secrets/ssh/maxwell_private_key so it does
+      # NOT shadow the gpg-agent identity at ~/.ssh/id_ed25519.
       "ssh/maxwell_private_key" = {
         owner = "maxwell";
         group = "users";
         mode  = "0400";
-        path  = "/home/maxwell/.ssh/id_ed25519";
       };
     };
   };

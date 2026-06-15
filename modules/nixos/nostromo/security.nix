@@ -46,7 +46,7 @@
             --urgency=critical \
             --icon=security-medium \
             "Security Alert" \
-            "$count CVE(s) found — run 'journalctl -u vulnix-scan' for details"
+            "$count CVE(s) found - run 'journalctl -u vulnix-scan' for details"
         fi
         echo "$output"
       '';

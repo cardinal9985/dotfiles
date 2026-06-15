@@ -6,6 +6,7 @@
   environment.persistence."/persist" = {
     hideMounts = true;
     directories = [
+      "/etc/nixos"
       "/var/lib/systemd/coredump"
       "/var/lib/nixos"
       "/var/lib/tailscale"

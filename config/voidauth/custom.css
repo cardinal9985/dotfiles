@@ -57,7 +57,7 @@
   --mat-sys-inverse-surface:             var(--usg-bright-cyan);
   --mat-sys-inverse-on-surface:          var(--usg-black);
 
-  /* Fonts — push the whole UI to Courier */
+  /* Fonts - push the whole UI to Courier */
   --mat-sys-body-medium-font:    "Courier New", "Lucida Console", monospace;
   --mat-sys-body-large-font:     "Courier New", "Lucida Console", monospace;
   --mat-sys-body-small-font:     "Courier New", "Lucida Console", monospace;
@@ -105,7 +105,7 @@ app-root {
   background: transparent !important;
 }
 
-/* Stars disabled — flickered, revisit later */
+/* Stars disabled - flickered, revisit later */
 
 /* ── CRT scanline overlay ────────────────────────── */
 body::after {
@@ -234,7 +234,7 @@ ngx-spinner .ngx-spinner-overlay > div:not(.loading-text) {
   display: none !important;
 }
 
-/* "INITIALIZING SYSTEMS" header — placed where the jelly box used to be */
+/* "INITIALIZING SYSTEMS" header - placed where the jelly box used to be */
 ngx-spinner .ngx-spinner-overlay::before {
   content: "INITIALIZING SYSTEMS";
   position: absolute !important;
@@ -268,7 +268,7 @@ ngx-spinner .ngx-spinner-overlay::after {
   animation: usg-ascii-spin 0.6s steps(1) infinite !important;
 }
 
-/* The translated "Loading..." text — sits below the spinning frame */
+/* The translated "Loading..." text - sits below the spinning frame */
 ngx-spinner .loading-text {
   top: calc(50% + 3rem) !important;
 }

@@ -91,8 +91,6 @@ let
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
               X-XSS-Protection: "0"
               Permissions-Policy: "interest-cohort=()"
-        # rewrite-jellyfin-system-info + jellyfin-info-headers removed - see
-        # jellyfin-info-public-router removal note below for context.
         anubis-theme:
           plugin:
             rewriteBody:
@@ -479,10 +477,6 @@ let
             - error-pages
             - tailnet-only
             - voidauth-forwardauth
-        # jellyfin-info-public-router removed - the static substitute broke JF web
-        # client startup, causing 30s page loads. The information disclosure
-        # (LocalAddress reveals tailnet IP) is accepted as a known design choice
-        # of Jellyfin's client discovery endpoint.
         jellyfin-router:
           rule: "Host(`jellyfin.${domain}`)"
           service: jellyfin-service
@@ -668,8 +662,6 @@ in
         /persist/pangolin/errors/404.html
       install -m 0644 ${../../../config/pangolin/approval_required.html} \
         /persist/pangolin/errors/approval_required.html
-      install -m 0644 ${../../../config/pangolin/jellyfin-system-info.json} \
-        /persist/pangolin/errors/jellyfin-system-info.json
       install -m 0644 ${../../../config/pangolin/robots.txt} \
         /persist/pangolin/errors/robots.txt
       install -m 0644 ${../../../config/pangolin/anubis-theme.css} \

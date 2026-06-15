@@ -16,7 +16,7 @@
   --usg-bright-red: #f0708a;
 }
 
-/* Body styles — scoped to body#top, which only exists on Anubis pages. */
+/* Body styles - scoped to body#top, which only exists on Anubis pages. */
 body#top {
   background: var(--usg-black) !important;
   color: var(--usg-white) !important;
@@ -48,7 +48,7 @@ html {
 /* Sledgehammer: fixed-position backdrop behind everything. If any browser
  * fails to paint html/body backgrounds correctly (Zen-Firefox edge cases,
  * iframe contexts, split-view modes), this catches it. z-index: -1000 keeps
- * it below all real content. Safe on voidauth too — its UI sits above this.
+ * it below all real content. Safe on voidauth too - its UI sits above this.
  */
 html::after {
   content: "" !important;
@@ -193,7 +193,7 @@ body#top footer p {
   margin: 0.3rem 0 !important;
 }
 
-/* Hide "Mascot design by CELPHASE" — the second <p> in the footer.
+/* Hide "Mascot design by CELPHASE" - the second <p> in the footer.
  * The mascot itself was removed via #image { display: none }, so the
  * credit no longer makes sense.
  */

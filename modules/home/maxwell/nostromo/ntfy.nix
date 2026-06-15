@@ -18,7 +18,7 @@
 
   systemd.user.services.ntfy-bridge = {
     Unit = {
-      Description = "ntfy → swaync notification bridge";
+      Description = "ntfy -> swaync notification bridge";
       After = [ "network-online.target" "graphical-session.target" ];
       Wants = [ "graphical-session.target" ];
     };

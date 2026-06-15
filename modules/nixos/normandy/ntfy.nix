@@ -131,7 +131,36 @@ Approve at https://auth.ishimura.lol/admin/" \
     ${pkgs.coreutils}/bin/install -m 0644 "$new_state" ${voidauthStateFile}
   '';
 
-  # ── Producer 4: OnFailure alerts for critical services on Normandy ──────
+  # ── Producer 4: endlessh attempt digest ─────────────────────────────────
+  # endlessh-go logs each accepted SSH connection. Public-IP normandy gets
+  # tarpitted by scanners constantly; per-event ntfy would be noise. Post
+  # an hourly digest with attempt count + unique source IPs.
+  endlesshDigestScript = pkgs.writeShellScript "endlessh-ntfy-digest" ''
+    set -euo pipefail
+
+    # Last hour of endlessh accepted-connection entries.
+    entries=$(${pkgs.systemd}/bin/journalctl -u endlessh-go.service \
+      --since "1 hour ago" --no-pager 2>/dev/null \
+      | ${pkgs.gnugrep}/bin/grep -oE 'ACCEPT host=[0-9.]+' || true)
+
+    [ -z "$entries" ] && exit 0
+
+    total=$(echo "$entries" | ${pkgs.coreutils}/bin/wc -l)
+    unique=$(echo "$entries" | ${pkgs.coreutils}/bin/sort -u | ${pkgs.coreutils}/bin/wc -l)
+    top_ips=$(echo "$entries" | ${pkgs.gnugrep}/bin/grep -oE '[0-9.]+$' \
+      | ${pkgs.coreutils}/bin/sort | ${pkgs.coreutils}/bin/uniq -c \
+      | ${pkgs.coreutils}/bin/sort -rn | ${pkgs.coreutils}/bin/head -5 \
+      | ${pkgs.gawk}/bin/awk '{printf "  %s (%dx)\n", $2, $1}')
+
+    ${pkgs.curl}/bin/curl -s \
+      -H "X-Title: SSH honeypot: $total attempts ($unique unique IPs)" \
+      -H "X-Tags: hook,spider_web" \
+      -d "Top sources:
+$top_ips" \
+      http://localhost:8080/honeypot >/dev/null || true
+  '';
+
+  # ── Producer 5: OnFailure alerts for critical services on Normandy ──────
   critical = [
     "podman-pangolin"
     "podman-traefik"
@@ -171,12 +200,13 @@ in
 
   # ── CrowdSec poller (Producer 1) ────────────────────────────────────────
   systemd.timers.crowdsec-ntfy = {
-    description = "Periodic CrowdSec ban → ntfy poll";
+    description = "Periodic CrowdSec ban -> ntfy poll";
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "1m";
       OnUnitActiveSec = "30s";
       AccuracySec = "5s";
+      Unit = "crowdsec-ntfy.service";
     };
   };
 
@@ -197,6 +227,16 @@ in
       OnBootSec = "2m";
       OnUnitActiveSec = "5m";
       Unit = "voidauth-ntfy.service";
+    };
+  };
+
+  systemd.timers.endlessh-ntfy-digest = {
+    description = "Hourly endlessh attempt digest";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "15m";
+      OnUnitActiveSec = "1h";
+      Unit = "endlessh-ntfy-digest.service";
     };
   };
 
@@ -224,6 +264,14 @@ in
         serviceConfig = {
           Type = "oneshot";
           ExecStart = voidauthPollScript;
+        };
+      };
+      endlessh-ntfy-digest = {
+        description = "Hourly endlessh attempt digest -> ntfy";
+        after = [ "endlessh-go.service" "ntfy-sh.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = endlesshDigestScript;
         };
       };
     }

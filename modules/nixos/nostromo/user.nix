@@ -1,8 +1,6 @@
 { config, pkgs, ... }:
 
 {
-  security.sudo.wheelNeedsPassword = true;
-
   programs.zsh.enable = true;
 
   users = {

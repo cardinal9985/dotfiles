@@ -6,14 +6,10 @@
   # transcoding via the dGPU.
   hardware.nvidia-container-toolkit.enable = true;
 
-  systemd.tmpfiles.rules = [
-    "d /persist/tdarr-node          0755 maxwell users -"
-    "d /persist/tdarr-node/configs  0755 maxwell users -"
-    "d /persist/tdarr-node/logs     0755 maxwell users -"
-  ];
-
   environment.persistence."/persist".directories = [
-    { directory = "/persist/tdarr-node"; user = "maxwell"; group = "users"; mode = "0755"; }
+    { directory = "/persist/tdarr-node";         user = "maxwell"; group = "users"; mode = "0755"; }
+    { directory = "/persist/tdarr-node/configs"; user = "maxwell"; group = "users"; mode = "0755"; }
+    { directory = "/persist/tdarr-node/logs";    user = "maxwell"; group = "users"; mode = "0755"; }
   ];
 
   virtualisation.oci-containers.containers.tdarr-node = {

@@ -39,7 +39,7 @@
   myModules.home.rocksmith = {
     enable = true;
 
-    # latencyBuffer: 1–4, lower = less latency. Start at 2; drop to 1 if stable.
+    # latencyBuffer: 1-4, lower = less latency. Start at 2; drop to 1 if stable.
     latencyBuffer = 2;
 
     # Must match default.clock.quantum / default.clock.rate in audio.nix

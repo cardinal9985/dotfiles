@@ -146,7 +146,7 @@ function initStarfield() {
   }
 }
 
-/* Constellation data: positions normalized 0–1, mag = star magnitude (lower = brighter). */
+/* Constellation data: positions normalized 0-1, mag = star magnitude (lower = brighter). */
 var CONSTELLATIONS = [
   {
     name: 'Orion',
@@ -415,7 +415,7 @@ function scheduleConstellation() {
   setTimeout(function () {
     if (!activeConstellation) spawnConstellation();
     scheduleConstellation();
-  }, 8000 + Math.random() * 6000);  /* 8–14s between */
+  }, 8000 + Math.random() * 6000);  /* 8-14s between */
 }
 scheduleConstellation();
 

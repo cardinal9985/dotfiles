@@ -35,6 +35,11 @@
         labels.type = "syslog";
       }
       {
+        source = "journalctl";
+        journalctl_filter = [ "_SYSTEMD_UNIT=endlessh-go.service" ];
+        labels.type = "syslog";
+      }
+      {
         filenames = [ "/persist/pangolin/config/traefik/logs/access.log" ];
         labels.type = "traefik";
       }

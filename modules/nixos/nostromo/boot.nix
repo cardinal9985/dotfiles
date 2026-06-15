@@ -2,6 +2,7 @@
 
 {
   boot = {
+    # Note: audio.nix appends usbcore.autosuspend=-1 + threadirqs.
     kernelParams = [
       "iommu=pt"
       "amd_iommu=on" # AMD Page Fault Fix
@@ -35,7 +36,7 @@
       systemd = {
         enable = true;
         # Allow root access in initrd emergency shell for debugging
-        # Safe to leave enabled — only accessible if boot fails
+        # Safe to leave enabled - only accessible if boot fails
         emergencyAccess = true;
         services.rollback = {
           description = "Rollback BTRFS root subvolume to blank snapshot";

@@ -18,5 +18,6 @@
     jq
     mtr
     mediainfo
+    sqlite
   ];
 }

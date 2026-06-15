@@ -81,16 +81,8 @@ let
             query: /{status}.html
         noindex-headers:
           headers:
-            stsSeconds: 31536000
-            stsIncludeSubdomains: true
-            stsPreload: false
-            contentTypeNosniff: true
-            customFrameOptionsValue: "SAMEORIGIN"
-            referrerPolicy: "no-referrer"
             customResponseHeaders:
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
-              X-XSS-Protection: "0"
-              Permissions-Policy: "interest-cohort=()"
         anubis-theme:
           plugin:
             rewriteBody:
@@ -101,7 +93,7 @@ let
         voidauth-forwardauth:
           forwardAuth:
             address: "http://127.0.0.1:3030/api/authz/forward-auth"
-            trustForwardHeader: false
+            trustForwardHeader: true
             authResponseHeaders:
               - Remote-User
               - Remote-Name
@@ -356,7 +348,6 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-            - voidauth-forwardauth
             - anubis-theme
         homepage-router:
           rule: "Host(`${domain}`)"
@@ -391,7 +382,6 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-            - voidauth-forwardauth
         tdarr-router:
           rule: "Host(`tdarr.${domain}`)"
           service: tdarr-service
@@ -408,7 +398,6 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-            - voidauth-forwardauth
         ntfy-router:
           rule: "Host(`ntfy.${domain}`)"
           service: ntfy-service
@@ -425,7 +414,6 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-            - voidauth-forwardauth
         adguard-router:
           rule: "Host(`adguard.${domain}`)"
           service: adguard-service
@@ -442,7 +430,6 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-            - voidauth-forwardauth
         grafana-router:
           rule: "Host(`grafana.${domain}`)"
           service: grafana-service
@@ -459,7 +446,6 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-            - voidauth-forwardauth
         prometheus-router:
           rule: "Host(`prometheus.${domain}`)"
           service: prometheus-service
@@ -476,7 +462,6 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-            - voidauth-forwardauth
         jellyfin-router:
           rule: "Host(`jellyfin.${domain}`)"
           service: jellyfin-service

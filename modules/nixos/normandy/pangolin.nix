@@ -347,7 +347,6 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-            - anubis-theme
         homepage-router:
           rule: "Host(`${domain}`)"
           service: homepage-service
@@ -363,7 +362,6 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
-            - anubis-theme
             - error-pages
         scrutiny-router:
           rule: "Host(`scrutiny.${domain}`)"
@@ -510,7 +508,7 @@ let
         homepage-service:
           loadBalancer:
             servers:
-              - url: "http://127.0.0.1:8925"
+              - url: "http://127.0.0.1:8086"
         ishimura-jellyfin-health-service:
           loadBalancer:
             servers:

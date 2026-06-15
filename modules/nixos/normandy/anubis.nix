@@ -72,17 +72,9 @@
       };
     };
 
-    instances.homepage = {
-      settings = {
-        BIND = "127.0.0.1:8925";
-        BIND_NETWORK = "tcp";
-        METRICS_BIND = "127.0.0.1:8926";
-        METRICS_BIND_NETWORK = "tcp";
-        TARGET = "http://127.0.0.1:8086";  # static homepage container
-        SERVE_ROBOTS_TXT = false;
-        OG_PASSTHROUGH = true;
-        WEBMASTER_EMAIL = "fanatical.despise915@simplelogin.com";
-      };
-    };
+    # anubis-homepage instance removed - redundant with voidauth-forwardauth
+    # which already gates anonymous bots from reaching the homepage. Anyone
+    # who reaches the homepage container has already authenticated via
+    # voidauth (which itself is behind anubis-public PoW).
   };
 }

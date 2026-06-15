@@ -171,7 +171,6 @@ $top_ips" \
     "podman-homepage"
     "podman-errorpages"
     "anubis-public"
-    "anubis-homepage"
     "crowdsec"
     "crowdsec-ntfy"
   ];

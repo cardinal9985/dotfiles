@@ -83,13 +83,28 @@ let
           headers:
             customResponseHeaders:
               X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
+        # OLD anubis-theme middleware (rewriteBody injecting <link>) is kept
+        # commented for reference. It worked when voidauth had a permissive
+        # CSP but broke when voidauth tightened to strict-dynamic + sha256
+        # hashes - any HTML body modification invalidated the script hashes,
+        # so the Angular SPA refused to bootstrap (blank page).
+        #
+        # anubis-theme:
+        #   plugin:
+        #     rewriteBody:
+        #       lastModified: true
+        #       rewrites:
+        #         - regex: '</head>'
+        #           replacement: '<link rel="stylesheet" href="/anubis-theme.css"></head>'
+        #
+        # New approach: add the stylesheet via HTTP Link header, which
+        # doesn't touch the HTML body. CSS is scoped to body#top so it
+        # only paints the Anubis challenge page; voidauth's body has no
+        # id="top" so the stylesheet loads but has no matching selectors.
         anubis-theme:
-          plugin:
-            rewriteBody:
-              lastModified: true
-              rewrites:
-                - regex: '</head>'
-                  replacement: '<link rel="stylesheet" href="/anubis-theme.css"></head>'
+          headers:
+            customResponseHeaders:
+              Link: "</anubis-theme.css>; rel=\"stylesheet\""
         voidauth-forwardauth:
           forwardAuth:
             address: "http://127.0.0.1:3030/api/authz/forward-auth"
@@ -210,6 +225,7 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+            - anubis-theme
             - error-pages
         homepage-health-jellyfin-router:
           rule: "Host(`${domain}`) && Path(`/health/jellyfin`)"

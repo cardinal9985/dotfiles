@@ -107,26 +107,27 @@ header {
   text-shadow: 0 0 10px rgba(110, 200, 230, 0.5);
 }
 
-/* ── ASCII art ── */
+/* ── ASCII art (SVG-based, font-independent so LG TVs render it cleanly) ── */
 @keyframes shadow-pulse {
-  0%, 100% { text-shadow: 0 0 8px rgba(110, 200, 230, 0.4); }
-  50%       { text-shadow: 0 0 12px rgba(167, 139, 250, 0.4); }
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(110, 200, 230, 0.4)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.4)); }
 }
 
 @keyframes glitch {
-  0%   { transform: translate(-2px,  1px); filter: hue-rotate(90deg); }
-  25%  { transform: translate( 2px, -1px); filter: hue-rotate(180deg); }
-  50%  { transform: translate(-1px, -2px); filter: hue-rotate(270deg); }
-  75%  { transform: translate( 1px,  2px); filter: hue-rotate(45deg); }
-  100% { transform: translate( 0,    0);   filter: hue-rotate(0deg); }
+  0%   { transform: perspective(800px) rotateY(-4deg) skewX(-4deg) translate(-2px,  1px); }
+  25%  { transform: perspective(800px) rotateY(-4deg) skewX(-4deg) translate( 2px, -1px); }
+  50%  { transform: perspective(800px) rotateY(-4deg) skewX(-4deg) translate(-1px, -2px); }
+  75%  { transform: perspective(800px) rotateY(-4deg) skewX(-4deg) translate( 1px,  2px); }
+  100% { transform: perspective(800px) rotateY(-4deg) skewX(-4deg) translate( 0,    0); }
 }
 
 .ascii-art {
-  color: var(--bright-cyan);
-  font-size: clamp(0.35rem, 1.4vw, 0.85rem);
-  line-height: 1.15;
-  white-space: pre;
-  display: table;
+  --ascii-color: var(--bright-cyan);
+  width: min(100%, 700px);
+  aspect-ratio: 701 / 188;
+  background-color: var(--ascii-color);
+  -webkit-mask: url('/ishimura.svg') no-repeat center / contain;
+  mask: url('/ishimura.svg') no-repeat center / contain;
   margin: 0 auto 0.5rem;
   animation: shadow-pulse 4s ease-in-out infinite;
   user-select: none;
@@ -244,12 +245,12 @@ header {
 
 /* ── Admin page theme overrides ── */
 @keyframes shadow-pulse-red {
-  0%, 100% { text-shadow: 0 0 8px rgba(240, 112, 138, 0.4); }
-  50%       { text-shadow: 0 0 12px rgba(167, 139, 250, 0.4); }
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(240, 112, 138, 0.4)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.4)); }
 }
 
 body.admin .ascii-art {
-  color: var(--bright-red);
+  --ascii-color: var(--bright-red);
   animation-name: shadow-pulse-red;
 }
 

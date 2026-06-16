@@ -4,10 +4,13 @@ let
   pelicanHost = "pelican.ishimura.lol";
 in
 {
+  # Pelican container runs as www-data (UID/GID 33 in the standard PHP base
+   # image). Bind-mounted volumes need that ownership or the entrypoint can't
+   # write .env / logs / database files.
   systemd.tmpfiles.rules = [
-    "d /persist/pelican       0755 root root -"
-    "d /persist/pelican/data  0755 root root -"
-    "d /persist/pelican/logs  0755 root root -"
+    "d /persist/pelican       0755 33 33 -"
+    "d /persist/pelican/data  0755 33 33 -"
+    "d /persist/pelican/logs  0755 33 33 -"
   ];
 
   # AdGuard Home holds udp/53 on every interface including podman's default
@@ -42,7 +45,7 @@ in
       APP_TIMEZONE=UTC
       ADMIN_EMAIL=fanatical.despise915@simplelogin.com
       XDG_DATA_HOME=/pelican-data
-      TRUSTED_PROXIES=*
+      BEHIND_PROXY=true
     '';
   };
 

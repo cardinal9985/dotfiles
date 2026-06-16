@@ -4,13 +4,14 @@ let
   pelicanHost = "pelican.ishimura.lol";
 in
 {
-  # Pelican container runs as www-data (UID/GID 33 in the standard PHP base
-   # image). Bind-mounted volumes need that ownership or the entrypoint can't
-   # write .env / logs / database files.
+  # Pelican container runs as www-data, UID/GID 82 in its custom Alpine-based
+  # PHP base image (Alpine convention, NOT the Debian 33). Bind-mounted
+  # volumes need that ownership or the entrypoint can't write .env, logs,
+  # or the SQLite database file.
   systemd.tmpfiles.rules = [
-    "d /persist/pelican       0755 33 33 -"
-    "d /persist/pelican/data  0755 33 33 -"
-    "d /persist/pelican/logs  0755 33 33 -"
+    "d /persist/pelican       0755 82 82 -"
+    "d /persist/pelican/data  0755 82 82 -"
+    "d /persist/pelican/logs  0755 82 82 -"
   ];
 
   # AdGuard Home holds udp/53 on every interface including podman's default

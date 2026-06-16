@@ -97,7 +97,6 @@ let
     cp ${src}/style.css        $out/style.css
     cp ${src}/app.js           $out/app.js
     cp ${src}/404.html         $out/404.html
-    cp ${src}/ishimura.svg     $out/ishimura.svg
     cp ${servicesJson}         $out/services.json
     cp ${src}/admin/index.html $out/admin/index.html
     cp ${adminServicesJson}    $out/admin/services.json

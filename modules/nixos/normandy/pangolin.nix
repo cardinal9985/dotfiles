@@ -210,8 +210,8 @@ let
           priority: 100
           middlewares:
             - noindex-headers
-        ishimura-banner-svg-router:
-          rule: "HostRegexp(`^.+\\.${domain}$`) && Path(`/ishimura-banner.svg`)"
+        ishimura-banner-png-router:
+          rule: "HostRegexp(`^.+\\.${domain}$`) && Path(`/ishimura-banner.png`)"
           service: errors-service
           entryPoints:
             - websecure
@@ -673,8 +673,8 @@ in
         /persist/pangolin/errors/robots.txt
       install -m 0644 ${../../../config/pangolin/anubis-theme.css} \
         /persist/pangolin/errors/anubis-theme.css
-      install -m 0644 ${../../../config/pangolin/ishimura-banner.svg} \
-        /persist/pangolin/errors/ishimura-banner.svg
+      install -m 0644 ${../../../config/pangolin/ishimura-banner.png} \
+        /persist/pangolin/errors/ishimura-banner.png
       ${pkgs.gnused}/bin/sed \
         "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
         ${traefikDynamicConfig} \

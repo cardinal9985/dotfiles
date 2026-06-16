@@ -58,7 +58,13 @@ in
       "/persist/pelican/logs:/var/www/html/storage/logs"
     ];
     ports = [ "0.0.0.0:8801:80" ];
-    extraOptions = [ "--network=pelican-net" ];
+    extraOptions = [
+      "--network=pelican-net"
+      # Caddy inside runs as www-data (UID 82) and tries to bind :80; podman
+      # drops privileged-port capability by default, so the bind fails. Add
+      # the capability back so non-root processes can listen on port 80.
+      "--cap-add=NET_BIND_SERVICE"
+    ];
   };
 
   systemd.services.podman-pelican.after = [ "create-pelican-network.service" ];

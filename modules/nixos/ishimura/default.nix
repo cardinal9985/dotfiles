@@ -11,6 +11,7 @@
     ./prometheus.nix
     ./impermanence.nix
     ./jellyfin.nix
+    ./pelican.nix
     ./network.nix
     ./nfs.nix
     ./newt.nix

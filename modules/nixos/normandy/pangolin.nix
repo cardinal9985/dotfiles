@@ -498,6 +498,20 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+        pelican-router:
+          rule: "Host(`pelican.${domain}`)"
+          service: pelican-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
@@ -542,6 +556,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:8096"
+        pelican-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8801"
         scrutiny-service:
           loadBalancer:
             servers:

@@ -210,6 +210,20 @@ let
           priority: 100
           middlewares:
             - noindex-headers
+        ishimura-banner-svg-router:
+          rule: "HostRegexp(`^.+\\.${domain}$`) && Path(`/ishimura-banner.svg`)"
+          service: errors-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 100
+          middlewares:
+            - noindex-headers
         auth-router:
           rule: "Host(`auth.${domain}`)"
           service: auth-service
@@ -659,6 +673,8 @@ in
         /persist/pangolin/errors/robots.txt
       install -m 0644 ${../../../config/pangolin/anubis-theme.css} \
         /persist/pangolin/errors/anubis-theme.css
+      install -m 0644 ${../../../config/pangolin/ishimura-banner.svg} \
+        /persist/pangolin/errors/ishimura-banner.svg
       ${pkgs.gnused}/bin/sed \
         "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
         ${traefikDynamicConfig} \

@@ -177,6 +177,13 @@ let
       -H "Accept: application/json" \
       "$url" || echo "{}")
 
+    # Sanity check the response is JSON, otherwise emit empty list. Some
+    # error responses are plain-text "Unauthorized" which would crash jq
+    # with exit 5, taking the whole systemd service down.
+    if ! echo "$response" | jq -e . >/dev/null 2>&1; then
+      response='{"data":[]}'
+    fi
+
     echo "$response" | jq -c '.data[]? | .attributes // empty' 2>/dev/null | while read -r srv; do
       name=$(echo "$srv" | jq -r '.name // empty')
       identifier=$(echo "$srv" | jq -r '.identifier // empty')
@@ -189,7 +196,10 @@ let
           -H "Authorization: Bearer $API_KEY" \
           -H "Accept: application/json" \
           "https://pelican.ishimura.lol/api/client/servers/$identifier/resources" || echo "{}")
-        status=$(echo "$resources" | jq -r '.attributes.current_state // "unknown"')
+        if ! echo "$resources" | jq -e . >/dev/null 2>&1; then
+          resources='{}'
+        fi
+        status=$(echo "$resources" | jq -r '.attributes.current_state // "unknown"' 2>/dev/null || echo "unknown")
       fi
       [ -z "$name" ] && continue
 

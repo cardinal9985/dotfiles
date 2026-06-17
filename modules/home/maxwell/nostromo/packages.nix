@@ -19,6 +19,7 @@
     tree            # File/Directory Tree
     lazyjournal     # Log Viewer
     compose2nix     # Convert Docker Compose Files
+    libnotify       # notify-send CLI for D-Bus notifications
     tailscale       # Zero-Trust Network Overlay
     android-tools   # ADB
     nfs-utils       # NFS Tools

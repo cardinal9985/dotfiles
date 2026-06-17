@@ -123,6 +123,77 @@ fetch('services.json')
       '<div style="color:var(--yellow);font-size:0.8rem;opacity:0.7">[SERVICE MANIFEST UNAVAILABLE]</div>';
   });
 
+/* ── Game servers ── */
+function renderGames(games) {
+  var list = document.getElementById('game-list');
+  if (!list) return;
+  list.innerHTML = '';
+  games.forEach(function (g) {
+    var d = document.createElement('details');
+    d.className = 'game-card';
+
+    var summary = document.createElement('summary');
+    summary.innerHTML =
+      '<span class="game-icon">' + (g.icon || '▣') + '</span>' +
+      '<div class="game-summary-text">' +
+        '<span class="game-name">' + g.name + '</span>' +
+        '<span class="game-desc">' + (g.description || '') + '</span>' +
+      '</div>' +
+      '<span class="game-version">' + (g.version || '') + '</span>' +
+      '<span class="game-expand">[+]</span>';
+    d.appendChild(summary);
+
+    var body = document.createElement('div');
+    body.className = 'game-body';
+
+    var addr = document.createElement('div');
+    addr.className = 'game-address';
+    addr.innerHTML =
+      '<span class="game-address-label">CONNECT</span>' +
+      '<span class="game-address-value">' + g.address + '</span>' +
+      '<button class="game-copy" type="button">COPY</button>';
+    addr.querySelector('.game-copy').addEventListener('click', function (e) {
+      e.preventDefault();
+      navigator.clipboard.writeText(g.address).then(function () {
+        var btn = e.target;
+        var prev = btn.textContent;
+        btn.textContent = 'COPIED';
+        setTimeout(function () { btn.textContent = prev; }, 1200);
+      });
+    });
+    body.appendChild(addr);
+
+    if (g.howTo && g.howTo.length) {
+      var howto = document.createElement('div');
+      howto.className = 'game-howto';
+      howto.innerHTML = '<div class="game-howto-title">> HOW TO CONNECT</div>';
+      var ol = document.createElement('ol');
+      g.howTo.forEach(function (step) {
+        var li = document.createElement('li');
+        li.textContent = step;
+        ol.appendChild(li);
+      });
+      howto.appendChild(ol);
+      body.appendChild(howto);
+    }
+
+    d.appendChild(body);
+    d.addEventListener('toggle', function () {
+      summary.querySelector('.game-expand').textContent = d.open ? '[-]' : '[+]';
+    });
+    list.appendChild(d);
+  });
+}
+
+fetch('games.json')
+  .then(function (r) { return r.json(); })
+  .then(renderGames)
+  .catch(function () {
+    var list = document.getElementById('game-list');
+    if (list) list.innerHTML =
+      '<div style="color:var(--yellow);font-size:0.8rem;opacity:0.7">[GAME MANIFEST UNAVAILABLE]</div>';
+  });
+
 /* ── Canvas: stars + shooting stars + constellations ── */
 var starCanvas = document.getElementById('star-canvas');
 var sCtx = starCanvas.getContext('2d');

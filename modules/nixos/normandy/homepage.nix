@@ -55,6 +55,14 @@ let
       icon        = "⬡";
     }
     {
+      name        = "Pelican";
+      description = "Game Servers";
+      url         = "https://pelican.ishimura.lol";
+      icon        = "◆";
+      statusPath  = "/health/pelican";
+      healthUrl   = "http://${ishimuraTailnetIP}:8801/up";
+    }
+    {
       name        = "VoidAuth";
       description = "Auth Provider";
       url         = "https://auth.ishimura.lol";
@@ -88,8 +96,29 @@ let
     }
   ];
 
+  # Game servers advertised on the public homepage so friends can find the
+  # connection address + a short how-to. Each card expands inline. Add new
+  # games here as Pelican servers come online.
+  games = [
+    {
+      name        = "Vintage Story";
+      description = "Modded survival sandbox";
+      address     = "ishimura.lol:42420";
+      version     = "1.22.3 (Stable)";
+      icon        = "▣";
+      howTo = [
+        "Open Vintage Story and log in with your account"
+        "Click 'Multiplayer'"
+        "Click 'Server connect'"
+        "Paste 'ishimura.lol:42420' into the address field"
+        "Whitelist is on - ping Maxwell with your playername to be added"
+      ];
+    }
+  ];
+
   servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);
   adminServicesJson = pkgs.writeText "admin-services.json" (builtins.toJSON adminServices);
+  gamesJson         = pkgs.writeText "games.json"          (builtins.toJSON games);
 
   homepage = pkgs.runCommand "ishimura-homepage" {} ''
     mkdir -p $out $out/admin
@@ -98,6 +127,7 @@ let
     cp ${src}/app.js           $out/app.js
     cp ${src}/404.html         $out/404.html
     cp ${servicesJson}         $out/services.json
+    cp ${gamesJson}            $out/games.json
     cp ${src}/admin/index.html $out/admin/index.html
     cp ${adminServicesJson}    $out/admin/services.json
   '';

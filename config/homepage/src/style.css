@@ -242,6 +242,159 @@ header {
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
+/* ── Game servers ── */
+.games-section { margin-bottom: 2rem; }
+
+.game-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.game-card {
+  border: 1px solid var(--cyan);
+  background: var(--surface);
+  font-size: 0.9rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.game-card[open] {
+  border-color: var(--bright-cyan);
+  box-shadow: 0 0 12px rgba(110, 200, 230, 0.2);
+}
+
+.game-card > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--bright-cyan);
+  text-shadow: 0 0 6px rgba(110, 200, 230, 0.3);
+  transition: background 0.15s;
+}
+
+.game-card > summary::-webkit-details-marker { display: none; }
+
+.game-card > summary:hover {
+  background: rgba(58, 159, 191, 0.08);
+}
+
+.game-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.game-summary-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.game-name {
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+.game-desc {
+  color: var(--white);
+  font-size: 0.75rem;
+  opacity: 0.7;
+  text-shadow: none;
+}
+
+.game-version {
+  color: var(--yellow);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  text-shadow: 0 0 4px rgba(184, 144, 64, 0.3);
+}
+
+.game-expand {
+  color: var(--cyan);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  width: 2rem;
+  text-align: right;
+}
+
+.game-body {
+  border-top: 1px dashed rgba(110, 200, 230, 0.4);
+  padding: 1rem 1.2rem;
+  background: rgba(14, 19, 32, 0.6);
+}
+
+.game-address {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.game-address-label {
+  color: var(--bright-yellow);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 4px rgba(251, 191, 96, 0.3);
+}
+
+.game-address-value {
+  color: var(--bright-white);
+  font-family: "Courier New", monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.6rem;
+  background: var(--surface-light);
+  border: 1px solid var(--cyan);
+  flex: 1;
+  min-width: 0;
+}
+
+.game-copy {
+  background: transparent;
+  color: var(--bright-cyan);
+  border: 1px solid var(--cyan);
+  font-family: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  text-shadow: 0 0 4px rgba(110, 200, 230, 0.3);
+  transition: all 0.15s;
+}
+
+.game-copy:hover {
+  background: var(--cyan);
+  color: var(--black);
+  text-shadow: none;
+}
+
+.game-howto-title {
+  color: var(--bright-cyan);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.6rem;
+  text-shadow: 0 0 4px rgba(110, 200, 230, 0.3);
+}
+
+.game-howto ol {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--white);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.game-howto li {
+  margin-bottom: 0.25rem;
+}
+
 /* ── Admin page theme overrides ── */
 @keyframes shadow-pulse-red {
   0%, 100% { text-shadow: 0 0 8px rgba(240, 112, 138, 0.4); }

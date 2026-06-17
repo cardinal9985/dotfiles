@@ -133,6 +133,9 @@ let
         rewrite-prometheus-health:
           replacePath:
             path: "/-/healthy"
+        rewrite-pelican-health:
+          replacePath:
+            path: "/up"
         rewrite-approval-required:
           replacePath:
             path: "/approval_required.html"
@@ -341,6 +344,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-grafana-health
+        homepage-health-pelican-router:
+          rule: "Host(`${domain}`) && Path(`/health/pelican`)"
+          service: pelican-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-pelican-health
         homepage-health-prometheus-router:
           rule: "Host(`${domain}`) && Path(`/health/prometheus`)"
           service: prometheus-service

@@ -640,6 +640,11 @@ let
             certResolver: letsencrypt
           middlewares:
             - crowdsec@file
+      # Raw UDP entrypoints for game-server traffic. Pangolin's "raw resource"
+      # admin UI pushes a matching TCP/UDP router via the HTTP provider once
+      # the resource is defined. Naming convention is protocol-port.
+      udp-42420:
+        address: ":42420/udp"
     certificatesResolvers:
       letsencrypt:
         acme:

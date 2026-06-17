@@ -512,6 +512,20 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+        wings-router:
+          rule: "Host(`wings.${domain}`)"
+          service: wings-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
@@ -560,6 +574,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:8801"
+        wings-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.107.103.76:8080"
         scrutiny-service:
           loadBalancer:
             servers:

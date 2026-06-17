@@ -124,6 +124,28 @@ fetch('services.json')
   });
 
 /* ── Game servers ── */
+function setGameStatus(spanEl, status) {
+  var s = (status || 'unknown').toLowerCase();
+  spanEl.className = 'game-status game-status-' + s;
+  spanEl.innerHTML = '<span class="game-status-dot"></span>' + s.toUpperCase();
+}
+
+async function fetchGameStatus(slug) {
+  if (!slug) return 'unknown';
+  try {
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 4000);
+    var res = await fetch('games-status/' + slug + '.json',
+      { cache: 'no-store', signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return 'unknown';
+    var j = await res.json();
+    return j.status || 'unknown';
+  } catch (_) {
+    return 'unknown';
+  }
+}
+
 function renderGames(games) {
   var list = document.getElementById('game-list');
   if (!list) return;
@@ -131,9 +153,6 @@ function renderGames(games) {
   games.forEach(function (g) {
     var d = document.createElement('details');
     d.className = 'game-card';
-
-    var status = (g.status || 'unknown').toLowerCase();
-    var statusLabel = status.toUpperCase();
 
     var summary = document.createElement('summary');
     summary.innerHTML =
@@ -143,11 +162,18 @@ function renderGames(games) {
         '<span class="game-desc">' + (g.description || '') + '</span>' +
       '</div>' +
       '<span class="game-version">' + (g.version || '') + '</span>' +
-      '<span class="game-status game-status-' + status + '">' +
-        '<span class="game-status-dot"></span>' + statusLabel +
+      '<span class="game-status game-status-unknown">' +
+        '<span class="game-status-dot"></span>UNKNOWN' +
       '</span>' +
       '<span class="game-expand">[+]</span>';
     d.appendChild(summary);
+
+    // Live status from the normandy poller (writes games-status/<slug>.json).
+    var statusEl = summary.querySelector('.game-status');
+    fetchGameStatus(g.slug).then(function (st) { setGameStatus(statusEl, st); });
+    setInterval(function () {
+      fetchGameStatus(g.slug).then(function (st) { setGameStatus(statusEl, st); });
+    }, 30000);
 
     var body = document.createElement('div');
     body.className = 'game-body';

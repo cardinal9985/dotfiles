@@ -101,12 +101,12 @@ let
   # games here as Pelican servers come online.
   games = [
     {
-      name        = "Vintage Story";
-      description = "Wilderness survival sandbox in a ruined fantasy world";
-      address     = "ishimura.lol:42420";
-      version     = "1.22.3 (Stable)";
-      icon        = "▣";
-      status      = "online";  # flip to "offline" or "maintenance" as needed
+      name              = "Vintage Story";
+      slug              = "vintage-story";  # matches Pelican server name (lowercased, hyphens for spaces)
+      description       = "Wilderness survival sandbox in a ruined fantasy world";
+      address           = "ishimura.lol:42420";
+      version           = "1.22.3 (Stable)";
+      icon              = "▣";
       howTo = [
         "Open Vintage Story and log in with your account"
         "Click 'Multiplayer'"
@@ -122,7 +122,7 @@ let
   gamesJson         = pkgs.writeText "games.json"          (builtins.toJSON games);
 
   homepage = pkgs.runCommand "ishimura-homepage" {} ''
-    mkdir -p $out $out/admin
+    mkdir -p $out $out/admin $out/games-status
     cp ${src}/index.html       $out/index.html
     cp ${src}/style.css        $out/style.css
     cp ${src}/app.js           $out/app.js
@@ -132,6 +132,69 @@ let
     cp ${src}/admin/index.html $out/admin/index.html
     cp ${adminServicesJson}    $out/admin/services.json
   '';
+
+  # Polls Pelican Panel's application API every 30s, writes per-server
+  # state JSON into the homepage's games-status/ dir. The activation script
+  # uses rsync with --exclude games-status so we don't wipe these on rebuild.
+  gameStatusPoller = pkgs.writeShellScript "game-status-poller" ''
+    set -uo pipefail
+    PATH=${pkgs.curl}/bin:${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnused}/bin
+
+    API_KEY=$(cat /run/secrets/pelican/application_api_key 2>/dev/null || true)
+    [ -z "$API_KEY" ] && exit 0
+
+    OUT_DIR=/persist/pangolin/homepage/games-status
+    mkdir -p "$OUT_DIR"
+
+    # Pelican Client API returns the logged-in user's servers. Each server
+    # listing only gives name/identifier; live state comes from per-server
+    # resources endpoint. So: list servers, then query each one's resources.
+    # ptla_ keys could use /api/application/servers in one shot; ptlc_ keys
+    # need this two-step. We support both transparently.
+    if [[ "$API_KEY" == ptla_* ]]; then
+      url="https://pelican.ishimura.lol/api/application/servers"
+    else
+      url="https://pelican.ishimura.lol/api/client"
+    fi
+
+    response=$(curl -s --max-time 8 \
+      -H "Authorization: Bearer $API_KEY" \
+      -H "Accept: application/json" \
+      "$url" || echo "{}")
+
+    echo "$response" | jq -c '.data[]? | .attributes // empty' 2>/dev/null | while read -r srv; do
+      name=$(echo "$srv" | jq -r '.name // empty')
+      identifier=$(echo "$srv" | jq -r '.identifier // empty')
+      status=$(echo "$srv" | jq -r '.status // ""')
+
+      # Application API returns .status inline. Client API needs a second
+      # call to /api/client/servers/<identifier>/resources for state.
+      if [ -z "$status" ] && [ -n "$identifier" ]; then
+        resources=$(curl -s --max-time 5 \
+          -H "Authorization: Bearer $API_KEY" \
+          -H "Accept: application/json" \
+          "https://pelican.ishimura.lol/api/client/servers/$identifier/resources" || echo "{}")
+        status=$(echo "$resources" | jq -r '.attributes.current_state // "unknown"')
+      fi
+      [ -z "$name" ] && continue
+
+      # Slugify: lowercase, non-alnum -> hyphen, collapse hyphens, strip edges.
+      slug=$(echo "$name" | tr '[:upper:]' '[:lower:]' \
+        | sed 's/[^a-z0-9]\+/-/g; s/^-//; s/-$//')
+      [ -z "$slug" ] && continue
+
+      # Normalize Pelican states into the four homepage statuses.
+      case "$status" in
+        running)                    js_status=online       ;;
+        offline|null|"")            js_status=offline      ;;
+        installing|starting|stopping|suspending) js_status=maintenance ;;
+        *)                          js_status=unknown      ;;
+      esac
+
+      echo "{\"slug\":\"$slug\",\"status\":\"$js_status\",\"raw\":\"$status\"}" \
+        > "$OUT_DIR/$slug.json"
+    done
+  '';
 in
 {
   systemd.tmpfiles.rules = [
@@ -139,10 +202,33 @@ in
   ];
 
   system.activationScripts.homepage = ''
-    rm -rf /persist/pangolin/homepage/*
-    cp -r ${homepage}/. /persist/pangolin/homepage/
+    mkdir -p /persist/pangolin/homepage/games-status
+    ${pkgs.rsync}/bin/rsync -a --delete \
+      --exclude games-status \
+      ${homepage}/ /persist/pangolin/homepage/
     chmod -R a+rX /persist/pangolin/homepage
   '';
+
+  systemd.services.game-status-poller = {
+    description = "Poll Pelican Panel for game-server states";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = gameStatusPoller;
+    };
+  };
+
+  systemd.timers.game-status-poller = {
+    description = "Run the Pelican game-status poller every 30s";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "1m";
+      OnUnitActiveSec = "30s";
+      AccuracySec = "5s";
+      Unit = "game-status-poller.service";
+    };
+  };
 
   virtualisation.oci-containers.containers.homepage = {
     image = "docker.io/library/busybox@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8";

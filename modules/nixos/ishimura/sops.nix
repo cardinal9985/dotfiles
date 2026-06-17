@@ -24,7 +24,6 @@
       };
       "invidious/hmac_key" = {
         mode = "0400";
-        owner = "invidious";
       };
     };
   };

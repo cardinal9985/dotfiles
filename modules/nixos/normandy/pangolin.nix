@@ -136,6 +136,9 @@ let
         rewrite-pelican-health:
           replacePath:
             path: "/up"
+        rewrite-invidious-health:
+          replacePath:
+            path: "/api/v1/stats"
         rewrite-approval-required:
           replacePath:
             path: "/approval_required.html"
@@ -344,6 +347,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-grafana-health
+        homepage-health-invidious-router:
+          rule: "Host(`${domain}`) && Path(`/health/invidious`)"
+          service: invidious-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-invidious-health
         homepage-health-pelican-router:
           rule: "Host(`${domain}`) && Path(`/health/pelican`)"
           service: pelican-service

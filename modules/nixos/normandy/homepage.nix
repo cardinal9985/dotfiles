@@ -96,6 +96,19 @@ let
     }
   ];
 
+  # Privacy frontends - self-hosted alternatives to YouTube/Reddit/etc.
+  # Tailnet-only access. New ones go here as they come online.
+  frontends = [
+    {
+      name        = "Invidious";
+      description = "YouTube";
+      url         = "https://invidious.ishimura.lol";
+      icon        = "▷";
+      statusPath  = "/health/invidious";
+      healthUrl   = "http://${ishimuraTailnetIP}:3939/api/v1/stats";
+    }
+  ];
+
   # Game servers advertised on the public homepage so friends can find the
   # connection address + a short how-to. Each card expands inline. Add new
   # games here as Pelican servers come online.
@@ -119,6 +132,7 @@ let
 
   servicesJson      = pkgs.writeText "services.json"       (builtins.toJSON services);
   adminServicesJson = pkgs.writeText "admin-services.json" (builtins.toJSON adminServices);
+  frontendsJson     = pkgs.writeText "frontends.json"      (builtins.toJSON frontends);
   gamesJson         = pkgs.writeText "games.json"          (builtins.toJSON games);
 
   homepage = pkgs.runCommand "ishimura-homepage" {} ''
@@ -128,6 +142,7 @@ let
     cp ${src}/app.js           $out/app.js
     cp ${src}/404.html         $out/404.html
     cp ${servicesJson}         $out/services.json
+    cp ${frontendsJson}        $out/frontends.json
     cp ${gamesJson}            $out/games.json
     cp ${src}/admin/index.html $out/admin/index.html
     cp ${adminServicesJson}    $out/admin/services.json

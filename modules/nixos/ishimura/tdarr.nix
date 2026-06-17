@@ -1,9 +1,26 @@
-{ ... }:
+{ pkgs, ... }:
 
 let
   tailnetIP = "100.92.76.121";  # ishimura tailnet IP
 in
 {
+  # Same DNS-conflict workaround Pelican uses: AGH holds udp/53 on every
+  # interface including podman's default bridge gateway, so aardvark-dns can't
+  # start for the default network. Dedicate a network with DNS disabled.
+  systemd.services.create-tdarr-network = {
+    description = "Create tdarr podman network (no DNS)";
+    wantedBy = [ "podman-tdarr-server.service" ];
+    before   = [ "podman-tdarr-server.service" ];
+    after    = [ "podman.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ${pkgs.podman}/bin/podman network exists tdarr-net || \
+        ${pkgs.podman}/bin/podman network create --disable-dns tdarr-net
+    '';
+  };
   systemd.tmpfiles.rules = [
     "d /persist/tdarr          0755 maxwell users -"
     "d /persist/tdarr/server   0755 maxwell users -"
@@ -50,5 +67,8 @@ in
       # Node API bound to tailnet IP. nostromo's worker connects here.
       "${tailnetIP}:8266:8266"
     ];
+    extraOptions = [ "--network=tdarr-net" ];
   };
+
+  systemd.services.podman-tdarr-server.after = [ "create-tdarr-network.service" ];
 }

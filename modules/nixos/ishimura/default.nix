@@ -12,6 +12,7 @@
     ./impermanence.nix
     ./jellyfin.nix
     ./pelican.nix
+    ./invidious.nix
     ./network.nix
     ./nfs.nix
     ./newt.nix

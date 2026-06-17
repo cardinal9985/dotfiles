@@ -22,6 +22,10 @@
       "pelican/app_key" = {
         mode = "0400";
       };
+      "invidious/hmac_key" = {
+        mode = "0400";
+        owner = "invidious";
+      };
     };
   };
 }

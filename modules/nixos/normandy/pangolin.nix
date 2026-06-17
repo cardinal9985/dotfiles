@@ -516,6 +516,21 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+        invidious-router:
+          rule: "Host(`invidious.${domain}`)"
+          service: invidious-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - tailnet-only
         pelican-router:
           rule: "Host(`pelican.${domain}`)"
           service: pelican-service
@@ -592,6 +607,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:8801"
+        invidious-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:3939"
         wings-service:
           loadBalancer:
             servers:

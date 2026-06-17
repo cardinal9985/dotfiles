@@ -139,6 +139,10 @@ let
         rewrite-invidious-health:
           replacePath:
             path: "/api/v1/stats"
+        strip-companion-prefix:
+          stripPrefix:
+            prefixes:
+              - /companion
         rewrite-approval-required:
           replacePath:
             path: "/approval_required.html"
@@ -534,6 +538,22 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+        invidious-companion-router:
+          rule: "Host(`invidious.${domain}`) && PathPrefix(`/companion`)"
+          service: invidious-companion-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - tailnet-only
+            - strip-companion-prefix
         invidious-router:
           rule: "Host(`invidious.${domain}`)"
           service: invidious-service
@@ -629,6 +649,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:3939"
+        invidious-companion-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8282"
         wings-service:
           loadBalancer:
             servers:

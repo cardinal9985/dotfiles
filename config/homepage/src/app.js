@@ -132,6 +132,9 @@ function renderGames(games) {
     var d = document.createElement('details');
     d.className = 'game-card';
 
+    var status = (g.status || 'unknown').toLowerCase();
+    var statusLabel = status.toUpperCase();
+
     var summary = document.createElement('summary');
     summary.innerHTML =
       '<span class="game-icon">' + (g.icon || '▣') + '</span>' +
@@ -140,6 +143,9 @@ function renderGames(games) {
         '<span class="game-desc">' + (g.description || '') + '</span>' +
       '</div>' +
       '<span class="game-version">' + (g.version || '') + '</span>' +
+      '<span class="game-status game-status-' + status + '">' +
+        '<span class="game-status-dot"></span>' + statusLabel +
+      '</span>' +
       '<span class="game-expand">[+]</span>';
     d.appendChild(summary);
 

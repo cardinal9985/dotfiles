@@ -315,6 +315,59 @@ header {
   text-shadow: 0 0 4px rgba(184, 144, 64, 0.3);
 }
 
+.game-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  flex-shrink: 0;
+}
+
+.game-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.game-status-online {
+  color: var(--bright-green);
+  text-shadow: 0 0 4px rgba(94, 234, 212, 0.4);
+}
+.game-status-online .game-status-dot {
+  background: var(--bright-green);
+  box-shadow: 0 0 6px rgba(94, 234, 212, 0.7);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.game-status-offline {
+  color: var(--bright-red);
+  text-shadow: 0 0 4px rgba(240, 112, 138, 0.4);
+}
+.game-status-offline .game-status-dot {
+  background: var(--bright-red);
+  box-shadow: 0 0 4px rgba(240, 112, 138, 0.4);
+}
+
+.game-status-maintenance {
+  color: var(--bright-yellow);
+  text-shadow: 0 0 4px rgba(251, 191, 96, 0.4);
+}
+.game-status-maintenance .game-status-dot {
+  background: var(--bright-yellow);
+  box-shadow: 0 0 4px rgba(251, 191, 96, 0.4);
+}
+
+.game-status-unknown {
+  color: var(--white);
+  opacity: 0.4;
+}
+.game-status-unknown .game-status-dot {
+  background: var(--white);
+  opacity: 0.4;
+}
+
 .game-expand {
   color: var(--cyan);
   font-size: 0.85rem;

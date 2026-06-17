@@ -102,10 +102,11 @@ let
   games = [
     {
       name        = "Vintage Story";
-      description = "Modded survival sandbox";
+      description = "Wilderness survival sandbox in a ruined fantasy world";
       address     = "ishimura.lol:42420";
       version     = "1.22.3 (Stable)";
       icon        = "▣";
+      status      = "online";  # flip to "offline" or "maintenance" as needed
       howTo = [
         "Open Vintage Story and log in with your account"
         "Click 'Multiplayer'"

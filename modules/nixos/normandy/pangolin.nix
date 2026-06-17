@@ -126,7 +126,7 @@ let
             path: "/api/v2/status"
         rewrite-adguard-health:
           replacePath:
-            path: "/"
+            path: "/login.html"
         rewrite-grafana-health:
           replacePath:
             path: "/api/health"

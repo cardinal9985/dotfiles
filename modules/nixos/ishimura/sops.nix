@@ -67,6 +67,9 @@
       "slskd/slsk_password" = {
         mode = "0400";
       };
+      "searxng/secret_key" = {
+        mode = "0400";
+      };
     };
   };
 }

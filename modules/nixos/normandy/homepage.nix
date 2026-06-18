@@ -145,7 +145,7 @@ let
     {
       name        = "slskd";
       description = "Soulseek";
-      url         = "https://slskd.ishimura.lol";
+      url         = "http://ishimura:5030";
       icon        = "≈";
       statusPath  = "/health/slskd";
       healthUrl   = "http://${ishimuraTailnetIP}:5030/health";

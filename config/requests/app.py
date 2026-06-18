@@ -309,20 +309,21 @@ def submit_request():
     db.commit()
 
     try:
+        ntfy_url = "{}/{}".format(NTFY_URL, NTFY_TOPIC)
+        message = "{} requested {}: {}".format(user, req_type.lower(), title)
+        ntfy_headers = {
+            "Title": "New {} request".format(req_type.lower()),
+            "Tags": req_type.lower(),
+        }
         if NTFY_TOKEN:
-            ntfy_url = "{}/{}".format(NTFY_URL, NTFY_TOPIC)
-            message = "{} requested {}: {}".format(user, req_type.lower(), title)
-            ntfy_req = urllib.request.Request(
-                ntfy_url,
-                data=message.encode(),
-                headers={
-                    "Authorization": "Bearer " + NTFY_TOKEN,
-                    "Title": "New {} request".format(req_type.lower()),
-                    "Tags": req_type.lower(),
-                },
-                method="POST",
-            )
-            urllib.request.urlopen(ntfy_req, timeout=5)
+            ntfy_headers["Authorization"] = "Bearer " + NTFY_TOKEN
+        ntfy_req = urllib.request.Request(
+            ntfy_url,
+            data=message.encode(),
+            headers=ntfy_headers,
+            method="POST",
+        )
+        urllib.request.urlopen(ntfy_req, timeout=5)
     except Exception:
         pass
 

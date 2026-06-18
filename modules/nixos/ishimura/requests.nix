@@ -35,7 +35,7 @@ in
       IGDB_CLIENT_SECRET=${config.sops.placeholder."romm/igdb_client_secret"}
       NTFY_URL=http://normandy:8080
       NTFY_TOPIC=ishimura-requests
-      NTFY_TOKEN=${config.sops.placeholder."requests/ntfy_token"}
+      NTFY_TOKEN=
     '';
   };
 

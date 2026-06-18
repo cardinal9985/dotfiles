@@ -58,9 +58,6 @@
       "requests/tmdb_token" = {
         mode = "0400";
       };
-      "requests/ntfy_token" = {
-        mode = "0400";
-      };
     };
   };
 }

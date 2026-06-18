@@ -12,8 +12,11 @@ let
   '';
 in
 {
+  # z (lowercase, non-recursive) chowns the existing /persist/dicebear dir
+  # that the persistence module pre-creates as root before tmpfiles can.
+  # Without z, the d on the parent silently no-ops and subdirs never get made.
   systemd.tmpfiles.rules = [
-    "d /persist/dicebear     0755 maxwell users -"
+    "z /persist/dicebear     0755 maxwell users -"
     "d /persist/dicebear/www 0755 maxwell users -"
   ];
 

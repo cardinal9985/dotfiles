@@ -62,6 +62,18 @@ in
       RETROACHIEVEMENTS_API_KEY=${config.sops.placeholder."romm/retroachievements_api_key"}
       SCREENSCRAPER_USER=${config.sops.placeholder."romm/screenscraper_user"}
       SCREENSCRAPER_PASSWORD=${config.sops.placeholder."romm/screenscraper_password"}
+      # voidauth OIDC. Same /oidc suffix discovery quirk as booklore.
+      ROMM_BASE_URL=https://romm.ishimura.lol
+      OIDC_ENABLED=true
+      OIDC_PROVIDER=voidauth
+      OIDC_CLIENT_ID=${config.sops.placeholder."romm/oidc_client_id"}
+      OIDC_CLIENT_SECRET=${config.sops.placeholder."romm/oidc_client_secret"}
+      OIDC_SERVER_APPLICATION_URL=https://auth.ishimura.lol/oidc
+      OIDC_REDIRECT_URI=https://romm.ishimura.lol/api/oauth/openid
+      OIDC_USERNAME_ATTRIBUTE=preferred_username
+      OIDC_CLAIM_ROLES=groups
+      OIDC_ROLE_VIEWER=users
+      OIDC_ROLE_ADMIN=admins
     '';
   };
 

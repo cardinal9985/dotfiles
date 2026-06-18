@@ -49,6 +49,12 @@
       "romm/screenscraper_password" = {
         mode = "0400";
       };
+      "romm/oidc_client_id" = {
+        mode = "0400";
+      };
+      "romm/oidc_client_secret" = {
+        mode = "0400";
+      };
     };
   };
 }

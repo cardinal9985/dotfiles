@@ -22,6 +22,21 @@
       };
 
       policy.settings = {
+        # Bypass PoW for OIDC discovery + token + jwks endpoints so OIDC
+        # relying parties (BookLore, future Subsonic clients, etc.) can
+        # fetch them from JS / their backends without solving challenges.
+        bots = [
+          {
+            name = "oidc-endpoints";
+            path_regex = "^/oidc/.*";
+            action = "ALLOW";
+          }
+          {
+            name = "well-known";
+            path_regex = "^/\\.well-known/.*";
+            action = "ALLOW";
+          }
+        ];
         thresholds = [
           {
             name = "minimal-suspicion";

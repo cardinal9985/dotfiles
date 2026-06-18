@@ -5,6 +5,11 @@
   # 100.100.100.100 (MagicDNS), bypassing AGH and its DNS rewrites.
   services.tailscale.extraUpFlags = [ "--accept-dns=false" ];
 
+  # NM's default dns mode feeds DHCP-provided DNS into resolvconf, which
+  # overwrites the static nameservers below. "none" stops NM from touching
+  # DNS so the nameservers list is the only input to /etc/resolv.conf.
+  networking.networkmanager.dns = "none";
+
   networking = {
     hostName = "ishimura";
     useDHCP = true;

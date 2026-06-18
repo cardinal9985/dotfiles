@@ -11,6 +11,7 @@
     ./prometheus.nix
     ./impermanence.nix
     ./booklore.nix
+    ./dicebear.nix
     ./jellyfin.nix
     ./navidrome.nix
     ./pelican.nix

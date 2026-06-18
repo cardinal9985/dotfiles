@@ -148,6 +148,10 @@ let
         rewrite-booklore-health:
           replacePath:
             path: "/"
+        dicebear-strip-api:
+          stripPrefix:
+            prefixes:
+              - "/api"
         rewrite-pelican-health:
           replacePath:
             path: "/up"
@@ -637,6 +641,42 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        # Dicebear API: /api/* paths strip the prefix and proxy to the
+        # self-hosted dicebear/api container on ishimura. Public (no auth)
+        # so the OIDC `picture` URLs voidauth eventually issues are fetchable
+        # without a cookie. High priority so it beats the customizer router.
+        dicebear-api-router:
+          rule: "Host(`avatars.${domain}`) && PathPrefix(`/api`)"
+          service: dicebear-api-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 20
+          middlewares:
+            - noindex-headers
+            - dicebear-strip-api
+        # Customizer static page (busybox httpd) at the root, voidauth-gated
+        # so only signed-in crew see the foundry.
+        dicebear-router:
+          rule: "Host(`avatars.${domain}`)"
+          service: dicebear-www-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
@@ -721,6 +761,14 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:6060"
+        dicebear-api-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:7373"
+        dicebear-www-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:7374"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

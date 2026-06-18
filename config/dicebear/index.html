@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>USG ISHIMURA :: AVATAR FOUNDRY</title>
+  <style>
+    :root {
+      --bg: #080c14;
+      --panel: #0d1420;
+      --panel-2: #0a1018;
+      --border: #3a9fbf;
+      --border-dim: #1f4d5e;
+      --text: #cfd9e2;
+      --text-dim: #7a8a99;
+      --text-vdim: #5a6a78;
+      --accent: #3a9fbf;
+      --accent-warm: #b94a3f;
+      --mono: 'Courier New', 'Cascadia Mono', ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      min-height: 100vh;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 60px;
+    }
+    .ascii-title {
+      color: var(--accent);
+      font-size: 10px;
+      line-height: 1.1;
+      letter-spacing: 0;
+      white-space: pre;
+      margin: 12px 0 6px;
+      text-align: center;
+    }
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 11px;
+      letter-spacing: 3px;
+      margin-bottom: 18px;
+    }
+    .frame {
+      width: 100%;
+      max-width: 760px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 20px 24px 24px;
+      margin-top: 8px;
+    }
+    .frame-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 18px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+    .preview-wrap {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .preview {
+      background: var(--panel-2);
+      border: 1px solid var(--border-dim);
+      padding: 8px;
+      width: 240px;
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .preview img {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+    }
+    .controls {
+      flex: 1;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    select, input[type=text] {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border-dim);
+      padding: 8px 10px;
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+    }
+    select:focus, input[type=text]:focus { border-color: var(--accent); }
+    .row {
+      display: flex;
+      gap: 8px;
+    }
+    .row > input[type=text] { flex: 1; }
+    button {
+      background: var(--accent);
+      color: var(--bg);
+      border: 1px solid var(--accent);
+      padding: 10px 18px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+    button:hover {
+      background: var(--bg);
+      color: var(--accent);
+    }
+    button.secondary {
+      background: var(--panel);
+      color: var(--accent);
+      border-color: var(--border-dim);
+    }
+    button.secondary:hover {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .url-display {
+      font-size: 11px;
+      color: var(--text-vdim);
+      word-break: break-all;
+      background: var(--panel-2);
+      border: 1px solid var(--border-dim);
+      padding: 8px 10px;
+      max-width: 100%;
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 10px;
+      color: var(--text-vdim);
+      letter-spacing: 2px;
+      text-align: center;
+      max-width: 720px;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    .divider {
+      border: 0;
+      border-top: 1px dashed var(--border);
+      margin: 12px 0;
+    }
+    @media (max-width: 600px) {
+      .preview-wrap { flex-direction: column; align-items: center; }
+      .preview { width: 200px; height: 200px; }
+      .controls { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<pre class="ascii-title">
+ █████╗ ██╗   ██╗ █████╗ ████████╗ █████╗ ██████╗     ███████╗ ██████╗ ██╗   ██╗███╗   ██╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║   ██║██╔══██╗╚══██╔══╝██╔══██╗██╔══██╗    ██╔════╝██╔═══██╗██║   ██║████╗  ██║██╔══██╗██╔══██╗╚██╗ ██╔╝
+███████║██║   ██║███████║   ██║   ███████║██████╔╝    █████╗  ██║   ██║██║   ██║██╔██╗ ██║██║  ██║██████╔╝ ╚████╔╝
+██╔══██║╚██╗ ██╔╝██╔══██║   ██║   ██╔══██║██╔══██╗    ██╔══╝  ██║   ██║██║   ██║██║╚██╗██║██║  ██║██╔══██╗  ╚██╔╝
+██║  ██║ ╚████╔╝ ██║  ██║   ██║   ██║  ██║██║  ██║    ██║     ╚██████╔╝╚██████╔╝██║ ╚████║██████╔╝██║  ██║   ██║
+╚═╝  ╚═╝  ╚═══╝  ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝    ╚═╝      ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝   ╚═╝
+</pre>
+<div class="subtitle">USG ISHIMURA :: IDENTITY MODULE</div>
+
+<div class="frame">
+  <div class="frame-header">
+    <span>&gt;&gt; AVATAR GENERATOR &lt;&lt;</span>
+    <span id="status">IDLE</span>
+  </div>
+
+  <div class="preview-wrap">
+    <div class="preview">
+      <img id="preview" alt="Avatar preview" />
+    </div>
+    <div class="controls">
+      <div>
+        <label for="style">STYLE</label>
+        <select id="style">
+          <option value="bottts" selected>bottts (robots)</option>
+          <option value="bottts-neutral">bottts-neutral</option>
+          <option value="pixel-art">pixel-art</option>
+          <option value="pixel-art-neutral">pixel-art-neutral</option>
+          <option value="identicon">identicon</option>
+          <option value="shapes">shapes</option>
+          <option value="thumbs">thumbs</option>
+          <option value="icons">icons</option>
+          <option value="rings">rings</option>
+          <option value="adventurer">adventurer</option>
+          <option value="adventurer-neutral">adventurer-neutral</option>
+          <option value="avataaars">avataaars</option>
+          <option value="avataaars-neutral">avataaars-neutral</option>
+          <option value="big-ears">big-ears</option>
+          <option value="big-ears-neutral">big-ears-neutral</option>
+          <option value="big-smile">big-smile</option>
+          <option value="croodles">croodles</option>
+          <option value="croodles-neutral">croodles-neutral</option>
+          <option value="fun-emoji">fun-emoji</option>
+          <option value="lorelei">lorelei</option>
+          <option value="lorelei-neutral">lorelei-neutral</option>
+          <option value="micah">micah</option>
+          <option value="miniavs">miniavs</option>
+          <option value="notionists">notionists</option>
+          <option value="notionists-neutral">notionists-neutral</option>
+          <option value="open-peeps">open-peeps</option>
+          <option value="personas">personas</option>
+          <option value="dylan">dylan</option>
+          <option value="glass">glass</option>
+          <option value="initials">initials</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="seed">SEED</label>
+        <div class="row">
+          <input type="text" id="seed" value="maxwell" autocomplete="off" />
+          <button class="secondary" id="randomize">RND</button>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="actions">
+        <button id="download-svg">[ DOWNLOAD SVG ]</button>
+        <button class="secondary" id="download-png">[ PNG ]</button>
+        <button class="secondary" id="copy-url">[ COPY URL ]</button>
+      </div>
+
+      <div>
+        <label>SOURCE URL</label>
+        <div class="url-display" id="url-display"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  &gt;&gt; DOWNLOAD YOUR AVATAR AND UPLOAD VIA <a href="https://auth.ishimura.lol/account">AUTH NODE :: ACCOUNT</a> &lt;&lt;<br>
+  POWERED BY <a href="https://dicebear.com" target="_blank" rel="noopener">DICEBEAR</a> :: SELF-HOSTED ON ISHIMURA
+</div>
+
+<script>
+(function() {
+  const API_BASE = '/api/10.x';
+  const styleSel = document.getElementById('style');
+  const seedInp  = document.getElementById('seed');
+  const preview  = document.getElementById('preview');
+  const urlDisp  = document.getElementById('url-display');
+  const status   = document.getElementById('status');
+  const dlSvg    = document.getElementById('download-svg');
+  const dlPng    = document.getElementById('download-png');
+  const cpUrl    = document.getElementById('copy-url');
+  const rnd      = document.getElementById('randomize');
+
+  function currentUrl(format) {
+    const style = encodeURIComponent(styleSel.value);
+    const seed  = encodeURIComponent(seedInp.value || 'crewmember');
+    return `${API_BASE}/${style}/${format}?seed=${seed}`;
+  }
+
+  function update() {
+    const svgUrl = currentUrl('svg');
+    preview.src = svgUrl;
+    urlDisp.textContent = window.location.origin + svgUrl;
+    status.textContent = 'READY';
+  }
+
+  function randomSeed() {
+    const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let out = '';
+    for (let i = 0; i < 8; i++) out += charset[Math.floor(Math.random() * charset.length)];
+    seedInp.value = out;
+    update();
+  }
+
+  function downloadFile(format) {
+    const url = currentUrl(format);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `avatar-${seedInp.value || 'crewmember'}-${styleSel.value}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  styleSel.addEventListener('change', update);
+  seedInp.addEventListener('input', update);
+  rnd.addEventListener('click', randomSeed);
+  dlSvg.addEventListener('click', () => downloadFile('svg'));
+  dlPng.addEventListener('click', () => downloadFile('png'));
+  cpUrl.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(urlDisp.textContent);
+      status.textContent = 'COPIED';
+      setTimeout(() => (status.textContent = 'READY'), 1200);
+    } catch (e) {
+      status.textContent = 'COPY FAILED';
+    }
+  });
+
+  preview.addEventListener('error', () => { status.textContent = 'API ERROR'; });
+  preview.addEventListener('load',  () => { status.textContent = 'READY'; });
+
+  update();
+})();
+</script>
+</body>
+</html>

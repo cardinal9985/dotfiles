@@ -8,12 +8,14 @@ let
   searxngIP = "10.89.70.11";
 in
 {
-  systemd.tmpfiles.rules = [
-    # searxng container runs as uid 977; valkey as uid 999.
-    "z /persist/searxng        0755 977  977  -"
-    "d /persist/searxng/data   0750 977  977  -"
-    "d /persist/searxng/valkey 0750 999  1000 -"
-  ];
+  # Activation script (vs systemd.tmpfiles) so the dirs exist before podman
+  # tries to bind-mount them. tmpfiles raced the container startup on first
+  # deploy and pushed the unit past its restart limit.
+  system.activationScripts.searxng-dirs = ''
+    install -d -m 0755 -o 977 -g 977   /persist/searxng
+    install -d -m 0750 -o 977 -g 977   /persist/searxng/data
+    install -d -m 0750 -o 999 -g 1000  /persist/searxng/valkey
+  '';
 
   environment.persistence."/persist".directories = [
     "/persist/searxng"
@@ -64,8 +66,8 @@ in
           X-Download-Options: noopen
           X-Robots-Tag: noindex, nofollow
           Referrer-Policy: no-referrer
-      redis:
-        url: redis://${valkeyIP}:6379/0
+      valkey:
+        url: valkey://${valkeyIP}:6379/0
       search:
         safe_search: 0
         autocomplete: duckduckgo

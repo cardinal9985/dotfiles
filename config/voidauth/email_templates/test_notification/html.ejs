@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= locals.app_title %> :: TEST</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#080c14;font-family:<%= locals.app_font %>'Courier New',monospace;color:#cfd9e2;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#080c14;">
+      <tr>
+        <td align="center" style="padding:30px 10px;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background-color:#0d1420;border:1px solid #3a9fbf;font-family:<%= locals.app_font %>'Courier New',monospace;">
+
+            <tr>
+              <td align="center" style="padding:24px 20px 8px;border-bottom:1px dashed #3a9fbf;">
+                <div style="font-family:<%= locals.app_font %>'Courier New',monospace;font-size:11px;color:#3a9fbf;letter-spacing:2px;">
+                  &gt;&gt; USG ISHIMURA :: DIAGNOSTIC SYSTEMS &lt;&lt;
+                </div>
+                <h1 style="font-family:<%= locals.app_font %>'Courier New',monospace;color:#3a9fbf;margin:14px 0 4px;font-size:22px;letter-spacing:3px;">
+                  TEST TRANSMISSION
+                </h1>
+                <div style="font-size:11px;color:#7a8a99;letter-spacing:1px;">
+                  AUTH NODE :: <%= locals.app_title %>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:24px 28px;">
+                <p style="margin:0 0 14px;color:#a6b5c2;font-size:13px;line-height:1.6;">
+                  This is a test notification from <%= locals.app_title %>.
+                </p>
+                <p style="margin:0 0 14px;color:#a6b5c2;font-size:13px;line-height:1.6;">
+                  If you can read this, mail subsystems are operational.
+                </p>
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:18px;">
+                  <tr>
+                    <td style="padding:6px 0;font-size:12px;color:#7a8a99;letter-spacing:1px;">
+                      SIGNAL :: <span style="color:#3a9fbf;">GREEN</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-size:12px;color:#7a8a99;letter-spacing:1px;">
+                      CHANNEL :: <span style="color:#3a9fbf;">STABLE</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:12px;background-color:#0a1018;border-top:1px solid #3a9fbf;">
+                <div style="font-size:10px;color:#3a9fbf;letter-spacing:2px;font-family:<%= locals.app_font %>'Courier New',monospace;">
+                  &gt;&gt;&gt; END OF TRANSMISSION &lt;&lt;&lt;
+                </div>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

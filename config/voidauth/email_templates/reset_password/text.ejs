@@ -1,0 +1,23 @@
+============================================================
+  USG ISHIMURA :: SECURITY SUBSYSTEM
+============================================================
+
+  >> CREDENTIAL RESET PROTOCOL INITIATED <<
+
+<%= locals.name ? '  CREW MEMBER: ' + locals.name : '' %>
+
+  A request to reset your access credentials has been
+  logged at <%= locals.app_title %>.
+
+  RESET LINK (valid for 2 hours):
+
+  <%= locals.reset_url %>
+
+------------------------------------------------------------
+
+  If you did not initiate this request, disregard this
+  transmission. Your credentials remain unchanged.
+
+============================================================
+  END OF TRANSMISSION
+============================================================

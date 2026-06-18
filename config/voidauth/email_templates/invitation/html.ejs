@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= locals.app_title %> :: INVITATION</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#080c14;font-family:<%= locals.app_font %>'Courier New',monospace;color:#cfd9e2;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#080c14;">
+      <tr>
+        <td align="center" style="padding:30px 10px;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background-color:#0d1420;border:1px solid #3a9fbf;font-family:<%= locals.app_font %>'Courier New',monospace;">
+
+            <tr>
+              <td align="center" style="padding:24px 20px 8px;border-bottom:1px dashed #3a9fbf;">
+                <div style="font-family:<%= locals.app_font %>'Courier New',monospace;font-size:11px;color:#3a9fbf;letter-spacing:2px;">
+                  &gt;&gt; USG ISHIMURA :: CREW RECRUITMENT &lt;&lt;
+                </div>
+                <h1 style="font-family:<%= locals.app_font %>'Courier New',monospace;color:#3a9fbf;margin:14px 0 4px;font-size:22px;letter-spacing:3px;">
+                  INVITATION TO BOARD
+                </h1>
+                <div style="font-size:11px;color:#7a8a99;letter-spacing:1px;">
+                  AUTH NODE :: <%= locals.app_title %>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:24px 28px 8px;">
+                <% if (locals.name) { %>
+                  <p style="margin:0 0 14px;color:#a6b5c2;font-size:13px;">
+                    <span style="color:#3a9fbf;">[ADDRESSED TO]</span> <%= locals.name %>
+                  </p>
+                <% } %>
+                <p style="margin:0;color:#a6b5c2;font-size:13px;line-height:1.6;">
+                  You have been invited to join the crew of <%= locals.app_title %>. Accept your invitation by following the link below.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:24px;">
+                <table border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td align="center" bgcolor="#3a9fbf" style="border:1px solid #3a9fbf;">
+                      <a href="<%= locals.invitation_url %>"
+                         style="display:inline-block;padding:12px 28px;font-family:<%= locals.app_font %>'Courier New',monospace;font-size:13px;font-weight:bold;color:#080c14;text-decoration:none;letter-spacing:2px;">
+                        [ ACCEPT INVITATION ]
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:0 28px 24px;">
+                <p style="margin:0 0 8px;font-size:11px;color:#7a8a99;letter-spacing:1px;">
+                  -- OR PASTE INTO BROWSER --
+                </p>
+                <a href="<%= locals.invitation_url %>"
+                   style="word-break:break-all;font-size:11px;color:#3a9fbf;text-decoration:none;">
+                  <%= locals.invitation_url %>
+                </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:12px;background-color:#0a1018;border-top:1px solid #3a9fbf;">
+                <div style="font-size:10px;color:#3a9fbf;letter-spacing:2px;font-family:<%= locals.app_font %>'Courier New',monospace;">
+                  &gt;&gt;&gt; WE LOOK FORWARD TO HAVING YOU ABOARD &lt;&lt;&lt;
+                </div>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

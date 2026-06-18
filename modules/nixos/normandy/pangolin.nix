@@ -133,6 +133,12 @@ let
         rewrite-prometheus-health:
           replacePath:
             path: "/-/healthy"
+        rewrite-navidrome-health:
+          replacePath:
+            path: "/ping"
+        rewrite-booklore-health:
+          replacePath:
+            path: "/"
         rewrite-pelican-health:
           replacePath:
             path: "/up"
@@ -374,6 +380,36 @@ let
           middlewares:
             - noindex-headers
             - rewrite-prometheus-health
+        homepage-health-navidrome-router:
+          rule: "Host(`${domain}`) && Path(`/health/navidrome`)"
+          service: navidrome-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-navidrome-health
+        homepage-health-booklore-router:
+          rule: "Host(`${domain}`) && Path(`/health/booklore`)"
+          service: booklore-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-booklore-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service

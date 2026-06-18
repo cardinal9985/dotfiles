@@ -19,6 +19,22 @@ let
       statusPath  = "/health/jellyfin";
       healthUrl   = "http://${ishimuraTailnetIP}:8096/health";
     }
+    {
+      name        = "Navidrome";
+      description = "Music Streaming";
+      url         = "https://music.ishimura.lol";
+      icon        = "♪";
+      statusPath  = "/health/navidrome";
+      healthUrl   = "http://${ishimuraTailnetIP}:4533/ping";
+    }
+    {
+      name        = "BookLore";
+      description = "Ebook Library";
+      url         = "https://books.ishimura.lol";
+      icon        = "❒";
+      statusPath  = "/health/booklore";
+      healthUrl   = "http://${ishimuraTailnetIP}:6060/";
+    }
   ];
 
   # Admin-only tiles. /admin/ is gated by voidauth forwardauth so only signed-in

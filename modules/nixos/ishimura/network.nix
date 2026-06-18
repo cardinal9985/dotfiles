@@ -1,6 +1,10 @@
 { ... }:
 
 {
+  # Tailscale's accept-dns=true would overwrite /etc/resolv.conf with
+  # 100.100.100.100 (MagicDNS), bypassing AGH and its DNS rewrites.
+  services.tailscale.extraUpFlags = [ "--accept-dns=false" ];
+
   networking = {
     hostName = "ishimura";
     useDHCP = true;

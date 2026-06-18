@@ -62,6 +62,11 @@ in
       RETROACHIEVEMENTS_API_KEY=${config.sops.placeholder."romm/retroachievements_api_key"}
       SCREENSCRAPER_USER=${config.sops.placeholder."romm/screenscraper_user"}
       SCREENSCRAPER_PASSWORD=${config.sops.placeholder."romm/screenscraper_password"}
+      # Public/keyless providers, off by default.
+      HASHEOUS_API_ENABLED=true
+      LAUNCHBOX_API_ENABLED=true
+      FLASHPOINT_API_ENABLED=true
+      HLTB_API_ENABLED=true
       # voidauth OIDC. Same /oidc suffix discovery quirk as booklore.
       ROMM_BASE_URL=https://romm.ishimura.lol
       OIDC_ENABLED=true

@@ -60,6 +60,8 @@ in
       IGDB_CLIENT_SECRET=${config.sops.placeholder."romm/igdb_client_secret"}
       STEAMGRIDDB_API_KEY=${config.sops.placeholder."romm/steamgriddb_api_key"}
       RETROACHIEVEMENTS_API_KEY=${config.sops.placeholder."romm/retroachievements_api_key"}
+      SCREENSCRAPER_USER=${config.sops.placeholder."romm/screenscraper_user"}
+      SCREENSCRAPER_PASSWORD=${config.sops.placeholder."romm/screenscraper_password"}
     '';
   };
 

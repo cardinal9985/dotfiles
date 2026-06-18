@@ -43,6 +43,12 @@
       "romm/retroachievements_api_key" = {
         mode = "0400";
       };
+      "romm/screenscraper_user" = {
+        mode = "0400";
+      };
+      "romm/screenscraper_password" = {
+        mode = "0400";
+      };
     };
   };
 }

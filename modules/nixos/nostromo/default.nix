@@ -25,11 +25,7 @@
     ./security.nix
     ./power.nix
     ./peripherals.nix
-    ./virtualisation.nix
     ./ssh.nix
-    # VMs
-    ./vms/zealos.nix
-    ./vms/whonix.nix
   ];
 
 }

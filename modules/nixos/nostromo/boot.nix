@@ -15,9 +15,7 @@
 
     kernelPackages = pkgs.linuxPackages_zen;
 
-    kernelModules = [ "kvm-amd" ];
-
-    tmp.cleanOnBoot = true;
+tmp.cleanOnBoot = true;
 
     plymouth.enable = true;
 

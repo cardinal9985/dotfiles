@@ -5,12 +5,15 @@ let
 in
 {
   systemd.tmpfiles.rules = [
-    "z /persist/slskd     0755 1000 1000 -"
-    "d /persist/slskd/app 0755 1000 1000 -"
+    "z /persist/slskd                       0755 maxwell users -"
+    "d /persist/slskd/app                   0755 maxwell users -"
+    "d /mnt/storage/downloads               0755 maxwell users -"
+    "d /mnt/storage/downloads/complete      0755 maxwell users -"
+    "d /mnt/storage/downloads/incomplete    0755 maxwell users -"
   ];
 
   environment.persistence."/persist".directories = [
-    "/persist/slskd"
+    { directory = "/persist/slskd"; user = "maxwell"; group = "users"; mode = "0755"; }
   ];
 
   systemd.services.create-slskd-network = {
@@ -41,7 +44,7 @@ in
     environment = {
       TZ = "America/New_York";
       PUID = "1000";
-      PGID = "100";
+      PGID = "100";  # users group
       # Access is gated by Pangolin's tailnet-only middleware upstream so no
       # need for slskd's own login form.
       SLSKD_NO_AUTH = "true";

@@ -31,6 +31,11 @@
       "voidauth/smtp_password" = {
         mode = "0400";
       };
+      "coturn/static_auth_secret" = {
+        owner = "turnserver";
+        group = "turnserver";
+        mode = "0400";
+      };
       "porkbun/api_key" = {
         mode = "0400";
       };

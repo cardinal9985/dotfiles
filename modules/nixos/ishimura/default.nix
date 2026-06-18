@@ -10,7 +10,9 @@
     ./loki.nix
     ./prometheus.nix
     ./impermanence.nix
+    ./booklore.nix
     ./jellyfin.nix
+    ./navidrome.nix
     ./pelican.nix
     ./network.nix
     ./nfs.nix

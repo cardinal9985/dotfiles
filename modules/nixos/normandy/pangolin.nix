@@ -544,6 +544,53 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+        # Subsonic API (/rest/*) needs to bypass voidauth so phone apps like
+        # DSub, Substreamer, Symfonium can authenticate with their own
+        # Subsonic password (set per-user in the Navidrome UI).
+        navidrome-api-router:
+          rule: "Host(`music.${domain}`) && PathPrefix(`/rest`)"
+          service: navidrome-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 20
+          middlewares:
+            - noindex-headers
+        navidrome-router:
+          rule: "Host(`music.${domain}`)"
+          service: navidrome-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
+        booklore-router:
+          rule: "Host(`books.${domain}`)"
+          service: booklore-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
@@ -620,6 +667,14 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:9090"
+        navidrome-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:4533"
+        booklore-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:6060"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

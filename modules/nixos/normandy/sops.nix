@@ -28,6 +28,9 @@
       "voidauth/ldap_bind_password" = {
         mode = "0400";
       };
+      "voidauth/smtp_password" = {
+        mode = "0400";
+      };
       "porkbun/api_key" = {
         mode = "0400";
       };

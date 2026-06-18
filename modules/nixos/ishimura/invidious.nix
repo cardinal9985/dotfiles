@@ -24,7 +24,7 @@
         "invidious_companion_key": "${config.sops.placeholder."invidious/companion_key"}",
         "invidious_companion": [
           {
-            "private_url": "http://127.0.0.1:8282",
+            "private_url": "http://127.0.0.1:8282/companion",
             "public_url":  "https://invidious.ishimura.lol/companion"
           }
         ]
@@ -45,10 +45,8 @@
       INVIDIOUS_DOMAIN=invidious.ishimura.lol
       PORT=8282
       JOBS_YOUTUBE_SESSION_PO_TOKEN_ENABLED=false
-      # Serve at root since Pangolin strips the /companion prefix before
-      # forwarding. Invidious's private_url is http://127.0.0.1:8282 (also
-      # root-relative), so internal + external paths match up.
-      SERVER_BASE_PATH=
+      # Keep default /companion base path. Invidious's private_url has
+      # /companion suffix to match; Pangolin no longer strips the prefix.
     '';
   };
 

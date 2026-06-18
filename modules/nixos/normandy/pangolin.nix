@@ -553,7 +553,6 @@ let
           middlewares:
             - noindex-headers
             - tailnet-only
-            - strip-companion-prefix
         invidious-router:
           rule: "Host(`invidious.${domain}`)"
           service: invidious-service

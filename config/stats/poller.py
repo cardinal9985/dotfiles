@@ -11,7 +11,7 @@ import requests
 from db import get_db, insert_event, get_poll_state, set_poll_state, \
     set_user_map, reverse_user_map
 
-log = logging.getLogger("wrapped.poller")
+log = logging.getLogger("stats.poller")
 
 
 def _secret(name):

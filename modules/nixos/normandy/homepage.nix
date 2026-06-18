@@ -60,11 +60,11 @@ let
       healthUrl   = "http://${ishimuraTailnetIP}:5002/";
     }
     {
-      name        = "Wrapped";
+      name        = "Stats";
       description = "Your Stats";
-      url         = "https://wrapped.ishimura.lol";
+      url         = "https://stats.ishimura.lol";
       icon        = "◍";
-      statusPath  = "/health/wrapped";
+      statusPath  = "/health/stats";
       healthUrl   = "http://${ishimuraTailnetIP}:5005/health";
     }
     {

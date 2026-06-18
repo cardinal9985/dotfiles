@@ -4,7 +4,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 
-DB_PATH = os.environ.get("WRAPPED_DB_PATH", "/data/wrapped.db")
+DB_PATH = os.environ.get("STATS_DB_PATH", "/data/stats.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS events (

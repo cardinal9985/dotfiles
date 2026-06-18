@@ -20,7 +20,7 @@
     ./romm.nix
     ./searxng.nix
     ./slskd.nix
-    ./wrapped.nix
+    ./stats.nix
     ./network.nix
     ./nfs.nix
     ./newt.nix

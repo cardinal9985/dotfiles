@@ -157,7 +157,7 @@ let
         rewrite-requests-health:
           replacePath:
             path: "/health"
-        rewrite-wrapped-health:
+        rewrite-stats-health:
           replacePath:
             path: "/health"
         dicebear-strip-api:
@@ -487,9 +487,9 @@ let
           middlewares:
             - noindex-headers
             - rewrite-requests-health
-        homepage-health-wrapped-router:
-          rule: "Host(`${domain}`) && Path(`/health/wrapped`)"
-          service: wrapped-service
+        homepage-health-stats-router:
+          rule: "Host(`${domain}`) && Path(`/health/stats`)"
+          service: stats-service
           entryPoints:
             - websecure
           tls:
@@ -501,7 +501,7 @@ let
           priority: 50
           middlewares:
             - noindex-headers
-            - rewrite-wrapped-health
+            - rewrite-stats-health
         homepage-health-slskd-router:
           rule: "Host(`${domain}`) && Path(`/health/slskd`)"
           service: slskd-service
@@ -846,9 +846,9 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
-        wrapped-router:
-          rule: "Host(`wrapped.${domain}`)"
-          service: wrapped-service
+        stats-router:
+          rule: "Host(`stats.${domain}`)"
+          service: stats-service
           entryPoints:
             - websecure
           tls:
@@ -980,7 +980,7 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5002"
-        wrapped-service:
+        stats-service:
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5005"

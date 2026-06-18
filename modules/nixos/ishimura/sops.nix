@@ -58,7 +58,7 @@
       "requests/tmdb_token" = {
         mode = "0400";
       };
-      "wrapped/jellyfin_api_key" = {
+      "stats/jellyfin_api_key" = {
         mode = "0400";
       };
       "slskd/slsk_username" = {

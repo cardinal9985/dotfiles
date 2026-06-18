@@ -10,7 +10,7 @@ from poller import poll_jellyfin, poll_navidrome, poll_romm, poll_booklore
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
-log = logging.getLogger("wrapped")
+log = logging.getLogger("stats")
 
 app = Flask(__name__)
 

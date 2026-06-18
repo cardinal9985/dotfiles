@@ -109,6 +109,15 @@ let
               - Remote-Name
               - Remote-Email
               - Remote-Groups
+        # Voidauth ships Cross-Origin-Resource-Policy: same-origin which blocks
+        # OIDC discovery fetches from other ishimura.lol subdomains (BookLore,
+        # any other relying party that loads /.well-known/* from the browser).
+        # Relax to cross-origin so OIDC clients on books.ishimura.lol etc. can
+        # discover the provider.
+        voidauth-cors-relax:
+          headers:
+            customResponseHeaders:
+              Cross-Origin-Resource-Policy: "cross-origin"
         rewrite-jellyfin-health:
           replacePath:
             path: "/health"
@@ -243,6 +252,7 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+            - voidauth-cors-relax
             - anubis-theme
             - error-pages
         homepage-health-jellyfin-router:

@@ -9,11 +9,14 @@ let
   bookloreIP = "10.89.50.11";
 in
 {
+  # Use z (lowercase, non-recursive) so it fixes ownership on the existing
+  # /persist/booklore dir that the persistence module pre-creates as root.
+  # Z (uppercase) would recurse and stomp the mariadb subdir's 999:999 perms.
   systemd.tmpfiles.rules = [
-    "d /persist/booklore          0755 1000 100 -"
-    "d /persist/booklore/data     0755 1000 100 -"
+    "z /persist/booklore 0755 1000 100 -"
+    "d /persist/booklore/data 0755 1000 100 -"
     "d /persist/booklore/bookdrop 0755 1000 100 -"
-    "d /persist/booklore/mariadb  0755 999  999 -"  # MariaDB container UID/GID
+    "d /persist/booklore/mariadb 0750 999 999 -"
   ];
 
   systemd.services.create-booklore-network = {

@@ -14,6 +14,8 @@
         command: ${pkgs.libnotify}/bin/notify-send -u critical -i security-medium "$NTFY_TITLE" "$NTFY_MESSAGE"
       - topic: backup
         command: ${pkgs.libnotify}/bin/notify-send -u low -i drive-harddisk "$NTFY_TITLE" "$NTFY_MESSAGE"
+      - topic: ishimura-requests
+        command: ${pkgs.libnotify}/bin/notify-send -u normal -i mail-unread "$NTFY_TITLE" "$NTFY_MESSAGE"
   '';
 
   systemd.user.services.ntfy-bridge = {

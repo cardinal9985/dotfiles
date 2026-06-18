@@ -157,6 +157,9 @@ let
         rewrite-requests-health:
           replacePath:
             path: "/health"
+        rewrite-wrapped-health:
+          replacePath:
+            path: "/health"
         dicebear-strip-api:
           stripPrefix:
             prefixes:
@@ -478,6 +481,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-requests-health
+        homepage-health-wrapped-router:
+          rule: "Host(`${domain}`) && Path(`/health/wrapped`)"
+          service: wrapped-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-wrapped-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service
@@ -776,6 +794,21 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        wrapped-router:
+          rule: "Host(`wrapped.${domain}`)"
+          service: wrapped-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
@@ -880,6 +913,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5002"
+        wrapped-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:5005"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

@@ -14,25 +14,25 @@ from db import get_db, insert_event, get_poll_state, set_poll_state, \
 log = logging.getLogger("wrapped.poller")
 
 
-def _read_secret(path):
-    if not path:
-        return None
-    try:
-        with open(path) as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        log.warning("Secret file not found: %s", path)
-        return None
+def _secret(name):
+    path = os.environ.get(name + "_FILE")
+    if path:
+        try:
+            with open(path) as f:
+                return f.read().strip()
+        except FileNotFoundError:
+            log.warning("Secret file not found: %s", path)
+    return os.environ.get(name) or None
 
 
 JELLYFIN_URL = os.environ.get("JELLYFIN_URL", "http://host.containers.internal:63072")
-JELLYFIN_API_KEY = _read_secret(os.environ.get("JELLYFIN_API_KEY_FILE"))
+JELLYFIN_API_KEY = _secret("JELLYFIN_API_KEY")
 ROMM_URL = os.environ.get("ROMM_URL", "http://host.containers.internal:8998")
 BOOKLORE_DB_HOST = os.environ.get("BOOKLORE_DB_HOST", "10.89.13.2")
 BOOKLORE_DB_PORT = int(os.environ.get("BOOKLORE_DB_PORT", "3306"))
 BOOKLORE_DB_NAME = os.environ.get("BOOKLORE_DB_NAME", "booklore")
 BOOKLORE_DB_USER = os.environ.get("BOOKLORE_DB_USER", "booklore")
-BOOKLORE_DB_PASSWORD = _read_secret(os.environ.get("BOOKLORE_DB_PASSWORD_FILE"))
+BOOKLORE_DB_PASSWORD = _secret("BOOKLORE_DB_PASSWORD")
 NAVIDROME_DB = os.environ.get("NAVIDROME_DB", "/navidrome.db")
 
 
@@ -348,7 +348,7 @@ ROMM_DB_HOST = os.environ.get("ROMM_DB_HOST", "host.containers.internal")
 ROMM_DB_PORT = int(os.environ.get("ROMM_DB_PORT", "3308"))
 ROMM_DB_NAME = os.environ.get("ROMM_DB_NAME", "romm")
 ROMM_DB_USER = os.environ.get("ROMM_DB_USER", "romm")
-ROMM_DB_PASSWORD = _read_secret(os.environ.get("ROMM_DB_PASSWORD_FILE"))
+ROMM_DB_PASSWORD = _secret("ROMM_DB_PASSWORD")
 
 
 def _romm_connect():

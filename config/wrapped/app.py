@@ -74,6 +74,11 @@ app.jinja_env.filters["parse_meta"] = _parse_metadata
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@app.route("/health")
+def health():
+    return "ok", 200
+
+
 @app.route("/")
 def dashboard():
     user = _get_user()

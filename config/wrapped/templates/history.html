@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+<div class="box">
+  <div class="title">&gt; PLAY HISTORY</div>
+
+  <div class="filter-bar">
+    <a href="/history" class="{{ 'active' if not source }}">ALL</a>
+    <a href="/history?source=jellyfin" class="{{ 'active' if source == 'jellyfin' }}">JELLYFIN</a>
+    <a href="/history?source=navidrome" class="{{ 'active' if source == 'navidrome' }}">NAVIDROME</a>
+    <a href="/history?source=romm" class="{{ 'active' if source == 'romm' }}">ROMM</a>
+    <a href="/history?source=booklore" class="{{ 'active' if source == 'booklore' }}">BOOKLORE</a>
+  </div>
+
+  {% if events %}
+  <table class="list-table">
+    <thead><tr><th>DATE</th><th>SOURCE</th><th>TYPE</th><th>ITEM</th><th>DURATION</th></tr></thead>
+    <tbody>
+      {% for event in events %}
+      <tr>
+        <td style="white-space:nowrap">{{ event.played_at[:16] }}</td>
+        <td><span class="source-tag {{ event.source }}">{{ event.source|upper }}</span></td>
+        <td><span class="type-tag">{{ event.item_type|upper }}</span></td>
+        <td>{{ event.item_name }}{% set meta = event.item_metadata|parse_meta %}{% if meta.artist %} <span style="color:var(--cyan)">- {{ meta.artist }}</span>{% endif %}{% if meta.series %} <span style="color:var(--cyan)">({{ meta.series }})</span>{% endif %}</td>
+        <td>{{ event.duration_secs|duration if event.duration_secs else '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="/history?page={{ page - 1 }}{% if source %}&source={{ source }}{% endif %}">&lt; PREV</a>
+    {% endif %}
+    <span style="color:var(--white);font-size:0.75rem;padding:0.3rem">PAGE {{ page }}</span>
+    {% if events|length == 50 %}
+    <a href="/history?page={{ page + 1 }}{% if source %}&source={{ source }}{% endif %}">NEXT &gt;</a>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="empty">No play history yet. Data will appear after the first poll cycle.</div>
+  {% endif %}
+</div>
+{% endblock %}

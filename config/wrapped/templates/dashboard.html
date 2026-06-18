@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+{% if not user %}
+<div class="box">
+  <div class="empty">No user detected. Are you authenticated through Authelia?</div>
+</div>
+{% elif not stats %}
+<div class="box">
+  <div class="empty">Loading stats...</div>
+</div>
+{% else %}
+<div class="box">
+  <div class="title">&gt; OVERVIEW</div>
+  <div class="stat-grid">
+    <div class="stat-card magenta">
+      <div class="value">{{ stats.watch_time_secs|duration }}</div>
+      <div class="label">WATCH TIME</div>
+    </div>
+    <div class="stat-card green">
+      <div class="value">{{ stats.songs_played }}</div>
+      <div class="label">SONGS PLAYED</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="value">{{ stats.games_touched }}</div>
+      <div class="label">GAMES PLAYED</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="value">{{ stats.books_read }}</div>
+      <div class="label">BOOKS READ</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">{{ stats.reading_time_secs|duration }}</div>
+      <div class="label">READING TIME</div>
+    </div>
+  </div>
+</div>
+
+{% for src, label, color in [('jellyfin', 'JELLYFIN', 'magenta'), ('navidrome', 'NAVIDROME', 'green'), ('romm', 'ROMM', 'blue'), ('booklore', 'BOOKLORE', 'yellow')] %}
+{% set recent = stats['recent_' + src] %}
+{% if recent %}
+<div class="box">
+  <div class="title">&gt; RECENT {{ label }}</div>
+  <table class="list-table">
+    <thead><tr><th>ITEM</th><th>TYPE</th><th>DATE</th></tr></thead>
+    <tbody>
+      {% for item in recent %}
+      <tr>
+        <td>{{ item.item_name }}</td>
+        <td><span class="type-tag">{{ item.item_type|upper }}</span></td>
+        <td style="white-space:nowrap">{{ item.played_at[:10] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endblock %}

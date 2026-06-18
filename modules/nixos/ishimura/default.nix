@@ -16,6 +16,7 @@
     ./jellyfin.nix
     ./navidrome.nix
     ./pelican.nix
+    ./requests.nix
     ./romm.nix
     ./network.nix
     ./nfs.nix

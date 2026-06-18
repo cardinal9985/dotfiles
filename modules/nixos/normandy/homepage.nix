@@ -51,6 +51,14 @@ let
       statusPath  = "/health/tools";
       healthUrl   = "http://${ishimuraTailnetIP}:8085/";
     }
+    {
+      name        = "Requests";
+      description = "Media Requests";
+      url         = "https://requests.ishimura.lol";
+      icon        = "✎";
+      statusPath  = "/health/requests";
+      healthUrl   = "http://${ishimuraTailnetIP}:5002/";
+    }
   ];
 
   # Admin-only tiles. /admin/ is gated by voidauth forwardauth so only signed-in

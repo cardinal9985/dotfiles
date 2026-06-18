@@ -176,10 +176,48 @@
       border-top: 1px dashed var(--border);
       margin: 12px 0;
     }
+    .opts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 16px;
+    }
+    .opts-grid > div { display: flex; flex-direction: column; }
+    .opts-grid input[type=range] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    .opts-grid input[type=color] {
+      flex: 1;
+      min-width: 0;
+      height: 32px;
+      background: var(--bg);
+      border: 1px solid var(--border-dim);
+      cursor: pointer;
+      padding: 2px;
+    }
+    .opts-grid input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+    .opts-grid input[type=color]::-webkit-color-swatch { border: 0; }
+    .flip-wrap label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      font-size: 12px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      margin-top: 18px;
+    }
+    .flip-wrap input[type=checkbox] {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
     @media (max-width: 600px) {
       .preview-wrap { flex-direction: column; align-items: center; }
       .preview { width: 200px; height: 200px; }
       .controls { width: 100%; }
+      .opts-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -252,6 +290,43 @@
 
       <hr class="divider" />
 
+      <div class="opts-grid">
+        <div>
+          <label for="bg-type">BACKGROUND</label>
+          <select id="bg-type">
+            <option value="transparent" selected>transparent</option>
+            <option value="solid">solid</option>
+            <option value="gradientLinear">gradient</option>
+          </select>
+        </div>
+        <div id="bg-colors-wrap" style="display:none;">
+          <label for="bg-color">BG COLOR</label>
+          <div class="row">
+            <input type="color" id="bg-color" value="#3a9fbf" />
+            <input type="color" id="bg-color-2" value="#080c14" title="Second color for gradient" />
+          </div>
+        </div>
+        <div>
+          <label for="radius">RADIUS</label>
+          <input type="range" id="radius" min="0" max="50" value="0" />
+        </div>
+        <div>
+          <label for="rotate">ROTATE</label>
+          <input type="range" id="rotate" min="0" max="360" value="0" />
+        </div>
+        <div>
+          <label for="scale">SCALE</label>
+          <input type="range" id="scale" min="50" max="200" value="100" />
+        </div>
+        <div class="flip-wrap">
+          <label>
+            <input type="checkbox" id="flip" /> FLIP HORIZONTAL
+          </label>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
       <div class="actions">
         <button id="download-svg">[ DOWNLOAD SVG ]</button>
         <button class="secondary" id="download-png">[ PNG ]</button>
@@ -274,23 +349,59 @@
 <script>
 (function() {
   const API_BASE = '/api/10.x';
-  const styleSel = document.getElementById('style');
-  const seedInp  = document.getElementById('seed');
-  const preview  = document.getElementById('preview');
-  const urlDisp  = document.getElementById('url-display');
-  const status   = document.getElementById('status');
-  const dlSvg    = document.getElementById('download-svg');
-  const dlPng    = document.getElementById('download-png');
-  const cpUrl    = document.getElementById('copy-url');
-  const rnd      = document.getElementById('randomize');
+  const $ = (id) => document.getElementById(id);
+  const styleSel  = $('style');
+  const seedInp   = $('seed');
+  const preview   = $('preview');
+  const urlDisp   = $('url-display');
+  const status    = $('status');
+  const dlSvg     = $('download-svg');
+  const dlPng     = $('download-png');
+  const cpUrl     = $('copy-url');
+  const rnd       = $('randomize');
+  const bgType    = $('bg-type');
+  const bgColors  = $('bg-colors-wrap');
+  const bgColor1  = $('bg-color');
+  const bgColor2  = $('bg-color-2');
+  const radius    = $('radius');
+  const rotate    = $('rotate');
+  const scale     = $('scale');
+  const flip      = $('flip');
+
+  function syncBgVisibility() {
+    bgColors.style.display = bgType.value === 'transparent' ? 'none' : 'flex';
+    bgColor2.style.display = bgType.value === 'gradientLinear' ? 'inline-block' : 'none';
+  }
+
+  function hexNoHash(c) { return c.replace(/^#/, ''); }
 
   function currentUrl(format) {
     const style = encodeURIComponent(styleSel.value);
     const seed  = encodeURIComponent(seedInp.value || 'crewmember');
-    return `${API_BASE}/${style}/${format}?seed=${seed}`;
+    const params = new URLSearchParams();
+    params.set('seed', seedInp.value || 'crewmember');
+
+    if (bgType.value !== 'transparent') {
+      params.set('backgroundType', bgType.value);
+      params.set('backgroundColor', hexNoHash(bgColor1.value));
+      if (bgType.value === 'gradientLinear') {
+        params.append('backgroundColor', hexNoHash(bgColor2.value));
+      }
+    }
+    if (parseInt(radius.value, 10) > 0) params.set('radius', radius.value);
+    if (parseInt(rotate.value, 10) !== 0) params.set('rotate', rotate.value);
+    if (parseInt(scale.value, 10) !== 100) params.set('scale', scale.value);
+    if (flip.checked) params.set('flip', 'true');
+
+    // Already added seed via params above, but keep path simple
+    params.delete('seed');
+    params.set('seed', seedInp.value || 'crewmember');
+
+    return `${API_BASE}/${style}/${format}?${params.toString()}`;
   }
 
   function update() {
+    syncBgVisibility();
     const svgUrl = currentUrl('svg');
     preview.src = svgUrl;
     urlDisp.textContent = window.location.origin + svgUrl;
@@ -315,7 +426,10 @@
     document.body.removeChild(a);
   }
 
-  styleSel.addEventListener('change', update);
+  [styleSel, bgType, bgColor1, bgColor2, radius, rotate, scale, flip].forEach((el) => {
+    el.addEventListener('input', update);
+    el.addEventListener('change', update);
+  });
   seedInp.addEventListener('input', update);
   rnd.addEventListener('click', randomSeed);
   dlSvg.addEventListener('click', () => downloadFile('svg'));

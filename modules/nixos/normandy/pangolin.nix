@@ -167,6 +167,9 @@ let
         rewrite-pelican-health:
           replacePath:
             path: "/up"
+        rewrite-slskd-health:
+          replacePath:
+            path: "/health"
         rewrite-approval-required:
           replacePath:
             path: "/approval_required.html"
@@ -496,6 +499,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-wrapped-health
+        homepage-health-slskd-router:
+          rule: "Host(`${domain}`) && Path(`/health/slskd`)"
+          service: slskd-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-slskd-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service
@@ -611,6 +629,22 @@ let
         prometheus-router:
           rule: "Host(`prometheus.${domain}`)"
           service: prometheus-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - error-pages
+            - tailnet-only
+        slskd-router:
+          rule: "Host(`slskd.${domain}`)"
+          service: slskd-service
           entryPoints:
             - websecure
           tls:
@@ -917,6 +951,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5005"
+        slskd-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:5030"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

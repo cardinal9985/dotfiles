@@ -61,6 +61,12 @@
       "wrapped/jellyfin_api_key" = {
         mode = "0400";
       };
+      "slskd/slsk_username" = {
+        mode = "0400";
+      };
+      "slskd/slsk_password" = {
+        mode = "0400";
+      };
     };
   };
 }

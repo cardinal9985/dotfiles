@@ -142,6 +142,14 @@ let
       statusPath  = "/health/prometheus";
       healthUrl   = "http://${ishimuraTailnetIP}:9090/-/healthy";
     }
+    {
+      name        = "slskd";
+      description = "Soulseek";
+      url         = "https://slskd.ishimura.lol";
+      icon        = "≈";
+      statusPath  = "/health/slskd";
+      healthUrl   = "http://${ishimuraTailnetIP}:5030/health";
+    }
   ];
 
   # Game servers advertised on the public homepage so friends can find the

@@ -18,6 +18,7 @@
     ./pelican.nix
     ./requests.nix
     ./romm.nix
+    ./slskd.nix
     ./wrapped.nix
     ./network.nix
     ./nfs.nix

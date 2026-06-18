@@ -25,6 +25,12 @@
       "booklore/db_password" = {
         mode = "0400";
       };
+      "romm/db_password" = {
+        mode = "0400";
+      };
+      "romm/auth_secret_key" = {
+        mode = "0400";
+      };
     };
   };
 }

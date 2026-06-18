@@ -148,6 +148,9 @@ let
         rewrite-booklore-health:
           replacePath:
             path: "/"
+        rewrite-romm-health:
+          replacePath:
+            path: "/api/heartbeat"
         dicebear-strip-api:
           stripPrefix:
             prefixes:
@@ -424,6 +427,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-booklore-health
+        homepage-health-romm-router:
+          rule: "Host(`${domain}`) && Path(`/health/romm`)"
+          service: romm-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-romm-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service
@@ -677,6 +695,21 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        romm-router:
+          rule: "Host(`romm.${domain}`)"
+          service: romm-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
@@ -769,6 +802,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:7374"
+        romm-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8083"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

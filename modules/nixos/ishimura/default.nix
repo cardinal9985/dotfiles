@@ -15,6 +15,7 @@
     ./jellyfin.nix
     ./navidrome.nix
     ./pelican.nix
+    ./romm.nix
     ./network.nix
     ./nfs.nix
     ./newt.nix

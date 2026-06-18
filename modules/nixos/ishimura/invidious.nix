@@ -35,11 +35,20 @@
 
   # Companion env file. Companion's SERVER_SECRET_KEY must match Invidious's
   # invidious_companion_key for HMAC signatures to validate.
+  # PO token generation disabled: YouTube currently blocks PO-token validation
+  # attempts from residential server IPs (the companion's automatic method
+  # exhausts retries). Without PO token, video playback works for most
+  # non-age-restricted content. Re-enable with cookies later for full coverage.
   sops.templates."invidious-companion.env" = {
     content = ''
       SERVER_SECRET_KEY=${config.sops.placeholder."invidious/companion_key"}
       INVIDIOUS_DOMAIN=invidious.ishimura.lol
       PORT=8282
+      JOBS_YOUTUBE_SESSION_PO_TOKEN_ENABLED=false
+      # Serve at root since Pangolin strips the /companion prefix before
+      # forwarding. Invidious's private_url is http://127.0.0.1:8282 (also
+      # root-relative), so internal + external paths match up.
+      SERVER_BASE_PATH=
     '';
   };
 

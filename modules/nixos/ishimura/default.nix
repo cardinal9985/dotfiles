@@ -12,6 +12,7 @@
     ./impermanence.nix
     ./booklore.nix
     ./dicebear.nix
+    ./it-tools.nix
     ./jellyfin.nix
     ./navidrome.nix
     ./pelican.nix

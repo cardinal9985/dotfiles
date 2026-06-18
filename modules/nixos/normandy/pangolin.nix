@@ -151,6 +151,9 @@ let
         rewrite-romm-health:
           replacePath:
             path: "/api/heartbeat"
+        rewrite-tools-health:
+          replacePath:
+            path: "/"
         dicebear-strip-api:
           stripPrefix:
             prefixes:
@@ -442,6 +445,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-romm-health
+        homepage-health-tools-router:
+          rule: "Host(`${domain}`) && Path(`/health/tools`)"
+          service: it-tools-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-tools-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service
@@ -710,6 +728,21 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        it-tools-router:
+          rule: "Host(`tools.${domain}`)"
+          service: it-tools-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         catchall-router:
           rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
           service: errors-service
@@ -806,6 +839,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:8083"
+        it-tools-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8085"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

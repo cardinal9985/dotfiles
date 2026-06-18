@@ -102,7 +102,12 @@ in
         "/persist/romm/resources:/romm/resources"
         "/persist/romm/assets:/romm/assets"
         "/persist/romm/config:/romm/config"
-        "/mnt/storage/media/roms:/romm/library"
+        # ROMM Structure A: /romm/library/roms/<platform>/<files>.
+        # Bind /mnt/storage/media/roms directly under /romm/library/roms so
+        # the host layout stays /mnt/storage/media/roms/<platform>/<files>
+        # without a redundant /roms/roms/ nesting.
+        "/mnt/storage/media/roms:/romm/library/roms"
+        "/mnt/storage/media/bios:/romm/library/bios"
       ];
       ports = [ "${tailnetIP}:8083:8080" ];
       extraOptions = [

@@ -31,6 +31,18 @@
       "romm/auth_secret_key" = {
         mode = "0400";
       };
+      "romm/igdb_client_id" = {
+        mode = "0400";
+      };
+      "romm/igdb_client_secret" = {
+        mode = "0400";
+      };
+      "romm/steamgriddb_api_key" = {
+        mode = "0400";
+      };
+      "romm/retroachievements_api_key" = {
+        mode = "0400";
+      };
     };
   };
 }

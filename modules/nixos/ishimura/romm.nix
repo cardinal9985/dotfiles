@@ -56,6 +56,10 @@ in
       DB_USER=romm
       DB_PASSWD=${config.sops.placeholder."romm/db_password"}
       TZ=America/New_York
+      IGDB_CLIENT_ID=${config.sops.placeholder."romm/igdb_client_id"}
+      IGDB_CLIENT_SECRET=${config.sops.placeholder."romm/igdb_client_secret"}
+      STEAMGRIDDB_API_KEY=${config.sops.placeholder."romm/steamgriddb_api_key"}
+      RETROACHIEVEMENTS_API_KEY=${config.sops.placeholder."romm/retroachievements_api_key"}
     '';
   };
 

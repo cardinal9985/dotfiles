@@ -316,7 +316,7 @@
         </div>
         <div>
           <label for="scale">SCALE</label>
-          <input type="range" id="scale" min="50" max="200" value="100" />
+          <input type="range" id="scale" min="0" max="10" step="1" value="1" />
         </div>
         <div class="flip-wrap">
           <label>
@@ -390,8 +390,10 @@
     }
     if (parseInt(radius.value, 10) > 0) params.set('radius', radius.value);
     if (parseInt(rotate.value, 10) !== 0) params.set('rotate', rotate.value);
-    if (parseInt(scale.value, 10) !== 100) params.set('scale', scale.value);
-    if (flip.checked) params.set('flip', 'true');
+    if (parseInt(scale.value, 10) !== 1) params.set('scale', scale.value);
+    // API v4 quirk: flip is enabled by sending an empty value (or the bare
+    // key). Sending flip=true returns 400. Default is omitted = false.
+    if (flip.checked) params.set('flip', '');
 
     // Already added seed via params above, but keep path simple
     params.delete('seed');

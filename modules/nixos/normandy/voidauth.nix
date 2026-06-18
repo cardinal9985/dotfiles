@@ -78,7 +78,7 @@ in
       SMTP_SECURE=true
       SMTP_USER=resend
       SMTP_PASS=${config.sops.placeholder."voidauth/smtp_password"}
-      SMTP_FROM=USG ISHIMURA <noreply@ishimura.lol>
+      SMTP_FROM=noreply@ishimura.lol
     '';
   };
 

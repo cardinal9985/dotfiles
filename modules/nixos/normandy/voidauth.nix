@@ -73,13 +73,12 @@ in
       LDAP_PORT=3890
       LDAP_BIND_DN=cn=ldap_bind,dc=voidauth
       LDAP_BIND_PASSWORD=${config.sops.placeholder."voidauth/ldap_bind_password"}
-      EMAIL_HOST=smtp.resend.com
-      EMAIL_PORT=465
-      EMAIL_SECURE=true
-      EMAIL_USER=resend
-      EMAIL_PASS=${config.sops.placeholder."voidauth/smtp_password"}
-      EMAIL_FROM=noreply@ishimura.lol
-      EMAIL_NAME=USG ISHIMURA
+      SMTP_HOST=smtp.resend.com
+      SMTP_PORT=465
+      SMTP_SECURE=true
+      SMTP_USER=resend
+      SMTP_PASS=${config.sops.placeholder."voidauth/smtp_password"}
+      SMTP_FROM=USG ISHIMURA <noreply@ishimura.lol>
     '';
   };
 

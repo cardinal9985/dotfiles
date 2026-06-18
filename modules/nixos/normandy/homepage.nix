@@ -148,7 +148,7 @@ let
       url         = "http://ishimura:5030";
       icon        = "≈";
       statusPath  = "/health/slskd";
-      healthUrl   = "http://${ishimuraTailnetIP}:5030/health";
+      healthUrl   = "http://${ishimuraTailnetIP}:5030/api/v0/application";
     }
   ];
 

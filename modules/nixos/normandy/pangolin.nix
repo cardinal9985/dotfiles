@@ -169,7 +169,7 @@ let
             path: "/up"
         rewrite-slskd-health:
           replacePath:
-            path: "/health"
+            path: "/api/v0/application"
         rewrite-approval-required:
           replacePath:
             path: "/approval_required.html"

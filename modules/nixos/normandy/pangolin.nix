@@ -998,6 +998,8 @@ let
       # the resource is defined. Naming convention is protocol-port.
       udp-42420:
         address: ":42420/udp"
+      tcp-50300:
+        address: ":50300/tcp"
     certificatesResolvers:
       letsencrypt:
         acme:

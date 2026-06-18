@@ -20,6 +20,7 @@
         36475 # real SSH
         80    # Pangolin / Traefik (HTTP, ACME challenges)
         443   # Pangolin / Traefik (HTTPS)
+        50300 # slskd peer port (Pangolin raw resource -> ishimura tailnet:50300)
       ];
       allowedUDPPorts = [
         51820 # Pangolin / Gerbil (WireGuard, primary)

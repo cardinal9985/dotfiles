@@ -123,33 +123,6 @@ fetch('services.json')
       '<div style="color:var(--yellow);font-size:0.8rem;opacity:0.7">[SERVICE MANIFEST UNAVAILABLE]</div>';
   });
 
-function renderFrontends(items) {
-  var grid = document.getElementById('frontend-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  items.forEach(function (svc) {
-    var dotId = 'dot-frontend-' + encodeURIComponent(svc.name);
-    var a = document.createElement('a');
-    a.href = svc.url;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.setAttribute('data-icon', svc.icon || '▣');
-    a.innerHTML = svc.name + '<span class="svc-dot" id="' + dotId + '"></span>';
-    a.addEventListener('mouseenter', clickBeep);
-    grid.appendChild(a);
-    checkStatus(svc, dotId);
-  });
-}
-
-fetch('frontends.json')
-  .then(function (r) { return r.json(); })
-  .then(renderFrontends)
-  .catch(function () {
-    var g = document.getElementById('frontend-grid');
-    if (g) g.innerHTML =
-      '<div style="color:var(--yellow);font-size:0.8rem;opacity:0.7">[FRONTEND MANIFEST UNAVAILABLE]</div>';
-  });
-
 /* ── Game servers ── */
 function setGameStatus(spanEl, status) {
   var s = (status || 'unknown').toLowerCase();

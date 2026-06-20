@@ -581,9 +581,28 @@ in
       volumes = [ "/persist/degoog/data:/app/data" ];
       ports   = [ "${tailnetIP}:4444:4444" ];
       environment.TZ = "America/New_York";
+      extraOptions = [ "--network=degoog-net" ];
     };
   };
 
+  systemd.services.create-degoog-network = {
+    description = "Create degoog podman network (no DNS)";
+    wantedBy = [ "podman-degoog.service" ];
+    before   = [ "podman-degoog.service" ];
+    after    = [ "podman.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ${pkgs.podman}/bin/podman network exists degoog-net || \
+        ${pkgs.podman}/bin/podman network create \
+          --disable-dns \
+          degoog-net
+    '';
+  };
+
+  systemd.services.podman-degoog.after        = [ "create-degoog-network.service" ];
   systemd.services.podman-searxng.after        = [ "create-searxng-network.service" ];
   systemd.services.podman-searxng-valkey.after = [ "create-searxng-network.service" ];
 

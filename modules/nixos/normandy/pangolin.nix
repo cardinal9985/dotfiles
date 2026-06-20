@@ -170,6 +170,9 @@ let
         rewrite-slskd-health:
           replacePath:
             path: "/api/v0/application"
+        rewrite-degoog-health:
+          replacePath:
+            path: "/"
         rewrite-searxng-health:
           replacePath:
             path: "/healthz"
@@ -533,9 +536,9 @@ let
           middlewares:
             - noindex-headers
             - rewrite-slskd-health
-        homepage-health-searxng-router:
+        homepage-health-search-router:
           rule: "Host(`${domain}`) && Path(`/health/search`)"
-          service: searxng-service
+          service: degoog-service
           entryPoints:
             - websecure
           tls:
@@ -547,7 +550,7 @@ let
           priority: 50
           middlewares:
             - noindex-headers
-            - rewrite-searxng-health
+            - rewrite-degoog-health
         homepage-admin-router:
           rule: "Host(`${domain}`) && PathPrefix(`/admin`)"
           service: homepage-service
@@ -879,9 +882,9 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
-        searxng-router:
+        degoog-router:
           rule: "Host(`search.${domain}`)"
-          service: searxng-service
+          service: degoog-service
           entryPoints:
             - websecure
           tls:
@@ -1006,6 +1009,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5030"
+        degoog-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:4444"
         searxng-service:
           loadBalancer:
             servers:

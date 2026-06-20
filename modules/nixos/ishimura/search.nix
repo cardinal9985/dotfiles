@@ -126,7 +126,8 @@ let
     }
 
     .search-input {
-      color: var(--text-primary);
+      color: var(--text-primary) !important;
+      caret-color: var(--text-primary);
     }
 
     .results-search-bar:has(.search-input:focus),
@@ -429,36 +430,6 @@ let
     </form>
   '';
 
-  reposJson = pkgs.writeText "degoog-repos.json" (builtins.toJSON {
-    repos = [
-      { url = "https://github.com/degoog-org/official-extensions.git";
-        localPath = ""; addedAt = "2026-06-20T00:00:00.000Z";
-        lastFetched = ""; name = "official-extensions"; description = "Official degoog extensions"; error = null; }
-      { url = "https://github.com/SoPat712/degoog-toolkit.git";
-        localPath = ""; addedAt = "2026-06-20T00:00:00.000Z";
-        lastFetched = ""; name = "degoog-toolkit"; description = ""; error = null; }
-      { url = "https://codeberg.org/fccview/degoog-weeb-paradise.git";
-        localPath = ""; addedAt = "2026-06-20T00:00:00.000Z";
-        lastFetched = ""; name = "degoog-weeb-paradise"; description = ""; error = null; }
-      { url = "https://codeberg.org/Georgvwt/georgvwt-degoog-stuff.git";
-        localPath = ""; addedAt = "2026-06-20T00:00:00.000Z";
-        lastFetched = ""; name = "georgvwt-degoog-stuff"; description = ""; error = null; }
-      { url = "https://github.com/Arkmind/trankil.git";
-        localPath = ""; addedAt = "2026-06-20T00:00:00.000Z";
-        lastFetched = ""; name = "trankil"; description = ""; error = null; }
-      { url = "https://github.com/litruv/litruv-degoog-extensions.git";
-        localPath = ""; addedAt = "2026-06-20T00:00:00.000Z";
-        lastFetched = ""; name = "litruv-degoog-extensions"; description = ""; error = null; }
-      { url = "https://github.com/dawiddyd/degoog-extensions.git";
-        localPath = ""; addedAt = "2026-06-20T00:00:00.000Z";
-        lastFetched = ""; name = "degoog-extensions"; description = ""; error = null; }
-      { url = "https://github.com/TheAnnoying/theannoying-degoog-extensions.git";
-        localPath = ""; addedAt = "2026-06-20T00:00:00.000Z";
-        lastFetched = ""; name = "theannoying-degoog-extensions"; description = ""; error = null; }
-    ];
-    installed = [];
-  });
-
   # Initialized on first deploy only. SearXNG engine URLs pre-configured;
   # Jellyfin/ROMM credentials are set later via the Settings UI.
   pluginSettings = pkgs.writeText "degoog-plugin-settings.json" (builtins.toJSON {
@@ -624,11 +595,6 @@ in
       install -m 0644 -o 1000 -g 1000 ${themeStyle}   "$base/themes/ishimura/style.css"
       install -m 0644 -o 1000 -g 1000 ${searchHeader} "$base/themes/ishimura/search-templates/header.html"
       install -m 0644 -o 1000 -g 1000 ${indexSearch}  "$base/themes/ishimura/index-templates/search.html"
-
-      # seed repos.json if no repos are present yet
-      if ! ${pkgs.jq}/bin/jq -e '.repos | length > 0' "$base/repos.json" 2>/dev/null; then
-        install -m 0644 -o 1000 -g 1000 ${reposJson} "$base/repos.json"
-      fi
 
       # initialize plugin-settings.json only on first boot; degoog owns it after that
       if [ ! -f "$base/plugin-settings.json" ]; then

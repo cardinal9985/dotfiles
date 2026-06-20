@@ -181,6 +181,14 @@ let
           replacePathRegex:
             regex: "^/socket\\.io(.*)"
             replacement: "/netplay/socket.io$1"
+        # EmulatorJS netplay room list: fetch(this.url + "/list?...") where
+        # this.url = "romm.ishimura.lol" (bare hostname) is treated as a
+        # relative path, resolving to e.g. /console/rom/5/romm.ishimura.lol/list.
+        # Rewrite that to the actual ROMM REST endpoint.
+        rewrite-romm-netplay-list:
+          replacePathRegex:
+            regex: "^.*/romm\\.ishimura\\.lol/list"
+            replacement: "/api/netplay/list"
         rewrite-approval-required:
           replacePath:
             path: "/approval_required.html"
@@ -825,6 +833,7 @@ let
             - noindex-headers
             - voidauth-forwardauth
             - rewrite-romm-socket-path
+            - rewrite-romm-netplay-list
         it-tools-router:
           rule: "Host(`tools.${domain}`)"
           service: it-tools-service

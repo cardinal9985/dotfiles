@@ -173,6 +173,14 @@ let
         rewrite-searxng-health:
           replacePath:
             path: "/healthz"
+        # EmulatorJS netplay socket.io connects to /socket.io/ (the default
+        # path) because ROMM's defineNetplayFunctions override fails on the
+        # nightly build — undefined is not callable. Rewrite to the actual
+        # ROMM netplay mount point so the socket.io handshake succeeds.
+        rewrite-romm-socket-path:
+          replacePathRegex:
+            regex: "^/socket\\.io(.*)"
+            replacement: "/netplay/socket.io$1"
         rewrite-approval-required:
           replacePath:
             path: "/approval_required.html"
@@ -816,6 +824,7 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+            - rewrite-romm-socket-path
         it-tools-router:
           rule: "Host(`tools.${domain}`)"
           service: it-tools-service

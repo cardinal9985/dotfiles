@@ -13,10 +13,6 @@ let
     author      = "maxwell";
     description = "Dead Space-themed search interface.";
     css         = "style.css";
-    templates = {
-      "search-header" = "search-templates/header.html";
-      "home-search"   = "index-templates/search.html";
-    };
   });
 
   # LiterallyGoogle CSS (Google Fonts removed, font stack replaced) + Ishimura overrides
@@ -335,99 +331,16 @@ let
       text-align: center;
     }
 
-    .ishimura-header-logo {
+    .results-logo > * { display: none !important; }
+    .results-logo {
+      text-decoration: none;
       font-family: 'Courier New', Courier, monospace;
       font-size: 1rem;
       font-weight: bold;
       letter-spacing: 0.25em;
       color: var(--primary);
     }
-    .results-logo { text-decoration: none; }
-  '';
-
-  searchHeader = pkgs.writeText "degoog-search-header.html" ''
-    <a href="/" class="results-logo">
-      <span class="ishimura-header-logo">ISHIMURA</span>
-    </a>
-    <div class="results-search-bar" id="results-search-bar">
-      <input
-        type="text"
-        class="search-input"
-        id="results-search-input"
-        autocomplete="off"
-      />
-      <div class="ac-dropdown" id="ac-dropdown-results"></div>
-      <div id="search-bar-actions-results" class="search-bar-actions"></div>
-      <button class="search-submit-btn" id="results-search-btn">
-        <svg
-          class="search-icon"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--search-bar-icon)"
-          stroke-width="3"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
-      </button>
-    </div>
-    <a
-      href="/settings"
-      class="header-link settings-gear"
-      id="nav-settings-results"
-      title="Settings"
-    >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path
-          d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"
-        />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    </a>
-  '';
-
-  indexSearch = pkgs.writeText "degoog-index-search.html" ''
-    <form action="/search" method="get" id="search-form-home" class="search-form">
-      <div class="search-bar" id="search-bar-home">
-        <svg
-          class="search-icon"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--search-bar-icon)"
-          stroke-width="3"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
-        <input
-          type="text"
-          class="search-input"
-          id="search-input"
-          name="q"
-          autocomplete="off"
-          placeholder=""
-        />
-        <div class="ac-dropdown" id="ac-dropdown-home"></div>
-        <div id="search-bar-actions-home" class="search-bar-actions"></div>
-      </div>
-      <div class="button-row">
-        <button type="submit" class="search-btn" id="btn-search">Search</button>
-        <button type="button" class="search-btn" id="btn-lucky">I'm Feeling Lucky</button>
-      </div>
-    </form>
+    .results-logo::before { content: "ISHIMURA"; }
   '';
 
   # Initialized on first deploy only. SearXNG engine URLs pre-configured;
@@ -588,13 +501,10 @@ in
     text = ''
       base=/persist/degoog/data
       install -d -m 0755 -o 1000 -g 1000 "$base"
-      install -d -m 0755 -o 1000 -g 1000 "$base/themes/ishimura/search-templates"
-      install -d -m 0755 -o 1000 -g 1000 "$base/themes/ishimura/index-templates"
+      install -d -m 0755 -o 1000 -g 1000 "$base/themes/ishimura"
 
-      install -m 0644 -o 1000 -g 1000 ${themeJson}    "$base/themes/ishimura/theme.json"
-      install -m 0644 -o 1000 -g 1000 ${themeStyle}   "$base/themes/ishimura/style.css"
-      install -m 0644 -o 1000 -g 1000 ${searchHeader} "$base/themes/ishimura/search-templates/header.html"
-      install -m 0644 -o 1000 -g 1000 ${indexSearch}  "$base/themes/ishimura/index-templates/search.html"
+      install -m 0644 -o 1000 -g 1000 ${themeJson}  "$base/themes/ishimura/theme.json"
+      install -m 0644 -o 1000 -g 1000 ${themeStyle} "$base/themes/ishimura/style.css"
 
       # initialize plugin-settings.json only on first boot; degoog owns it after that
       if [ ! -f "$base/plugin-settings.json" ]; then

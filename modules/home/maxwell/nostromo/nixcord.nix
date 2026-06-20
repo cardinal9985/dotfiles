@@ -6,7 +6,6 @@
     discord.equicord.enable = true;
     discord.vencord.enable = false;
 
-    # Everforest Dark Hard color overrides for midnight theme
     quickCss = ''
       body {
         --font: 'JetBrainsMono Nerd Font';

@@ -1,12 +1,9 @@
 { pkgs, ... }:
 
 let
-  tailnetIP = "100.92.76.121";  # ishimura tailnet IP
+  tailnetIP = "100.92.76.121";
 in
 {
-  # Same DNS-conflict workaround Pelican uses: AGH holds udp/53 on every
-  # interface including podman's default bridge gateway, so aardvark-dns can't
-  # start for the default network. Dedicate a network with DNS disabled.
   systemd.services.create-tdarr-network = {
     description = "Create tdarr podman network (no DNS)";
     wantedBy = [ "podman-tdarr-server.service" ];
@@ -26,9 +23,6 @@ in
     "d /persist/tdarr/server   0755 maxwell users -"
     "d /persist/tdarr/configs  0755 maxwell users -"
     "d /persist/tdarr/logs     0755 maxwell users -"
-    # Shared transcode cache on the mergerfs union, NFS-exported to nostromo.
-    # Both tdarr-server (here) and tdarr-node (nostromo) mount this as /temp
-    # so the server can read worker output to run mediaInfo + replace-original.
     "d /mnt/storage/tdarr-cache  0755 maxwell users -"
   ];
 
@@ -46,8 +40,6 @@ in
       serverIP = "0.0.0.0";
       serverPort = "8266";
       webUIPort = "8265";
-      # No internal worker on the server: ishimura's iGPU is reserved for
-      # Jellyfin's live transcoding. Heavy lifting happens on nostromo.
       internalNode = "false";
       inContainer = "true";
     };
@@ -55,16 +47,11 @@ in
       "/persist/tdarr/server:/app/server"
       "/persist/tdarr/configs:/app/configs"
       "/persist/tdarr/logs:/app/logs"
-      # Shared with nostromo's tdarr-node via NFS so the server can see the
-      # worker's output cache for mediaInfo + replace-original post-steps.
       "/mnt/storage/tdarr-cache:/temp"
       "/mnt/storage:/media"
     ];
     ports = [
-      # Web UI bound to tailnet IP only. Traefik on Normandy proxies in via
-      # tdarr.ishimura.lol with tailnet-only IPAllowList middleware.
       "${tailnetIP}:8265:8265"
-      # Node API bound to tailnet IP. nostromo's worker connects here.
       "${tailnetIP}:8266:8266"
     ];
     extraOptions = [ "--network=tdarr-net" ];

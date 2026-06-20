@@ -1,9 +1,6 @@
 { lib, ... }:
 
 {
-  # Unbound: full recursive DNS resolver, talks to root + authoritative servers
-  # directly. No third-party upstream sees the full query stream. AdGuard Home
-  # forwards to this on 127.0.0.1:5335 for actual resolution.
   services.unbound = {
     enable = true;
     resolveLocalQueries = false;
@@ -29,8 +26,6 @@
     };
   };
 
-  # AdGuard Home: ad blocking, query log, web UI. Forwards to Unbound for
-  # recursive resolution. DNS on :53 for clients, web UI on :3000.
   services.adguardhome = {
     enable = true;
     mutableSettings = true;
@@ -39,14 +34,12 @@
     openFirewall = true;
   };
 
-  # Override AGH's DynamicUser=true so impermanence bind mounts work cleanly.
-  # DynamicUser symlinks /var/lib/AdGuardHome to /var/lib/private/AdGuardHome
-  # at runtime, which conflicts with the bind mount from /persist.
   users.users.adguardhome = {
     isSystemUser = true;
     group = "adguardhome";
     home = "/var/lib/AdGuardHome";
   };
+
   users.groups.adguardhome = { };
   systemd.services.adguardhome.serviceConfig = {
     DynamicUser = lib.mkForce false;
@@ -54,11 +47,9 @@
     Group = "adguardhome";
   };
 
-  # AGH's openFirewall only handles its web UI; DNS port 53 is not auto-opened.
   networking.firewall.allowedTCPPorts = [ 53 3000 ];
   networking.firewall.allowedUDPPorts = [ 53 ];
 
-  # Disable systemd-resolved so it does not fight AGH for port 53.
   services.resolved.enable = lib.mkForce false;
 
   environment.persistence."/persist".directories = [

@@ -24,10 +24,6 @@ $last_log" \
   '';
 in
 {
-  # Template unit. Other services opt in via:
-  #   unitConfig.OnFailure = [ "ntfy-on-failure@%n.service" ];
-  # On failure, %n expands to the caller's full unit name, which systemd
-  # routes here as the instance. The script strips the duplicate suffix.
   systemd.services."ntfy-on-failure@" = {
     description = "Notify ntfy when systemd unit %i fails";
     serviceConfig = {

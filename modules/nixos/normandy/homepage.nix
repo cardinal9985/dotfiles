@@ -2,14 +2,7 @@
 
 let
   src = ../../../config/homepage/src;
-
-  # ishimura tailnet IP. Used for both click-through URLs (resolves for tailnet
-  # visitors) and Normandy-side health-check proxies. Public visitors can't reach
-  # this IP, that's intentional; status dot reflects reality.
   ishimuraTailnetIP = "100.92.76.121";
-
-  # Services the public homepage advertises. Currently just Jellyfin; status is
-  # checked by Normandy proxying /health/jellyfin to ishimura over the tailnet.
   services = [
     {
       name        = "Jellyfin";
@@ -77,8 +70,6 @@ let
     }
   ];
 
-  # Admin-only tiles. /admin/ is gated by voidauth forwardauth so only signed-in
-  # admins see these.
   adminServices = [
     {
       name        = "Scrutiny";
@@ -160,13 +151,10 @@ let
     }
   ];
 
-  # Game servers advertised on the public homepage so friends can find the
-  # connection address + a short how-to. Each card expands inline. Add new
-  # games here as Pelican servers come online.
   games = [
     {
       name              = "Vintage Story";
-      slug              = "vintage-story";  # matches Pelican server name (lowercased, hyphens for spaces)
+      slug              = "vintage-story";
       description       = "Wilderness survival sandbox in a ruined fantasy world";
       address           = "ishimura.lol:42420";
       version           = "1.22.3 (Stable)";
@@ -176,7 +164,6 @@ let
         "Click 'Multiplayer'"
         "Click 'Server connect'"
         "Paste 'ishimura.lol:42420' into the address field"
-        "Whitelist is on - ping Maxwell with your playername to be added"
       ];
     }
   ];
@@ -197,9 +184,6 @@ let
     cp ${adminServicesJson}    $out/admin/services.json
   '';
 
-  # Polls Pelican Panel's application API every 30s, writes per-server
-  # state JSON into the homepage's games-status/ dir. The activation script
-  # uses rsync with --exclude games-status so we don't wipe these on rebuild.
   gameStatusPoller = pkgs.writeShellScript "game-status-poller" ''
     set -uo pipefail
     PATH=${pkgs.curl}/bin:${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnused}/bin

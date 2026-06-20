@@ -18,7 +18,6 @@
     settings = {
       server = {
         http_port = 3001;
-        # Bind 0.0.0.0; firewall below restricts ingress to the tailnet interface.
         http_addr = "0.0.0.0";
         domain = "grafana.ishimura.lol";
         root_url = "https://grafana.ishimura.lol";
@@ -30,10 +29,6 @@
         check_for_updates = false;
       };
 
-      # Grafana 13 stores dashboards via a new Kubernetes-style API
-      # (dashboard.grafana.app) which doesn't always populate the legacy
-      # Dashboards listing UI. Disable the new apiserver toggle so dashboards
-      # round-trip through the classic SQL store and show in the list.
       feature_toggles = {
         kubernetesDashboards = false;
         unifiedStorage = false;
@@ -72,8 +67,6 @@
 
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 3001 ];
 
-  # Persist Grafana's sqlite DB so dashboards, users, password changes, and
-  # imported visualizations survive reboots.
   environment.persistence."/persist".directories = [
     { directory = "/var/lib/grafana"; user = "grafana"; group = "grafana"; mode = "0750"; }
   ];

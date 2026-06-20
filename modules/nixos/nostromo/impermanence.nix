@@ -8,7 +8,7 @@
       "/var/lib/bluetooth"
       "/var/lib/systemd/coredump"
       "/var/lib/nixos"
-"/var/lib/tailscale"
+      "/var/lib/tailscale"
     ];
     files = [
       "/etc/machine-id"

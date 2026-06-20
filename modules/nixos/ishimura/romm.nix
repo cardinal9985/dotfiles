@@ -2,8 +2,6 @@
 
 let
   tailnetIP = "100.92.76.121";
-  # Static IPs on a dedicated podman network so romm can reach mariadb
-  # without aardvark-dns (AGH holds udp/53 on every bridge).
   mariaDBIP = "10.89.60.10";
   rommIP    = "10.89.60.11";
 in
@@ -15,6 +13,18 @@ in
     "d /persist/romm/config    0755 1000 100 -"
     "d /persist/romm/mariadb   0750 999  999 -"
   ];
+
+  system.activationScripts.romm-config = ''
+    cat > /persist/romm/config/config.yml << 'ROMM_CONFIG'
+emulatorjs:
+  netplay:
+    enabled: true
+    ice_servers:
+      - urls: "stun:turn.ishimura.lol:3478"
+ROMM_CONFIG
+    chown 1000:100 /persist/romm/config/config.yml
+    chmod 0644 /persist/romm/config/config.yml
+  '';
 
   environment.persistence."/persist".directories = [
     "/persist/romm"
@@ -102,10 +112,6 @@ in
         "/persist/romm/resources:/romm/resources"
         "/persist/romm/assets:/romm/assets"
         "/persist/romm/config:/romm/config"
-        # ROMM Structure A: /romm/library/roms/<platform>/<files>.
-        # Bind /mnt/storage/media/roms directly under /romm/library/roms so
-        # the host layout stays /mnt/storage/media/roms/<platform>/<files>
-        # without a redundant /roms/roms/ nesting.
         "/mnt/storage/media/roms:/romm/library/roms"
         "/mnt/storage/media/bios:/romm/library/bios"
       ];

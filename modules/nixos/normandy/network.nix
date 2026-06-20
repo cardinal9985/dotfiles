@@ -20,12 +20,12 @@
         36475 # real SSH
         80    # Pangolin / Traefik (HTTP, ACME challenges)
         443   # Pangolin / Traefik (HTTPS)
-        50300 # slskd peer port (Pangolin raw resource -> ishimura tailnet:50300)
+        50300 # slskd peer port (Pangolin raw resource > ishimura tailnet:50300)
       ];
       allowedUDPPorts = [
         51820 # Pangolin / Gerbil (WireGuard, primary)
         21820 # Pangolin / Gerbil (WireGuard, secondary)
-        42420 # Vintage Story (Pelican raw resource -> nostromo tailnet:42420)
+        42420 # Vintage Story (Pelican raw resource > nostromo tailnet:42420)
       ];
       interfaces.tailscale0.allowedTCPPorts = [
         3890 # voidauth LDAP (tailnet-only, jellyfin-plugin-ldap connects here)

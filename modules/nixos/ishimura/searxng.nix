@@ -2,15 +2,10 @@
 
 let
   tailnetIP = "100.92.76.121";
-  # Static IPs on a dedicated podman network. AGH holds udp/53 so we run with
-  # --disable-dns and address Valkey by IP rather than hostname.
   valkeyIP  = "10.89.70.10";
   searxngIP = "10.89.70.11";
 in
 {
-  # Activation script (vs systemd.tmpfiles) so the dirs exist before podman
-  # tries to bind-mount them. tmpfiles raced the container startup on first
-  # deploy and pushed the unit past its restart limit.
   system.activationScripts.searxng-dirs = ''
     install -d -m 0755 -o 977 -g 977   /persist/searxng
     install -d -m 0750 -o 977 -g 977   /persist/searxng/data
@@ -39,9 +34,6 @@ in
     '';
   };
 
-  # settings.yml lives in the Nix store (rendered by sops so the secret_key
-  # is inlined at activation time). Mount read-only into the container; the
-  # searxng user reads it during startup.
   sops.templates."searxng-settings.yml" = {
     mode = "0444";
     content = ''

@@ -3,7 +3,6 @@
 {
 
   imports = [
-    # Modules
     ./network.nix
     ./nfs.nix
     ./ntfy.nix

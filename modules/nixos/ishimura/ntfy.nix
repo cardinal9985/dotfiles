@@ -1,7 +1,6 @@
 { pkgs, lib, ... }:
 
 let
-  # ── Producer 1: disk space threshold alerts ─────────────────────────────
   stateDir  = "/var/lib/disk-space-ntfy";
   stateFile = "${stateDir}/seen.txt";
 
@@ -58,7 +57,6 @@ EOF
     ${pkgs.coreutils}/bin/install -m 0644 "$new_state" ${stateFile}
   '';
 
-  # ── Producer 2: OnFailure alerts for critical services on ishimura ──────
   critical = [
     "jellyfin"
     "podman-tdarr-server"
@@ -72,7 +70,7 @@ EOF
   };
 in
 {
-  # ── Disk-space poller (Producer 1) ──────────────────────────────────────
+
   systemd.timers.disk-space-ntfy = {
     description = "Run disk-space-ntfy every 15 minutes";
     wantedBy = [ "timers.target" ];
@@ -83,7 +81,6 @@ in
     };
   };
 
-  # systemd.services merged: disk-space poller + per-critical OnFailure hooks
   systemd.services = lib.mkMerge ([
     {
       disk-space-ntfy = {

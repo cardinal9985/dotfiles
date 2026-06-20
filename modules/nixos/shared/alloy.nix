@@ -1,9 +1,6 @@
 { pkgs, ... }:
 
 let
-  # Grafana Alloy config in River language. Ships the systemd journal
-  # to Loki on ishimura via MagicDNS so tailnet IP drift is harmless.
-  # Replaces the EOL promtail (deprecated in nixpkgs 26.05).
   alloyConfig = pkgs.writeText "config.alloy" ''
     loki.relabel "journal" {
       forward_to = []

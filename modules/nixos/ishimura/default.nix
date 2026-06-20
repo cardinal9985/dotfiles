@@ -3,7 +3,6 @@
 {
   imports = [
     ./crowdsec.nix
-    ./crowdsec-firewall-bouncer.nix
     ./dns.nix
     ./gpu.nix
     ./grafana.nix

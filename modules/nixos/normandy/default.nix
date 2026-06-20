@@ -6,7 +6,6 @@
     ./boot.nix
     ./coturn.nix
     ./crowdsec.nix
-    ./crowdsec-firewall-bouncer.nix
     ./homepage.nix
     ./impermanence.nix
     ./network.nix

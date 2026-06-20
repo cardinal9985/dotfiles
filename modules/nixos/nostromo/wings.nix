@@ -18,9 +18,6 @@ let
   };
 in
 {
-  # Wings tries to `useradd pelican` on startup; NixOS doesn't ship useradd
-  # on PATH (users are declarative), so pre-create the user here. Wings
-  # detects it exists and skips its own creation step.
   users.users.pelican = {
     isSystemUser = true;
     group = "pelican";
@@ -36,8 +33,6 @@ in
     "d /var/lib/pelican/logs    0700 root root -"
   ];
 
-  # nostromo's impermanence doesn't track /var/log; keep Wings's logs
-  # under /var/lib/pelican/logs so they're covered by /var/lib persistence.
   environment.persistence."/persist".directories = [
     "/etc/pelican"
     "/var/lib/pelican"
@@ -55,9 +50,6 @@ in
       LimitNOFILE = "4096";
       User = "root";
       Group = "root";
-      # Wings expects /var/run/docker.sock by default. dockerCompat on this
-      # host exposes a Docker-API-compatible socket at /run/podman/podman.sock;
-      # point Wings at it explicitly so it manages game containers via podman.
       Environment = "DOCKER_HOST=unix:///run/podman/podman.sock";
     };
     unitConfig = {
@@ -65,10 +57,4 @@ in
       StartLimitBurst = "30";
     };
   };
-
-  # No firewall ports needed for Wings itself - tailscale0 is a trusted
-  # interface (shared/tailscale.nix), so the panel on ishimura reaches Wings
-  # over tailnet without explicit holes. Game-server-specific ports get
-  # added per-game when each server is provisioned and needs public access
-  # via Pangolin raw TCP/UDP resources.
 }

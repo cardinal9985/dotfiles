@@ -7,7 +7,6 @@
       auth_enabled = false;
 
       server = {
-        # Bind 0.0.0.0; firewall below restricts ingress to the tailnet interface.
         http_listen_address = "0.0.0.0";
         http_listen_port = 3100;
         grpc_listen_address = "127.0.0.1";
@@ -42,13 +41,11 @@
         }];
       };
 
-      # Retention. 30d matches Prometheus.
       limits_config = {
         retention_period = "720h";
         reject_old_samples = true;
         reject_old_samples_max_age = "168h";
         max_query_series = 100000;
-        # Allow ingestion bursts during log spikes.
         ingestion_rate_mb = 16;
         ingestion_burst_size_mb = 32;
       };

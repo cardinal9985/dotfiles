@@ -55,8 +55,4 @@ in
       RestartSec = "5s";
     };
   };
-
-  # App binds 0.0.0.0:5002. tailscale0 is in trustedInterfaces so the port
-  # is reachable from normandy over tailnet; the host firewall blocks
-  # external access since 5002 isn't explicitly allowed.
 }

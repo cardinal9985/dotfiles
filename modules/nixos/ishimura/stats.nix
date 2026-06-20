@@ -16,9 +16,6 @@ let
   '';
 in
 {
-  # Navidrome's data dir defaults to 0700 navidrome:navidrome which blocks
-  # even group reads. Relax to 0750 + 0640 on the SQLite file so the stats
-  # poller can open it read-only via its navidrome group membership.
   systemd.services.navidrome.serviceConfig.UMask = pkgs.lib.mkForce "0027";
   systemd.tmpfiles.rules = [
     "d /persist/stats 0750 stats stats -"
@@ -38,10 +35,6 @@ in
   };
   users.groups.stats = {};
 
-  # Embed secrets directly. The original used per-secret *_FILE paths with
-  # root-only sops files; reusing the existing booklore/romm secrets would
-  # mean opening them up to a shared group. Inlining into a stats-owned env
-  # template keeps the original secrets root-only.
   sops.templates."stats.env" = {
     owner = "stats";
     content = ''

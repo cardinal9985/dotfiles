@@ -4,21 +4,12 @@ let
   pelicanHost = "pelican.ishimura.lol";
 in
 {
-  # Pelican container runs as www-data, UID/GID 82 in its custom Alpine-based
-  # PHP base image (Alpine convention, NOT the Debian 33). Bind-mounted
-  # volumes need that ownership or the entrypoint can't write .env, logs,
-  # or the SQLite database file.
   systemd.tmpfiles.rules = [
     "d /persist/pelican       0755 82 82 -"
     "d /persist/pelican/data  0755 82 82 -"
     "d /persist/pelican/logs  0755 82 82 -"
   ];
 
-  # AdGuard Home holds udp/53 on every interface including podman's default
-  # bridge gateway 10.88.0.1, so aardvark-dns can't start for the default
-  # podman network. Create a dedicated network with DNS disabled - Pelican
-  # uses the host's resolv.conf for any external lookups, no podman DNS
-  # needed inside a single-container deployment.
   systemd.services.create-pelican-network = {
     description = "Create pelican podman network (no DNS)";
     wantedBy = [ "podman-pelican.service" ];
@@ -34,9 +25,6 @@ in
     '';
   };
 
-  # Pelican stores APP_KEY in /pelican-data/.env on first run. Sopsing it
-  # ourselves guarantees the key survives a /persist wipe. Generate with:
-  #   openssl rand -base64 32 | sed 's|^|base64:|'
   sops.templates."pelican.env" = {
     content = ''
       APP_URL=https://${pelicanHost}
@@ -60,9 +48,6 @@ in
     ports = [ "0.0.0.0:8801:80" ];
     extraOptions = [
       "--network=pelican-net"
-      # Caddy inside runs as www-data (UID 82) and tries to bind :80; podman
-      # drops privileged-port capability by default, so the bind fails. Add
-      # the capability back so non-root processes can listen on port 80.
       "--cap-add=NET_BIND_SERVICE"
     ];
   };

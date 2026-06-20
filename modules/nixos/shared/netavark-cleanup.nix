@@ -1,34 +1,12 @@
 { pkgs, ... }:
 
 {
-  # netavark (podman's network backend) sometimes leaves DNAT chains in
-  # nftables after container networking changes (port mapping flip, host
-  # networking switch, container recreation). Those stale chains silently
-  # route incoming connections to dead container IPs, producing "no route
-  # to host" or timeouts on specific ports. See feedback memory for full
-  # background.
-  #
-  # This oneshot flushes all netavark-managed chains in both `ip nat` and
-  # `inet netavark` tables before podman starts. Each running container
-  # service triggers netavark to regenerate fresh chains afterwards, so
-  # the table ends up in a known-clean state.
-  #
-  # The matching is conservative: only deletes chains whose names start
-  # with NETAVARK- or nv_ (netavark's own prefixes). System chains
-  # (prerouting, postrouting, etc.) are untouched.
   systemd.services.netavark-stale-flush = {
     description = "Flush stale netavark NAT chains at boot only";
     wantedBy = [ "podman.service" ];
-    # create-pangolin-network.service only exists on normandy; listing
-    # it here would produce systemd warnings on the other hosts. The
-    # cleanup runs early enough via network-pre.target + before podman.
     before = [ "podman.service" ];
     after = [ "network-pre.target" ];
 
-    # Only run on boot, not on every config reload (`systemctl restart`
-    # after a nixos-rebuild switch would otherwise re-flush chains that
-    # active containers are currently using, breaking their NAT until
-    # the container itself restarts).
     unitConfig = {
       ConditionPathExists = "!/run/netavark-stale-flush.done";
     };

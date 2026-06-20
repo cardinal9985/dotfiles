@@ -9,12 +9,6 @@
 
   services.anubis = {
     defaultOptions = {
-      # Shared cookie domain so passing the challenge on auth.ishimura.lol
-      # also covers ishimura.lol (and any other future subdomain). For this
-      # to actually work, both instances must use the SAME ED25519 signing
-      # key. Without ED25519_PRIVATE_KEY_HEX_FILE each instance generates
-      # a random key at startup, making cross-instance cookies invalid
-      # and forcing the user to solve PoW per-subdomain.
       extraFlags = [ "-cookie-domain" ".ishimura.lol" ];
 
       settings = {
@@ -22,9 +16,6 @@
       };
 
       policy.settings = {
-        # Bypass PoW for OIDC discovery + token + jwks endpoints so OIDC
-        # relying parties (BookLore, future Subsonic clients, etc.) can
-        # fetch them from JS / their backends without solving challenges.
         bots = [
           {
             name = "oidc-endpoints";
@@ -80,16 +71,11 @@
         BIND_NETWORK = "tcp";
         METRICS_BIND = "127.0.0.1:8924";
         METRICS_BIND_NETWORK = "tcp";
-        TARGET = "http://127.0.0.1:3030";  # voidauth
+        TARGET = "http://127.0.0.1:3030";
         SERVE_ROBOTS_TXT = false;
         OG_PASSTHROUGH = true;
         WEBMASTER_EMAIL = "fanatical.despise915@simplelogin.com";
       };
     };
-
-    # anubis-homepage instance removed - redundant with voidauth-forwardauth
-    # which already gates anonymous bots from reaching the homepage. Anyone
-    # who reaches the homepage container has already authenticated via
-    # voidauth (which itself is behind anubis-public PoW).
   };
 }

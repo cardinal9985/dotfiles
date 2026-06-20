@@ -2,16 +2,10 @@
 
 let
   tailnetIP = "100.92.76.121";
-  # Static IPs on a dedicated podman network. We can't use aardvark-dns for
-  # name resolution (AGH holds udp/53 on every interface), so the BookLore
-  # container reaches MariaDB by IP rather than hostname.
   mariaDBIP = "10.89.50.10";
   bookloreIP = "10.89.50.11";
 in
 {
-  # Use z (lowercase, non-recursive) so it fixes ownership on the existing
-  # /persist/booklore dir that the persistence module pre-creates as root.
-  # Z (uppercase) would recurse and stomp the mariadb subdir's 999:999 perms.
   systemd.tmpfiles.rules = [
     "z /persist/booklore 0755 1000 100 -"
     "d /persist/booklore/data 0755 1000 100 -"

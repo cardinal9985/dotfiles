@@ -5,12 +5,11 @@
     hostName = "nostromo";
     networkmanager = {
       enable = true;
-      # AGH (LAN), AGH (tailnet) - tried in order before DHCP-provided DNS.
       insertNameservers = [ "192.168.254.186" "100.92.76.121" ];
     };
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 36475 43122 39387 ]; # 36475 = SSH 43122 = Nicotine
+      allowedTCPPorts = [ 36475  ]; # 36475 = SSH
     };
     hosts = {
       "100.108.98.70" = [ "ishimura.lol" "pangolin.ishimura.lol" "auth.ishimura.lol" ];

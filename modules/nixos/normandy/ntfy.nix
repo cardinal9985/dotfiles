@@ -1,7 +1,6 @@
 { pkgs, lib, ... }:
 
 let
-  # ── Producer 1: poll CrowdSec decisions, post new bans to ntfy ──────────
   stateDir  = "/var/lib/crowdsec-ntfy";
   stateFile = "${stateDir}/seen.txt";
 
@@ -33,9 +32,6 @@ Duration: $duration" \
     mv ${stateFile}.new ${stateFile}
   '';
 
-  # ── Producer 2: TLS cert expiry watchdog ────────────────────────────────
-  # Hits each public host via openssl, alerts if any cert is <14 days from
-  # expiry. Catches Traefik ACME renewal failures regardless of cause.
   certHosts = [
     "ishimura.lol"
     "auth.ishimura.lol"
@@ -91,10 +87,6 @@ Duration: $duration" \
     ${pkgs.coreutils}/bin/install -m 0644 "$new_state" ${certStateFile}
   '';
 
-  # ── Producer 3: voidauth pending-signup notifier ────────────────────────
-  # Polls the voidauth-db postgres for users with approved=false. New IDs
-  # since last poll get posted to ntfy so admin can act on them.
-  # Voidauth's user table is "user" (quoted, postgres reserved word).
   voidauthStateDir  = "/var/lib/voidauth-ntfy";
   voidauthStateFile = "${voidauthStateDir}/seen.txt";
 
@@ -131,10 +123,6 @@ Approve at https://auth.ishimura.lol/admin/" \
     ${pkgs.coreutils}/bin/install -m 0644 "$new_state" ${voidauthStateFile}
   '';
 
-  # ── Producer 4: endlessh attempt digest ─────────────────────────────────
-  # endlessh-go logs each accepted SSH connection. Public-IP normandy gets
-  # tarpitted by scanners constantly; per-event ntfy would be noise. Post
-  # an hourly digest with attempt count + unique source IPs.
   endlesshDigestScript = pkgs.writeShellScript "endlessh-ntfy-digest" ''
     set -euo pipefail
 
@@ -160,7 +148,6 @@ $top_ips" \
       http://localhost:8080/honeypot >/dev/null || true
   '';
 
-  # ── Producer 5: OnFailure alerts for critical services on Normandy ──────
   critical = [
     "podman-pangolin"
     "podman-traefik"
@@ -179,7 +166,7 @@ $top_ips" \
   };
 in
 {
-  # ── ntfy server ─────────────────────────────────────────────────────────
+
   services.ntfy-sh = {
     enable = true;
     settings = {
@@ -197,7 +184,6 @@ in
     "d /var/lib/ntfy-sh/attachments 0750 ntfy-sh ntfy-sh -"
   ];
 
-  # ── CrowdSec poller (Producer 1) ────────────────────────────────────────
   systemd.timers.crowdsec-ntfy = {
     description = "Periodic CrowdSec ban -> ntfy poll";
     wantedBy = [ "timers.target" ];
@@ -239,7 +225,6 @@ in
     };
   };
 
-  # systemd.services merged: pollers + per-critical OnFailure hooks
   systemd.services = lib.mkMerge ([
     {
       crowdsec-ntfy = {

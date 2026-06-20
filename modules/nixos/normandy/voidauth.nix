@@ -4,10 +4,10 @@ let
   authHost = "auth.ishimura.lol";
 in
 {
-  # Voidauth wedges its API after some time of uptime - container stays
+  # Voidauth wedges its API after some time of uptime, container stays
   # alive, DB healthy, but every /api/authz/forward-auth call times out.
   # Probable cause: DB connection pool exhausted from forwardauth requests
-  # or an unhandled async exception blocked the event loop. Until we can
+  # or an unhandled async exception blocked the event loop. Until I can
   # diagnose upstream, this watchdog probes the endpoint every 2 minutes
   # and restarts the container if it doesn't respond within 4s.
   systemd.services.voidauth-watchdog = {

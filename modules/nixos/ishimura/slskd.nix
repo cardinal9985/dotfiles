@@ -44,9 +44,7 @@ in
     environment = {
       TZ = "America/New_York";
       PUID = "1000";
-      PGID = "100";  # users group
-      # Access is gated by Pangolin's tailnet-only middleware upstream so no
-      # need for slskd's own login form.
+      PGID = "100";
       SLSKD_NO_AUTH = "true";
       SLSKD_REMOTE_CONFIGURATION = "true";
       SLSKD_SLSK_DESCRIPTION = "Ishimura";

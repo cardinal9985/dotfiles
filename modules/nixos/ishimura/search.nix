@@ -477,11 +477,6 @@ in
     "d /persist/degoog/data    0755 1000 1000 -"
   ];
 
-  environment.persistence."/persist".directories = [
-    "/persist/searxng"
-    "/persist/degoog"
-  ];
-
   # ── SearXNG (internal backend) ───────────────────────────────────────────
 
   systemd.services.create-searxng-network = {

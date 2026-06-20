@@ -125,6 +125,10 @@ let
       height: 50px;
     }
 
+    .search-input {
+      color: var(--text-primary);
+    }
+
     .results-search-bar:has(.search-input:focus),
     .search-bar:has(.search-input:focus) {
       background: var(--search-bar-focused);

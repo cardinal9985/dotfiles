@@ -21,7 +21,7 @@ in
 
   virtualisation.oci-containers.containers.it-tools = {
     image = "ghcr.io/sharevb/it-tools:latest";
-    ports = [ "${tailnetIP}:8085:80" ];
+    ports = [ "${tailnetIP}:8085:8080" ];
     extraOptions = [ "--network=it-tools-net" ];
   };
 

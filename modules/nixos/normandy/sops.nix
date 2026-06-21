@@ -48,9 +48,6 @@
       "searxng/secret_key" = {
         mode = "0400";
       };
-      "watch2gether/session_secret" = {
-        mode = "0400";
-      };
     };
   };
 }

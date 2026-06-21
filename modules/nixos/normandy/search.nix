@@ -341,7 +341,7 @@ let
   '';
 
   pluginSettings = pkgs.writeText "degoog-plugin-settings.json" (builtins.toJSON {
-    theme."active" = "ishimura";
+    theme."active" = "ishimura-theme";
     "searxng-search"."baseUrl" = searxngURL;
     "searxng-images"."baseUrl" = searxngURL;
     "searxng-videos"."baseUrl" = searxngURL;
@@ -471,10 +471,10 @@ in
     text = ''
       base=/persist/degoog/data
       install -d -m 0755 -o 1000 -g 1000 "$base"
-      install -d -m 0755 -o 1000 -g 1000 "$base/themes/ishimura"
+      install -d -m 0755 -o 1000 -g 1000 "$base/themes/ishimura-theme"
 
-      install -m 0644 -o 1000 -g 1000 ${themeJson}  "$base/themes/ishimura/theme.json"
-      install -m 0644 -o 1000 -g 1000 ${themeStyle} "$base/themes/ishimura/style.css"
+      install -m 0644 -o 1000 -g 1000 ${themeJson}  "$base/themes/ishimura-theme/theme.json"
+      install -m 0644 -o 1000 -g 1000 ${themeStyle} "$base/themes/ishimura-theme/style.css"
 
       if [ ! -f "$base/plugin-settings.json" ]; then
         install -m 0644 -o 1000 -g 1000 ${pluginSettings} "$base/plugin-settings.json"

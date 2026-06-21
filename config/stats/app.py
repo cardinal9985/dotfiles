@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template, request, redirect, url_for
@@ -20,27 +21,14 @@ db.init_db()
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(poll_jellyfin, "interval", minutes=5, id="poll_jellyfin",
-                  next_run_time=None)
+                  next_run_time=datetime.now() + timedelta(seconds=10))
 scheduler.add_job(poll_navidrome, "interval", minutes=5, id="poll_navidrome",
-                  next_run_time=None)
+                  next_run_time=datetime.now() + timedelta(seconds=15))
 scheduler.add_job(poll_romm, "interval", minutes=15, id="poll_romm",
-                  next_run_time=None)
+                  next_run_time=datetime.now() + timedelta(seconds=20))
 scheduler.add_job(poll_booklore, "interval", minutes=5, id="poll_booklore",
-                  next_run_time=None)
+                  next_run_time=datetime.now() + timedelta(seconds=25))
 scheduler.start()
-
-# Run initial poll after a short delay
-from apscheduler.triggers.date import DateTrigger
-from datetime import datetime, timedelta
-
-scheduler.add_job(poll_jellyfin, DateTrigger(
-    run_date=datetime.now() + timedelta(seconds=10)), id="init_jellyfin")
-scheduler.add_job(poll_navidrome, DateTrigger(
-    run_date=datetime.now() + timedelta(seconds=15)), id="init_navidrome")
-scheduler.add_job(poll_romm, DateTrigger(
-    run_date=datetime.now() + timedelta(seconds=20)), id="init_romm")
-scheduler.add_job(poll_booklore, DateTrigger(
-    run_date=datetime.now() + timedelta(seconds=25)), id="init_booklore")
 
 
 def _get_user():

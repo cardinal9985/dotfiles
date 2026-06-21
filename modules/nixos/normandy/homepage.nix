@@ -68,6 +68,14 @@ let
       statusPath  = "/health/search";
       healthUrl   = "http://${ishimuraTailnetIP}:8888/healthz";
     }
+    {
+      name        = "Watch2gether";
+      description = "Watch Together";
+      url         = "https://watch.ishimura.lol";
+      icon        = "◑";
+      statusPath  = "/health/watch2gether";
+      healthUrl   = "http://127.0.0.1:4545/";
+    }
   ];
 
   adminServices = [

@@ -18,5 +18,6 @@
     ./substituters.nix
     ./user.nix
     ./voidauth.nix
+    ./watch2gether.nix
   ];
 }

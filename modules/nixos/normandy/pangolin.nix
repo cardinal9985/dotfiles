@@ -173,6 +173,9 @@ let
         rewrite-degoog-health:
           replacePath:
             path: "/"
+        rewrite-watch2gether-health:
+          replacePath:
+            path: "/"
         # EmulatorJS netplay socket.io connects to /socket.io/ (the default
         # path) because ROMM's defineNetplayFunctions override fails on the
         # nightly build — undefined is not callable. Rewrite to the actual
@@ -533,6 +536,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-slskd-health
+        homepage-health-watch2gether-router:
+          rule: "Host(`${domain}`) && Path(`/health/watch2gether`)"
+          service: watch2gether-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-watch2gether-health
         homepage-health-search-router:
           rule: "Host(`${domain}`) && Path(`/health/search`)"
           service: degoog-service
@@ -879,6 +897,21 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        watch2gether-router:
+          rule: "Host(`watch.${domain}`)"
+          service: watch2gether-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         degoog-router:
           rule: "Host(`search.${domain}`)"
           service: degoog-service
@@ -1010,6 +1043,10 @@ let
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:4444"
+        watch2gether-service:
+          loadBalancer:
+            servers:
+              - url: "http://127.0.0.1:4545"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

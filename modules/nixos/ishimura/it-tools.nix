@@ -20,7 +20,7 @@ in
   };
 
   virtualisation.oci-containers.containers.it-tools = {
-    image = "ghcr.io/corentinth/it-tools:latest";
+    image = "ghcr.io/sharevb/it-tools:latest";
     ports = [ "${tailnetIP}:8085:80" ];
     extraOptions = [ "--network=it-tools-net" ];
   };

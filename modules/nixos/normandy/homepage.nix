@@ -76,6 +76,14 @@ let
       statusPath  = "/health/watch2gether";
       healthUrl   = "http://127.0.0.1:4545/";
     }
+    {
+      name        = "Moodist";
+      description = "Ambient Sounds";
+      url         = "https://moodist.ishimura.lol";
+      icon        = "≋";
+      statusPath  = "/health/moodist";
+      healthUrl   = "http://127.0.0.1:4546/";
+    }
   ];
 
   adminServices = [

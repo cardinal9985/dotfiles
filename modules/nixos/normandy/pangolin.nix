@@ -176,6 +176,9 @@ let
         rewrite-watch2gether-health:
           replacePath:
             path: "/"
+        rewrite-moodist-health:
+          replacePath:
+            path: "/"
         # EmulatorJS netplay socket.io connects to /socket.io/ (the default
         # path) because ROMM's defineNetplayFunctions override fails on the
         # nightly build — undefined is not callable. Rewrite to the actual
@@ -551,6 +554,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-watch2gether-health
+        homepage-health-moodist-router:
+          rule: "Host(`${domain}`) && Path(`/health/moodist`)"
+          service: moodist-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-moodist-health
         homepage-health-search-router:
           rule: "Host(`${domain}`) && Path(`/health/search`)"
           service: degoog-service
@@ -912,6 +930,21 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        moodist-router:
+          rule: "Host(`moodist.${domain}`)"
+          service: moodist-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         degoog-router:
           rule: "Host(`search.${domain}`)"
           service: degoog-service
@@ -1047,6 +1080,10 @@ let
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:4545"
+        moodist-service:
+          loadBalancer:
+            servers:
+              - url: "http://127.0.0.1:4546"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

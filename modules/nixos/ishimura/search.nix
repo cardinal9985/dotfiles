@@ -121,10 +121,8 @@ let
       height: 50px;
     }
 
-    .search-input {
-      color: var(--text-primary, #e8eaed) !important;
-      caret-color: var(--text-primary, #e8eaed);
-    }
+    .search-input { color: #e8eaed !important; caret-color: #e8eaed; }
+    [data-theme="light"] .search-input { color: #202124 !important; caret-color: #202124; }
 
     #btn-search { font-size: 0 !important; }
     #btn-search::before { content: "Search"; font-size: 1rem; font-weight: 500; }

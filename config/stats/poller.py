@@ -87,13 +87,13 @@ def poll_jellyfin():
             log.info("Running Jellyfin backfill...")
             _jellyfin_backfill(conn, user_map)
             set_poll_state(conn, "jellyfin",
-                           last_backfill=datetime.utcnow().isoformat(),
-                           last_poll=datetime.utcnow().isoformat())
+                           last_backfill=datetime.now().isoformat(),
+                           last_poll=datetime.now().isoformat())
             return
 
         # Incremental poll via Playback Reporting
-        since = state["last_poll"] or (datetime.utcnow() - timedelta(hours=1)).isoformat()
-        now = datetime.utcnow().isoformat()
+        since = state["last_poll"] or (datetime.now() - timedelta(hours=1)).isoformat()
+        now = datetime.now().isoformat()
         _jellyfin_poll_since(conn, user_map, since)
         set_poll_state(conn, "jellyfin", last_poll=now)
 
@@ -173,7 +173,7 @@ def _jellyfin_poll_since(conn, user_map, since):
     since_dt = datetime.fromisoformat(since.replace("Z", "+00:00") if "Z" in since else since)
     if since_dt.tzinfo:
         since_dt = since_dt.replace(tzinfo=None)
-    now = datetime.utcnow()
+    now = datetime.now()
 
     for jf_user_id, username in user_map.items():
         current = since_dt.date()
@@ -269,12 +269,12 @@ def poll_navidrome():
                 log.info("Running Navidrome backfill...")
                 _navidrome_backfill(conn, nd_conn, user_map)
                 set_poll_state(conn, "navidrome",
-                               last_backfill=datetime.utcnow().isoformat(),
-                               last_poll=datetime.utcnow().isoformat())
+                               last_backfill=datetime.now().isoformat(),
+                               last_poll=datetime.now().isoformat())
                 return
 
             since = state["last_poll"]
-            now = datetime.utcnow().isoformat()
+            now = datetime.now().isoformat()
             _navidrome_poll_since(conn, nd_conn, user_map, since)
             set_poll_state(conn, "navidrome", last_poll=now)
     finally:
@@ -407,12 +407,12 @@ def poll_romm():
                 log.info("Running RomM backfill...")
                 _romm_backfill(conn, rm_conn, user_map)
                 set_poll_state(conn, "romm",
-                               last_backfill=datetime.utcnow().isoformat(),
-                               last_poll=datetime.utcnow().isoformat())
+                               last_backfill=datetime.now().isoformat(),
+                               last_poll=datetime.now().isoformat())
                 return
 
             since = state["last_poll"]
-            now = datetime.utcnow().isoformat()
+            now = datetime.now().isoformat()
             _romm_poll_since(conn, rm_conn, user_map, since)
             set_poll_state(conn, "romm", last_poll=now)
     finally:
@@ -545,12 +545,12 @@ def poll_booklore():
                 log.info("Running BookLore backfill...")
                 _booklore_backfill(conn, bl_conn, user_map)
                 set_poll_state(conn, "booklore",
-                               last_backfill=datetime.utcnow().isoformat(),
-                               last_poll=datetime.utcnow().isoformat())
+                               last_backfill=datetime.now().isoformat(),
+                               last_poll=datetime.now().isoformat())
                 return
 
             since = state["last_poll"]
-            now = datetime.utcnow().isoformat()
+            now = datetime.now().isoformat()
             _booklore_poll_since(conn, bl_conn, user_map, since)
             set_poll_state(conn, "booklore", last_poll=now)
     finally:

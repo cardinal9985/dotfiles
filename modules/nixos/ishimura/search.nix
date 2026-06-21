@@ -401,7 +401,7 @@ in
         bind_address: "0.0.0.0"
         base_url: https://search.ishimura.lol/
         secret_key: "${config.sops.placeholder."searxng/secret_key"}"
-        limiter: true
+        limiter: false
         image_proxy: true
         method: "POST"
         public_instance: false

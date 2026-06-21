@@ -17,7 +17,6 @@
     ./pelican.nix
     ./requests.nix
     ./romm.nix
-    ./search.nix
     ./slskd.nix
     ./stats.nix
     ./network.nix

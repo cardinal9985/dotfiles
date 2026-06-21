@@ -12,6 +12,7 @@
     ./ntfy.nix
     ./packages.nix
     ./pangolin.nix
+    ./search.nix
     ./sops.nix
     ./ssh.nix
     ./substituters.nix

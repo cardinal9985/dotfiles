@@ -173,9 +173,6 @@ let
         rewrite-degoog-health:
           replacePath:
             path: "/"
-        rewrite-searxng-health:
-          replacePath:
-            path: "/healthz"
         # EmulatorJS netplay socket.io connects to /socket.io/ (the default
         # path) because ROMM's defineNetplayFunctions override fails on the
         # nightly build — undefined is not callable. Rewrite to the actual
@@ -1012,11 +1009,7 @@ let
         degoog-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:4444"
-        searxng-service:
-          loadBalancer:
-            servers:
-              - url: "http://100.92.76.121:8888"
+              - url: "http://127.0.0.1:4444"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

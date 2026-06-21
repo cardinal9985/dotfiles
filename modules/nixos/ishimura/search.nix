@@ -122,9 +122,12 @@ let
     }
 
     .search-input {
-      color: var(--text-primary) !important;
-      caret-color: var(--text-primary);
+      color: var(--text-primary, #e8eaed) !important;
+      caret-color: var(--text-primary, #e8eaed);
     }
+
+    #btn-search { font-size: 0 !important; }
+    #btn-search::before { content: "Search"; font-size: 1rem; font-weight: 500; }
 
     .results-search-bar:has(.search-input:focus),
     .search-bar:has(.search-input:focus) {

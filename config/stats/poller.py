@@ -169,40 +169,74 @@ def _jellyfin_backfill(conn, user_map):
 
 
 def _jellyfin_poll_since(conn, user_map, since):
-    """Poll per-user per-date for new play events."""
-    since_dt = datetime.fromisoformat(since.replace("Z", "+00:00") if "Z" in since else since)
-    if since_dt.tzinfo:
-        since_dt = since_dt.replace(tzinfo=None)
-    now = datetime.now()
+    """Poll for new play events since last poll using the same SQL endpoint as backfill."""
+    id_to_name = user_map
 
-    for jf_user_id, username in user_map.items():
-        current = since_dt.date()
-        while current <= now.date():
-            date_str = current.isoformat()
-            try:
-                resp = requests.get(
-                    f"{JELLYFIN_URL}/user_usage_stats/{jf_user_id}/{date_str}/GetItems",
-                    headers=_jellyfin_headers(),
-                    timeout=15
-                )
-                if resp.status_code == 404:
-                    current += timedelta(days=1)
-                    continue
-                resp.raise_for_status()
-                items = resp.json()
-                for item in items:
-                    row = {
-                        "Name": item.get("Name"),
-                        "Id": item.get("Id"),
-                        "Type": item.get("Type"),
-                        "Date": f"{date_str} {item.get('Time', '00:00')}",
-                        "Duration": item.get("Duration"),
-                        "PlayMethod": item.get("Method"),
-                    }
-                    _insert_jellyfin_event(conn, username, row)
-            except Exception as e:
-                log.error("Jellyfin poll error for %s on %s: %s", username, date_str, e)
-            current += timedelta(days=1)
+    try:
+        resp = requests.post(
+            f"{JELLYFIN_URL}/user_usage_stats/submit_custom_query",
+            headers=_jellyfin_headers(),
+            json={
+                "CustomQueryString": (
+                    "SELECT DateCreated, UserId, ItemId, ItemType, ItemName, "
+                    "PlayDuration, PlaybackMethod, ClientName, DeviceName "
+                    f"FROM PlaybackActivity WHERE DateCreated > '{since}' "
+                    "ORDER BY DateCreated"
+                ),
+                "ReplaceUserId": False
+            },
+            timeout=30
+        )
+        if resp.status_code == 404:
+            log.warning("Playback Reporting plugin not installed")
+            return
+        resp.raise_for_status()
+        data = resp.json()
+
+        columns = data.get("colums", data.get("columns", []))
+        results = data.get("results", [])
+        if not columns or not results:
+            return
+
+        col_idx = {col.lower(): i for i, col in enumerate(columns)}
+        count = 0
+        for row_data in results:
+            user_id = row_data[col_idx.get("userid", -1)] if "userid" in col_idx else None
+            username = id_to_name.get(user_id)
+            if not username:
+                continue
+
+            item_name = row_data[col_idx.get("itemname", -1)] if "itemname" in col_idx else "Unknown"
+            item_id = row_data[col_idx.get("itemid", -1)] if "itemid" in col_idx else item_name
+            item_type = _type_from_jellyfin(
+                row_data[col_idx.get("itemtype", -1)] if "itemtype" in col_idx else ""
+            )
+            played_at = row_data[col_idx.get("datecreated", -1)] if "datecreated" in col_idx else None
+            duration = row_data[col_idx.get("playduration", -1)] if "playduration" in col_idx else None
+
+            if isinstance(duration, str):
+                try:
+                    duration = int(float(duration))
+                except (ValueError, TypeError):
+                    duration = None
+            elif isinstance(duration, (int, float)):
+                duration = int(duration)
+
+            metadata = {}
+            if "playbackmethod" in col_idx:
+                metadata["playmethod"] = row_data[col_idx["playbackmethod"]]
+            if "clientname" in col_idx:
+                metadata["client"] = row_data[col_idx["clientname"]]
+
+            if played_at:
+                insert_event(conn, username, "jellyfin", item_type, str(item_id),
+                             str(item_name), metadata, played_at, duration)
+                count += 1
+
+        if count:
+            log.info("Jellyfin incremental poll: %d new events", count)
+    except Exception as e:
+        log.error("Jellyfin poll error: %s", e)
 
 
 def _insert_jellyfin_event(conn, username, row):

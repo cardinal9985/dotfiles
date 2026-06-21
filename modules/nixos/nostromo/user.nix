@@ -1,6 +1,12 @@
 { config, pkgs, ... }:
 
 {
+  # Remove stale home-manager backup files before activation so repeated
+  # rebuilds don't fail with "would be clobbered by backing up" errors.
+  system.activationScripts.cleanup-hm-backups.text = ''
+    find /home/maxwell -maxdepth 4 -name "*.backup" -delete 2>/dev/null || true
+  '';
+
   programs.zsh.enable = true;
 
   users = {

@@ -121,7 +121,7 @@ let
       height: 50px;
     }
 
-    .search-input { color: #e8eaed !important; caret-color: #e8eaed; }
+    .search-input { color: #ffffff !important; caret-color: #ffffff; }
     [data-theme="light"] .search-input { color: #202124 !important; caret-color: #202124; }
 
     #btn-search { font-size: 0 !important; }

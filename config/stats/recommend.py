@@ -67,6 +67,10 @@ TWITCH_CLIENT_ID     = os.environ.get("TWITCH_CLIENT_ID", "")
 TWITCH_CLIENT_SECRET = os.environ.get("TWITCH_CLIENT_SECRET", "")
 IGDB_BASE            = "https://api.igdb.com/v4"
 IGDB_IMG_BASE        = "https://images.igdb.com/igdb/image/upload/t_cover_big"
+# IGDB platform IDs to exclude from recommendation filtering even if the user
+# has ROMs configured for them. Browser (Flash/HTML5) sweeps in thousands of
+# modern HTML5 games and pollutes the retro feed.
+IGDB_RECS_EXCLUDED_PLATFORMS = {82}
 
 JELLYFIN_URL = os.environ.get("JELLYFIN_URL", "http://127.0.0.1:8096")
 JELLYFIN_API_KEY = os.environ.get("JELLYFIN_API_KEY", "")
@@ -922,26 +926,22 @@ def _igdb_game_genres(game_id):
 
 
 def _igdb_top_in_genres_on_platforms(genre_ids, platform_ids, limit=60):
-    """Highly-rated games matching any of the genres on any of the platforms.
-    Year-capped at 2010 so the Browser platform (which sweeps in thousands of
-    modern HTML5 games) doesn't pollute the retro feed."""
+    """Highly-rated games matching any of the genres on any of the platforms."""
     if not genre_ids or not platform_ids:
         return []
     g_key = ",".join(str(g) for g in sorted(genre_ids))
     p_key = ",".join(str(p) for p in sorted(platform_ids))
-    key = f"igdb:topby:v2:{g_key}|{p_key}|{limit}"
+    key = f"igdb:topby:v3:{g_key}|{p_key}|{limit}"
     cached = _cache_get(key, RECS_TTL_SECS)
     if cached is not None:
         return cached
     g_clause = "(" + ",".join(str(g) for g in genre_ids) + ")"
     p_clause = "(" + ",".join(str(p) for p in platform_ids) + ")"
-    # 2010-01-01 = 1262304000 unix
     body = (
         "fields id, name, cover.image_id, first_release_date, summary, "
         "platforms, total_rating, total_rating_count; "
         f"where genres = {g_clause} & platforms = {p_clause} "
-        "& total_rating > 70 & total_rating_count > 5 "
-        "& first_release_date < 1262304000 & first_release_date != null; "
+        "& total_rating > 70 & total_rating_count > 5; "
         f"sort total_rating desc; limit {limit};"
     )
     results = _igdb_post("games", body)
@@ -975,7 +975,7 @@ def game_recommendations(user, limit=20):
     if not seeds:
         return []
 
-    owned_platforms = sorted(_romm_owned_platforms())
+    owned_platforms = sorted(_romm_owned_platforms() - IGDB_RECS_EXCLUDED_PLATFORMS)
     if not owned_platforms:
         return []  # nothing to filter to - can't keep recs to ROMs
 

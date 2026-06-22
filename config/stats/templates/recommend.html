@@ -6,7 +6,7 @@
 <div class="box">
   <div class="empty">No user detected. Are you authenticated through VoidAuth?</div>
 </div>
-{% elif not video_by_lib and not artists and not songs %}
+{% elif not video_by_lib and not artists and not songs and not games %}
 <div class="box">
   <div class="empty">Watch movies or play music first, then come back for recommendations.</div>
 </div>
@@ -15,6 +15,7 @@
 <div class="rec-tabs">
   <button class="rec-tab active" data-tab="video">VIDEO ({{ video_total }})</button>
   <button class="rec-tab" data-tab="music">MUSIC ({{ artists|length + songs|length }})</button>
+  <button class="rec-tab" data-tab="games">GAMES ({{ games|length }})</button>
 </div>
 
 <section data-content="video" class="rec-pane">
@@ -115,6 +116,36 @@
   <div class="box"><div class="empty">No music recommendations yet - play more songs on Navidrome first.</div></div>
   {% endif %}
 </section>
+
+<section data-content="games" class="rec-pane hidden">
+  {% if games %}
+  <div class="box">
+    <div class="title">&gt; SEEDED FROM YOUR ROMM HISTORY</div>
+    <div class="rec-grid">
+      {% for g in games %}
+      <div class="rec-card">
+        {% if g.cover_url %}<img src="{{ g.cover_url }}" alt="">
+        {% else %}<div class="rec-noposter">[NO COVER]</div>{% endif %}
+        <div class="rec-body">
+          <div class="rec-title">
+            <span class="rec-kind rec-kind-game">GAME</span>
+            {{ g.title }}{% if g.year %} ({{ g.year }}){% endif %}
+          </div>
+          <div class="rec-overview">{{ g.overview }}</div>
+          <form action="https://requests.ishimura.lol/request" method="post">
+            <input type="hidden" name="type" value="Game">
+            <input type="hidden" name="title" value="{{ g.title }}{% if g.year %} ({{ g.year }}){% endif %}">
+            <button type="submit" class="rec-btn">+ REQUEST</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="box"><div class="empty">No game recommendations yet - launch a few games on ROMM first.</div></div>
+  {% endif %}
+</section>
 {% endif %}
 
 <style>
@@ -194,6 +225,7 @@
   }
   .rec-kind-movie { color: var(--bright-magenta); }
   .rec-kind-tv    { color: var(--bright-yellow); }
+  .rec-kind-game  { color: var(--bright-blue); }
   .rec-overview   { font-size: 0.75rem; color: var(--white); flex: 1; }
   .rec-btn {
     background: var(--magenta); color: var(--bright-white);

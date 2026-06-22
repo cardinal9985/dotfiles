@@ -47,6 +47,8 @@ in
       STATS_WEBHOOK_SECRET=${config.sops.placeholder."stats/webhook_secret"}
       TMDB_TOKEN=${config.sops.placeholder."requests/tmdb_token"}
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
+      TWITCH_CLIENT_ID=${config.sops.placeholder."stats/twitch_client_id"}
+      TWITCH_CLIENT_SECRET=${config.sops.placeholder."stats/twitch_client_secret"}
       JELLYFIN_URL=http://127.0.0.1:8096
       JELLYFIN_API_KEY=${config.sops.placeholder."stats/jellyfin_api_key"}
       NAVIDROME_DB=/var/lib/navidrome/navidrome.db

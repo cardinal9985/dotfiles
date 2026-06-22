@@ -67,6 +67,12 @@
       "stats/lastfm_api_key" = {
         mode = "0400";
       };
+      "stats/twitch_client_id" = {
+        mode = "0400";
+      };
+      "stats/twitch_client_secret" = {
+        mode = "0400";
+      };
       "slskd/slsk_username" = {
         mode = "0400";
       };

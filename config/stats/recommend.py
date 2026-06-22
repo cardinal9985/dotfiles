@@ -63,9 +63,20 @@ LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
 
 DEEZER_BASE = "https://api.deezer.com"
 
+TWITCH_CLIENT_ID     = os.environ.get("TWITCH_CLIENT_ID", "")
+TWITCH_CLIENT_SECRET = os.environ.get("TWITCH_CLIENT_SECRET", "")
+IGDB_BASE            = "https://api.igdb.com/v4"
+IGDB_IMG_BASE        = "https://images.igdb.com/igdb/image/upload/t_cover_big"
+
 JELLYFIN_URL = os.environ.get("JELLYFIN_URL", "http://127.0.0.1:8096")
 JELLYFIN_API_KEY = os.environ.get("JELLYFIN_API_KEY", "")
 NAVIDROME_DB = os.environ.get("NAVIDROME_DB", "/var/lib/navidrome/navidrome.db")
+
+ROMM_DB_HOST     = os.environ.get("ROMM_DB_HOST", "127.0.0.1")
+ROMM_DB_PORT     = int(os.environ.get("ROMM_DB_PORT", "3308"))
+ROMM_DB_NAME     = os.environ.get("ROMM_DB_NAME", "romm")
+ROMM_DB_USER     = os.environ.get("ROMM_DB_USER", "romm")
+ROMM_DB_PASSWORD = os.environ.get("ROMM_DB_PASSWORD", "")
 
 LIBRARY_TTL_SECS = 6 * 3600   # Refresh library snapshot every 6h
 
@@ -91,6 +102,7 @@ def warm_cache_for(user):
     video_recommendations_by_library(user)
     music_recommendations(user)
     song_recommendations(user)
+    game_recommendations(user)
 
 
 def _cache_get(key, max_age_secs):
@@ -700,6 +712,206 @@ def _seed_tracks(user, limit=10):
             (user, limit),
         ).fetchall()
     return [(r["artist"], r["title"]) for r in rows]
+
+
+# ── Games (IGDB via Twitch OAuth) ────────────────────────────────────────────
+
+def _igdb_token():
+    """Fetch and cache an IGDB access token via Twitch client_credentials.
+    Twitch tokens last ~60 days; we cache for 30 to leave headroom."""
+    key = "igdb:token"
+    cached = _cache_get(key, 30 * 86400)
+    if cached:
+        return cached
+    if not (TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET):
+        return ""
+    try:
+        r = http.post("https://id.twitch.tv/oauth2/token", params={
+            "client_id":     TWITCH_CLIENT_ID,
+            "client_secret": TWITCH_CLIENT_SECRET,
+            "grant_type":    "client_credentials",
+        }, timeout=10)
+        r.raise_for_status()
+        token = (r.json() or {}).get("access_token", "")
+    except Exception as e:
+        log.warning("igdb token error: %s", e)
+        return ""
+    if token:
+        _cache_set(key, token)
+    return token
+
+
+def _igdb_post(endpoint, body):
+    """POST an Apicalypse query body to IGDB. Returns parsed JSON or []."""
+    token = _igdb_token()
+    if not token or not TWITCH_CLIENT_ID:
+        return []
+    try:
+        r = http.post(
+            f"{IGDB_BASE}/{endpoint}",
+            headers={
+                "Client-ID":     TWITCH_CLIENT_ID,
+                "Authorization": f"Bearer {token}",
+                "Accept":        "application/json",
+            },
+            data=body,
+            timeout=15,
+        )
+        r.raise_for_status()
+        return r.json() or []
+    except Exception as e:
+        log.warning("igdb %s error: %s", endpoint, e)
+        return []
+
+
+def _igdb_search(name):
+    """Find an IGDB game ID by name. Returns int or None."""
+    key = f"igdb:search:{name.lower()}"
+    cached = _cache_get(key, SEARCH_TTL_SECS)
+    if cached is not None:
+        return cached or None
+    # Escape double quotes in the name.
+    safe = name.replace('"', '\\"')
+    results = _igdb_post("games", f'search "{safe}"; fields id; limit 1;')
+    game_id = results[0]["id"] if results else None
+    _cache_set(key, game_id)
+    return game_id
+
+
+def _igdb_similar(game_id, limit=10):
+    """Get similar games for a game. Returns normalized list of dicts."""
+    key = f"igdb:similar:{game_id}"
+    cached = _cache_get(key, RECS_TTL_SECS)
+    if cached is not None:
+        return cached[:limit]
+    body = (
+        "fields similar_games.id, similar_games.name, "
+        "similar_games.cover.image_id, similar_games.first_release_date, "
+        "similar_games.summary; "
+        f"where id = {game_id};"
+    )
+    results = _igdb_post("games", body)
+    similar = []
+    if results:
+        for g in (results[0].get("similar_games") or []):
+            cover = (g.get("cover") or {}).get("image_id")
+            year = ""
+            if g.get("first_release_date"):
+                try:
+                    year = str(datetime.fromtimestamp(g["first_release_date"]).year)
+                except Exception:
+                    year = ""
+            similar.append({
+                "id":        g.get("id"),
+                "name":      g.get("name", ""),
+                "year":      year,
+                "summary":   (g.get("summary") or "")[:240],
+                "cover_url": f"{IGDB_IMG_BASE}/{cover}.jpg" if cover else None,
+            })
+    _cache_set(key, similar)
+    return similar[:limit]
+
+
+def _romm_existing_games():
+    """Normalized set of game names already in the user's ROMM library."""
+    key = "romm:existing_games:v1"
+    cached = _cache_get(key, LIBRARY_TTL_SECS)
+    if cached is not None:
+        return set(cached)
+    if not ROMM_DB_PASSWORD:
+        return set()
+    try:
+        import pymysql
+        rm = pymysql.connect(
+            host=ROMM_DB_HOST, port=ROMM_DB_PORT,
+            user=ROMM_DB_USER, password=ROMM_DB_PASSWORD,
+            database=ROMM_DB_NAME,
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=10,
+        )
+        try:
+            with rm.cursor() as cur:
+                cur.execute("SELECT name, fs_name FROM roms")
+                rows = cur.fetchall()
+        finally:
+            rm.close()
+        names = set()
+        for r in rows:
+            for field in (r.get("name"), r.get("fs_name")):
+                if field:
+                    n = _norm(field)
+                    if n:
+                        names.add(n)
+        names_list = sorted(names)
+    except Exception as e:
+        log.warning("romm game scan failed: %s", e)
+        names_list = []
+    _cache_set(key, names_list)
+    return set(names_list)
+
+
+def _seed_games(user, limit=10):
+    """Top distinct games played in the last 180 days, regional tags stripped."""
+    with db.get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT item_name, COUNT(*) AS plays
+            FROM events
+            WHERE user_id = ? AND source = 'romm'
+              AND played_at > date('now', '-180 days')
+              AND item_name IS NOT NULL AND item_name != ''
+            GROUP BY item_id
+            ORDER BY plays DESC, MAX(played_at) DESC
+            LIMIT ?
+            """,
+            (user, limit),
+        ).fetchall()
+    out = []
+    for r in rows:
+        # ROMM names often include (USA), (Disc 1), [En,Fr,Es] - strip those
+        # for cleaner IGDB search.
+        cleaned = _PARENS_RE.sub("", r["item_name"]).strip()
+        if cleaned:
+            out.append(cleaned)
+    return out
+
+
+def game_recommendations(user, limit=20):
+    """Ranked IGDB recommendations from the user's recent ROMM plays.
+    Dedupes against the user's ROMM library."""
+    seeds = _seed_games(user)
+    if not seeds:
+        return []
+
+    seed_norm = {_norm(s) for s in seeds}
+    owned     = _romm_existing_games()
+
+    scores = {}
+    for game in seeds:
+        gid = _igdb_search(game)
+        if not gid:
+            continue
+        for sim in _igdb_similar(gid):
+            name = sim.get("name", "")
+            if not name:
+                continue
+            n = _norm(name)
+            if not n or n in seed_norm or n in owned:
+                continue
+            sid = sim.get("id")
+            entry = scores.setdefault(sid or n, {"score": 0, "data": sim})
+            entry["score"] += 1
+
+    ranked = sorted(scores.values(), key=lambda x: -x["score"])
+    return [{
+        "kind":         "game",
+        "title":        e["data"].get("name", ""),
+        "year":         e["data"].get("year", ""),
+        "overview":     e["data"].get("summary", ""),
+        "cover_url":    e["data"].get("cover_url"),
+        "request_type": "Game",
+        "score":        e["score"],
+    } for e in ranked[:limit]]
 
 
 def song_recommendations(user, limit=25):

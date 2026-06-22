@@ -9,7 +9,8 @@ from flask import Flask, render_template, request, redirect, url_for
 import db
 from poller import poll_jellyfin, poll_navidrome, poll_romm, poll_booklore
 from recommend import (video_recommendations_by_library, music_recommendations,
-                       song_recommendations, cache_is_warm, warm_cache_for)
+                       song_recommendations, game_recommendations,
+                       cache_is_warm, warm_cache_for)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -106,9 +107,11 @@ def recommend():
     video_by_lib = video_recommendations_by_library(user) if user else {}
     artists = music_recommendations(user) if user else []
     songs   = song_recommendations(user)  if user else []
+    games   = game_recommendations(user)  if user else []
     return render_template("recommend.html", user=user,
                            video_by_lib=video_by_lib,
-                           artists=artists, songs=songs)
+                           artists=artists, songs=songs,
+                           games=games)
 
 
 @app.route("/recommend/_build", methods=["POST"])

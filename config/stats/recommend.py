@@ -106,7 +106,7 @@ def warm_cache_for(user):
     video_recommendations_by_library(user)
     music_recommendations(user)
     song_recommendations(user)
-    game_recommendations(user)
+    game_recommendations_by_platform(user)
 
 
 def _cache_get(key, max_age_secs):
@@ -887,30 +887,72 @@ def _romm_existing_games():
     return set(names_list)
 
 
-def _seed_games(user, limit=10):
-    """Top distinct games played in the last 180 days, regional tags stripped."""
+def _seed_games_by_platform(user, limit_per=10):
+    """Recent ROMM seeds grouped by the platform_name stored in the event
+    metadata. Returns dict {platform_name: [cleaned_game_names]}."""
     with db.get_db() as conn:
         rows = conn.execute(
             """
-            SELECT item_name, COUNT(*) AS plays
+            SELECT item_name,
+                   json_extract(item_metadata, '$.platform') AS platform,
+                   item_id,
+                   COUNT(*) AS plays,
+                   MAX(played_at) AS recent
             FROM events
             WHERE user_id = ? AND source = 'romm'
               AND played_at > date('now', '-180 days')
               AND item_name IS NOT NULL AND item_name != ''
-            GROUP BY item_id
-            ORDER BY plays DESC, MAX(played_at) DESC
-            LIMIT ?
+              AND platform  IS NOT NULL AND platform  != ''
+            GROUP BY platform, item_id
+            ORDER BY plays DESC, recent DESC
             """,
-            (user, limit),
+            (user,),
         ).fetchall()
-    out = []
+    by_platform = {}
     for r in rows:
-        # ROMM names often include (USA), (Disc 1), [En,Fr,Es] - strip those
-        # for cleaner IGDB search.
         cleaned = _PARENS_RE.sub("", r["item_name"]).strip()
         if cleaned:
-            out.append(cleaned)
-    return out
+            by_platform.setdefault(r["platform"], []).append(cleaned)
+    # Cap seeds per platform.
+    return {p: games[:limit_per] for p, games in by_platform.items()}
+
+
+def _romm_platform_map():
+    """ROMM platform name -> IGDB platform id."""
+    key = "romm:platform_map:v1"
+    cached = _cache_get(key, LIBRARY_TTL_SECS)
+    if cached is not None:
+        return cached
+    if not ROMM_DB_PASSWORD:
+        return {}
+    try:
+        import pymysql
+        rm = pymysql.connect(
+            host=ROMM_DB_HOST, port=ROMM_DB_PORT,
+            user=ROMM_DB_USER, password=ROMM_DB_PASSWORD,
+            database=ROMM_DB_NAME,
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=10,
+        )
+        try:
+            with rm.cursor() as cur:
+                cur.execute(
+                    "SELECT name, custom_name, igdb_id FROM platforms "
+                    "WHERE igdb_id IS NOT NULL"
+                )
+                rows = cur.fetchall()
+        finally:
+            rm.close()
+        mapping = {}
+        for r in rows:
+            for n in (r.get("name"), r.get("custom_name")):
+                if n:
+                    mapping[n] = int(r["igdb_id"])
+    except Exception as e:
+        log.warning("romm platform map failed: %s", e)
+        mapping = {}
+    _cache_set(key, mapping)
+    return mapping
 
 
 def _igdb_game_genres(game_id):
@@ -966,54 +1008,58 @@ def _igdb_top_in_genres_on_platforms(genre_ids, platform_ids, limit=60):
     return games
 
 
-def game_recommendations(user, limit=20):
-    """Recommend retro games on platforms ROMM already serves: aggregate
-    genres from the user's recent seeds, then query IGDB for top-rated
-    games in those genres on the owned platforms. Dedupes against the
-    ROMM library."""
-    seeds = _seed_games(user)
-    if not seeds:
-        return []
+def game_recommendations_by_platform(user, limit_per=15):
+    """Recommend games grouped by platform: for each platform the user has
+    seeds on, query IGDB for top-rated games in matching genres limited to
+    that single platform. Dedupes against the ROMM library."""
+    seeds_by_platform = _seed_games_by_platform(user)
+    if not seeds_by_platform:
+        return {}
 
-    owned_platforms = sorted(_romm_owned_platforms() - IGDB_RECS_EXCLUDED_PLATFORMS)
-    if not owned_platforms:
-        return []  # nothing to filter to - can't keep recs to ROMs
+    platform_map = _romm_platform_map()
+    owned        = _romm_existing_games()
 
-    seed_norm = {_norm(s) for s in seeds}
-    owned     = _romm_existing_games()
-
-    # Collect genres from each seed game.
-    seed_genres = set()
-    for game in seeds:
-        gid = _igdb_search(game)
-        if not gid:
+    result = {}
+    for platform_name, seeds in seeds_by_platform.items():
+        igdb_pid = platform_map.get(platform_name)
+        if not igdb_pid or igdb_pid in IGDB_RECS_EXCLUDED_PLATFORMS:
             continue
-        seed_genres.update(_igdb_game_genres(gid))
-    if not seed_genres:
-        return []
 
-    candidates = _igdb_top_in_genres_on_platforms(
-        sorted(seed_genres), owned_platforms, limit=60
-    )
-
-    out = []
-    for g in candidates:
-        name = g.get("name", "")
-        n = _norm(name)
-        if not n or n in seed_norm or n in owned:
+        # Aggregate genres from this platform's seeds.
+        seed_genres = set()
+        for game in seeds:
+            gid = _igdb_search(game)
+            if gid:
+                seed_genres.update(_igdb_game_genres(gid))
+        if not seed_genres:
             continue
-        out.append({
-            "kind":         "game",
-            "title":        name,
-            "year":         g.get("year", ""),
-            "overview":     g.get("summary", ""),
-            "cover_url":    g.get("cover_url"),
-            "request_type": "Game",
-            "score":        round(g.get("rating", 0), 1),
-        })
-        if len(out) >= limit:
-            break
-    return out
+
+        candidates = _igdb_top_in_genres_on_platforms(
+            sorted(seed_genres), [igdb_pid], limit=40
+        )
+
+        seed_norm = {_norm(s) for s in seeds}
+        out = []
+        for g in candidates:
+            name = g.get("name", "")
+            n = _norm(name)
+            if not n or n in seed_norm or n in owned:
+                continue
+            out.append({
+                "kind":         "game",
+                "title":        name,
+                "year":         g.get("year", ""),
+                "overview":     g.get("summary", ""),
+                "cover_url":    g.get("cover_url"),
+                "request_type": "Game",
+                "score":        round(g.get("rating", 0), 1),
+            })
+            if len(out) >= limit_per:
+                break
+
+        if out:
+            result[platform_name] = out
+    return result
 
 
 def song_recommendations(user, limit=25):

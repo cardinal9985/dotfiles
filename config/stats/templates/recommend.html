@@ -2,11 +2,12 @@
 {% block title %}Recommendations{% endblock %}
 {% block content %}
 {% set video_total = video_by_lib.values()|map('length')|sum %}
+{% set games_total = games_by_plat.values()|map('length')|sum %}
 {% if not user %}
 <div class="box">
   <div class="empty">No user detected. Are you authenticated through VoidAuth?</div>
 </div>
-{% elif not video_by_lib and not artists and not songs and not games %}
+{% elif not video_by_lib and not artists and not songs and not games_by_plat %}
 <div class="box">
   <div class="empty">Watch movies or play music first, then come back for recommendations.</div>
 </div>
@@ -15,7 +16,7 @@
 <div class="rec-tabs">
   <button class="rec-tab active" data-tab="video">VIDEO ({{ video_total }})</button>
   <button class="rec-tab" data-tab="music">MUSIC ({{ artists|length + songs|length }})</button>
-  <button class="rec-tab" data-tab="games">GAMES ({{ games|length }})</button>
+  <button class="rec-tab" data-tab="games">GAMES ({{ games_total }})</button>
 </div>
 
 <section data-content="video" class="rec-pane">
@@ -118,11 +119,18 @@
 </section>
 
 <section data-content="games" class="rec-pane hidden">
-  {% if games %}
-  <div class="box">
-    <div class="title">&gt; SEEDED FROM YOUR ROMM HISTORY</div>
+  {% if games_by_plat %}
+  <div class="rec-subtabs">
+    {% for plat_name, items in games_by_plat.items() %}
+    <button class="rec-subtab {{ 'active' if loop.first }}" data-subtab="games-{{ loop.index }}">
+      {{ plat_name|upper }} ({{ items|length }})
+    </button>
+    {% endfor %}
+  </div>
+  {% for plat_name, items in games_by_plat.items() %}
+  <div class="rec-subpane {{ 'hidden' if not loop.first }}" data-subcontent="games-{{ loop.index }}">
     <div class="rec-grid">
-      {% for g in games %}
+      {% for g in items %}
       <div class="rec-card">
         {% if g.cover_url %}<img src="{{ g.cover_url }}" alt="">
         {% else %}<div class="rec-noposter">[NO COVER]</div>{% endif %}
@@ -134,7 +142,7 @@
           <div class="rec-overview">{{ g.overview }}</div>
           <form action="https://requests.ishimura.lol/request" method="post">
             <input type="hidden" name="type" value="Game">
-            <input type="hidden" name="title" value="{{ g.title }}{% if g.year %} ({{ g.year }}){% endif %}">
+            <input type="hidden" name="title" value="{{ g.title }}{% if g.year %} ({{ g.year }}){% endif %} [{{ plat_name }}]">
             <button type="submit" class="rec-btn">+ REQUEST</button>
           </form>
         </div>
@@ -142,6 +150,7 @@
       {% endfor %}
     </div>
   </div>
+  {% endfor %}
   {% else %}
   <div class="box"><div class="empty">No game recommendations yet - launch a few games on ROMM first.</div></div>
   {% endif %}

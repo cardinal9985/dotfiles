@@ -9,7 +9,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import db
 from poller import poll_jellyfin, poll_navidrome, poll_romm, poll_booklore
 from recommend import (video_recommendations_by_library, music_recommendations,
-                       song_recommendations, game_recommendations,
+                       song_recommendations, game_recommendations_by_platform,
                        cache_is_warm, warm_cache_for)
 
 logging.basicConfig(level=logging.INFO,
@@ -104,14 +104,14 @@ def recommend():
     # the user knows what's happening instead of staring at a hung page.
     if user and not cache_is_warm():
         return render_template("recommend_loading.html", user=user)
-    video_by_lib = video_recommendations_by_library(user) if user else {}
-    artists = music_recommendations(user) if user else []
-    songs   = song_recommendations(user)  if user else []
-    games   = game_recommendations(user)  if user else []
+    video_by_lib    = video_recommendations_by_library(user)    if user else {}
+    artists         = music_recommendations(user)               if user else []
+    songs           = song_recommendations(user)                if user else []
+    games_by_plat   = game_recommendations_by_platform(user)    if user else {}
     return render_template("recommend.html", user=user,
                            video_by_lib=video_by_lib,
                            artists=artists, songs=songs,
-                           games=games)
+                           games_by_plat=games_by_plat)
 
 
 @app.route("/recommend/_build", methods=["POST"])

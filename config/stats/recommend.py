@@ -16,6 +16,9 @@ TMDB_TOKEN = os.environ.get("TMDB_TOKEN", "")
 TMDB_BASE = "https://api.themoviedb.org/3"
 TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w342"
 
+LASTFM_API_KEY = os.environ.get("LASTFM_API_KEY", "")
+LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
+
 # Cache TTLs. Title->ID rarely changes, so we keep it ~30 days. Recommendations
 # get refreshed weekly since TMDB tweaks their algorithm over time.
 SEARCH_TTL_SECS = 30 * 86400
@@ -194,3 +197,90 @@ def movie_recommendations(user, limit=20):
 
     ranked = sorted(scores.values(), key=lambda x: -x["score"])
     return [_normalize(e["kind"], e["data"], e["score"]) for e in ranked[:limit]]
+
+
+# ── Music (Last.fm) ──────────────────────────────────────────────────────────
+
+def _lastfm_similar_artists(artist):
+    """Last.fm artist.getSimilar, returns list of {name, match} dicts."""
+    key = f"lastfm:similar:artist:{artist.lower()}"
+    cached = _cache_get(key, RECS_TTL_SECS)
+    if cached is not None:
+        return cached
+    if not LASTFM_API_KEY:
+        return []
+    try:
+        r = http.get(LASTFM_BASE, params={
+            "method": "artist.getSimilar",
+            "artist": artist,
+            "api_key": LASTFM_API_KEY,
+            "format": "json",
+            "limit": 15,
+        }, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        results = (data.get("similarartists") or {}).get("artist") or []
+    except Exception as e:
+        log.warning("lastfm error for %s: %s", artist, e)
+        results = []
+    _cache_set(key, results)
+    return results
+
+
+def _seed_artists(user, limit=10):
+    """Top distinct artists for the user from recent Navidrome plays."""
+    with db.get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT json_extract(item_metadata, '$.artist') AS artist,
+                   COUNT(*) AS plays
+            FROM events
+            WHERE user_id = ? AND source = 'navidrome'
+              AND played_at > date('now', '-180 days')
+              AND artist IS NOT NULL AND artist != ''
+            GROUP BY artist
+            ORDER BY plays DESC
+            LIMIT ?
+            """,
+            (user, limit),
+        ).fetchall()
+    return [r["artist"] for r in rows]
+
+
+def music_recommendations(user, limit=20):
+    """Return ranked artist recommendations from Last.fm based on the user's
+    top recently-played Navidrome artists."""
+    seeds = _seed_artists(user)
+    if not seeds:
+        return []
+
+    seed_lower = {s.lower() for s in seeds}
+    scores = {}  # artist_lower -> {"score": float, "name": str, "url": str}
+    for artist in seeds:
+        for rec in _lastfm_similar_artists(artist):
+            name = (rec.get("name") or "").strip()
+            if not name or name.lower() in seed_lower:
+                continue
+            try:
+                match = float(rec.get("match") or 0.0)
+            except Exception:
+                match = 0.0
+            entry = scores.setdefault(name.lower(), {
+                "score": 0.0,
+                "name": name,
+                "url": rec.get("url", ""),
+            })
+            entry["score"] += match
+
+    ranked = sorted(scores.values(), key=lambda x: -x["score"])
+    return [{
+        "kind": "music",
+        "tmdb_id": None,
+        "title": e["name"],
+        "year": "",
+        "overview": "",
+        "poster_url": None,
+        "request_type": "Music",
+        "score": round(e["score"], 2),
+        "url": e["url"],
+    } for e in ranked[:limit]]

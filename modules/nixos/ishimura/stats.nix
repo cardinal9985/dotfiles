@@ -46,6 +46,7 @@ in
       STATS_DB_PATH=/persist/stats/stats.db
       STATS_WEBHOOK_SECRET=${config.sops.placeholder."stats/webhook_secret"}
       TMDB_TOKEN=${config.sops.placeholder."requests/tmdb_token"}
+      LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
       JELLYFIN_URL=http://127.0.0.1:8096
       JELLYFIN_API_KEY=${config.sops.placeholder."stats/jellyfin_api_key"}
       NAVIDROME_DB=/var/lib/navidrome/navidrome.db

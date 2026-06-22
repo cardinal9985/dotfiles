@@ -91,8 +91,12 @@ def poll_jellyfin():
                            last_poll=datetime.now().isoformat())
             return
 
-        # Incremental poll via Playback Reporting
-        since = state["last_poll"] or (datetime.now() - timedelta(hours=1)).isoformat()
+        # Incremental poll via Playback Reporting.
+        # Playback Reporting stores DateCreated as "YYYY-MM-DD HH:MM:SS.ffffff"
+        # (space separator). Convert our ISO timestamp to the same shape so the
+        # string comparison in the WHERE clause works lexicographically.
+        since_iso = state["last_poll"] or (datetime.now() - timedelta(hours=1)).isoformat()
+        since = since_iso.replace("T", " ")
         now = datetime.now().isoformat()
         _jellyfin_poll_since(conn, user_map, since)
         set_poll_state(conn, "jellyfin", last_poll=now)

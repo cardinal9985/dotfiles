@@ -84,6 +84,14 @@ let
       statusPath  = "/health/moodist";
       healthUrl   = "http://127.0.0.1:4546/";
     }
+    {
+      name        = "Chat";
+      description = "Matrix Chat";
+      url         = "https://chat.ishimura.lol";
+      icon        = "⌘";
+      statusPath  = "/health/chat";
+      healthUrl   = "http://127.0.0.1:6167/_matrix/client/versions";
+    }
   ];
 
   adminServices = [

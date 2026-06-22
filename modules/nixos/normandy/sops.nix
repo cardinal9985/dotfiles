@@ -48,6 +48,10 @@
       "searxng/secret_key" = {
         mode = "0400";
       };
+      "tuwunel/oidc_client_secret" = {
+        owner = "tuwunel";
+        mode  = "0400";
+      };
     };
   };
 }

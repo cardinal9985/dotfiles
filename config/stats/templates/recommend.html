@@ -7,7 +7,7 @@
 <div class="box">
   <div class="empty">No user detected. Are you authenticated through VoidAuth?</div>
 </div>
-{% elif not video_by_lib and not artists and not songs and not games_by_plat %}
+{% elif not video_by_lib and not artists and not songs and not games_by_plat and not books %}
 <div class="box">
   <div class="empty">Watch movies or play music first, then come back for recommendations.</div>
 </div>
@@ -17,6 +17,7 @@
   <button class="rec-tab active" data-tab="video">VIDEO ({{ video_total }})</button>
   <button class="rec-tab" data-tab="music">MUSIC ({{ artists|length + songs|length }})</button>
   <button class="rec-tab" data-tab="games">GAMES ({{ games_total }})</button>
+  <button class="rec-tab" data-tab="books">BOOKS ({{ books|length }})</button>
 </div>
 
 <section data-content="video" class="rec-pane">
@@ -155,6 +156,36 @@
   <div class="box"><div class="empty">No game recommendations yet - launch a few games on ROMM first.</div></div>
   {% endif %}
 </section>
+
+<section data-content="books" class="rec-pane hidden">
+  {% if books %}
+  <div class="box">
+    <div class="title">&gt; SEEDED FROM AUTHORS YOU'VE READ</div>
+    <div class="rec-grid">
+      {% for b in books %}
+      <div class="rec-card">
+        {% if b.cover_url %}<img src="{{ b.cover_url }}" alt="">
+        {% else %}<div class="rec-noposter">[NO COVER]</div>{% endif %}
+        <div class="rec-body">
+          <div class="rec-title">
+            <span class="rec-kind rec-kind-book">BOOK</span>
+            {{ b.title }}{% if b.year %} ({{ b.year }}){% endif %}
+          </div>
+          {% if b.author %}<div class="rec-overview">by {{ b.author }}</div>{% endif %}
+          <form action="https://requests.ishimura.lol/request" method="post">
+            <input type="hidden" name="type" value="Book">
+            <input type="hidden" name="title" value="{{ b.title }}{% if b.author %} - {{ b.author }}{% endif %}">
+            <button type="submit" class="rec-btn">+ REQUEST</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="box"><div class="empty">No book recommendations yet - read a few books on BookLore first.</div></div>
+  {% endif %}
+</section>
 {% endif %}
 
 <style>
@@ -235,6 +266,7 @@
   .rec-kind-movie { color: var(--bright-magenta); }
   .rec-kind-tv    { color: var(--bright-yellow); }
   .rec-kind-game  { color: var(--bright-blue); }
+  .rec-kind-book  { color: var(--bright-green); }
   .rec-overview   { font-size: 0.75rem; color: var(--white); flex: 1; }
   .rec-btn {
     background: var(--magenta); color: var(--bright-white);

@@ -10,7 +10,8 @@ import db
 from poller import poll_jellyfin, poll_navidrome, poll_romm, poll_booklore
 from recommend import (video_recommendations_by_library, music_recommendations,
                        song_recommendations, game_recommendations_by_platform,
-                       cache_is_warm, warm_cache_for, short_platform_name)
+                       book_recommendations, cache_is_warm, warm_cache_for,
+                       short_platform_name)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -109,10 +110,12 @@ def recommend():
     artists         = music_recommendations(user)               if user else []
     songs           = song_recommendations(user)                if user else []
     games_by_plat   = game_recommendations_by_platform(user)    if user else {}
+    books           = book_recommendations(user)                if user else []
     return render_template("recommend.html", user=user,
                            video_by_lib=video_by_lib,
                            artists=artists, songs=songs,
-                           games_by_plat=games_by_plat)
+                           games_by_plat=games_by_plat,
+                           books=books)
 
 
 @app.route("/recommend/_build", methods=["POST"])

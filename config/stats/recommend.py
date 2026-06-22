@@ -140,6 +140,15 @@ ROMM_DB_NAME     = os.environ.get("ROMM_DB_NAME", "romm")
 ROMM_DB_USER     = os.environ.get("ROMM_DB_USER", "romm")
 ROMM_DB_PASSWORD = os.environ.get("ROMM_DB_PASSWORD", "")
 
+BOOKLORE_DB_HOST     = os.environ.get("BOOKLORE_DB_HOST", "127.0.0.1")
+BOOKLORE_DB_PORT     = int(os.environ.get("BOOKLORE_DB_PORT", "3306"))
+BOOKLORE_DB_NAME     = os.environ.get("BOOKLORE_DB_NAME", "booklore")
+BOOKLORE_DB_USER     = os.environ.get("BOOKLORE_DB_USER", "booklore")
+BOOKLORE_DB_PASSWORD = os.environ.get("BOOKLORE_DB_PASSWORD", "")
+
+OPENLIBRARY_BASE = "https://openlibrary.org"
+OPENLIBRARY_COVERS = "https://covers.openlibrary.org"
+
 LIBRARY_TTL_SECS = 6 * 3600   # Refresh library snapshot every 6h
 
 # Cache TTLs. Title->ID rarely changes, so we keep it ~30 days. Recommendations
@@ -159,12 +168,167 @@ def cache_is_warm():
     return row is not None
 
 
+# ── Books (OpenLibrary) ──────────────────────────────────────────────────────
+
+def _openlibrary_get(path, params=None):
+    try:
+        r = http.get(f"{OPENLIBRARY_BASE}{path}", params=params, timeout=15,
+                     headers={"User-Agent": "ishimura-stats/1.0"})
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        log.warning("openlibrary %s %s: %s", path, params, e)
+        return None
+
+
+def _openlibrary_books_by_author(author):
+    """List of book dicts by an author. Cached 30d."""
+    key = f"openlibrary:author:{author.lower()}"
+    cached = _cache_get(key, SEARCH_TTL_SECS)
+    if cached is not None:
+        return cached
+    data = _openlibrary_get("/search.json", {
+        "author": author,
+        "limit":  20,
+        "sort":   "rating",
+    })
+    books = []
+    for d in (data or {}).get("docs", []) or []:
+        books.append({
+            "title":         d.get("title") or "",
+            "year":          d.get("first_publish_year"),
+            "author_names":  (d.get("author_name") or [])[:2],
+            "cover_id":      d.get("cover_i"),
+            "subjects":      (d.get("subject") or [])[:3],
+            "edition_count": d.get("edition_count") or 0,
+        })
+    _cache_set(key, books)
+    return books
+
+
+def _booklore_existing_books():
+    """Normalized set of book titles already in the user's BookLore library."""
+    key = "booklore:existing_books:v1"
+    cached = _cache_get(key, LIBRARY_TTL_SECS)
+    if cached is not None:
+        return set(cached)
+    if not BOOKLORE_DB_PASSWORD:
+        return set()
+    try:
+        import pymysql
+        bl = pymysql.connect(
+            host=BOOKLORE_DB_HOST, port=BOOKLORE_DB_PORT,
+            user=BOOKLORE_DB_USER, password=BOOKLORE_DB_PASSWORD,
+            database=BOOKLORE_DB_NAME,
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=10,
+        )
+        try:
+            with bl.cursor() as cur:
+                cur.execute("""
+                    SELECT bm.title FROM book b
+                    JOIN book_metadata bm ON b.id = bm.book_id
+                    WHERE b.deleted = 0 AND bm.title IS NOT NULL
+                """)
+                rows = cur.fetchall()
+        finally:
+            bl.close()
+        titles = sorted({_norm(r["title"]) for r in rows if r.get("title")})
+        titles = [t for t in titles if t]
+    except Exception as e:
+        log.warning("booklore book scan failed: %s", e)
+        titles = []
+    _cache_set(key, titles)
+    return set(titles)
+
+
+def _seed_books(user, limit=10):
+    """Most-recent distinct books the user has read in the last year, with
+    author parsed out of the event metadata."""
+    with db.get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT item_name AS title,
+                   json_extract(item_metadata, '$.author') AS author,
+                   MAX(played_at) AS recent
+            FROM events
+            WHERE user_id = ? AND source = 'booklore'
+              AND played_at > date('now', '-365 days')
+              AND item_name IS NOT NULL AND item_name != ''
+            GROUP BY item_id
+            ORDER BY recent DESC
+            LIMIT ?
+            """,
+            (user, limit),
+        ).fetchall()
+    seeds = []
+    seen_authors = set()
+    for r in rows:
+        # Each author string may list multiple authors; split & use each.
+        for a in _split_artists(r["author"] or ""):
+            an = _norm(a)
+            if an and an not in seen_authors:
+                seen_authors.add(an)
+                seeds.append(a.strip())
+    return seeds
+
+
+def book_recommendations(user, limit=20):
+    """Recommend books by authors you've read, filtered against your library."""
+    seed_authors = _seed_books(user)
+    if not seed_authors:
+        return []
+
+    owned = _booklore_existing_books()
+    seed_titles_norm = set()
+    # Also collect titles already in the library so we don't re-suggest books
+    # we own even if the user happened to read one (we want NEW books).
+    with db.get_db() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT item_name FROM events "
+            "WHERE user_id=? AND source='booklore'",
+            (user,),
+        ).fetchall()
+    for r in rows:
+        if r["item_name"]:
+            seed_titles_norm.add(_norm(r["item_name"]))
+
+    scores = {}  # norm_title -> {"score": int, "book": dict}
+    for author in seed_authors:
+        for b in _openlibrary_books_by_author(author):
+            title = b.get("title") or ""
+            n = _norm(title)
+            if not n or n in seed_titles_norm or n in owned:
+                continue
+            entry = scores.setdefault(n, {"score": 0, "book": b})
+            entry["score"] += max(1, (b.get("edition_count") or 1))
+
+    ranked = sorted(scores.values(), key=lambda x: -x["score"])
+    out = []
+    for e in ranked[:limit]:
+        b = e["book"]
+        cover = (f"{OPENLIBRARY_COVERS}/b/id/{b['cover_id']}-M.jpg"
+                 if b.get("cover_id") else None)
+        out.append({
+            "kind":         "book",
+            "title":        b.get("title", ""),
+            "year":         str(b.get("year") or ""),
+            "author":       ", ".join(b.get("author_names") or []),
+            "overview":     "",
+            "cover_url":    cover,
+            "request_type": "Book",
+            "score":        e["score"],
+        })
+    return out
+
+
 def warm_cache_for(user):
     """Run all recommendation builds. Slow first time, fast after (cached)."""
     video_recommendations_by_library(user)
     music_recommendations(user)
     song_recommendations(user)
     game_recommendations_by_platform(user)
+    book_recommendations(user)
 
 
 def _cache_get(key, max_age_secs):

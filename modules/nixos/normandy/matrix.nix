@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 let
-  elementWeb = pkgs.element-web.override {
+  elementWebSrc = pkgs.element-web.override {
     conf = {
       default_server_config."m.homeserver" = {
         base_url = "https://chat.ishimura.lol";
@@ -13,6 +13,10 @@ let
       room_directory.servers = [ "ishimura.lol" ];
     };
   };
+  elementWeb = pkgs.runCommand "element-web-self-contained" { } ''
+    mkdir -p $out
+    cp -rL ${elementWebSrc}/. $out/
+  '';
 in
 {
   sops.secrets."tuwunel/oidc_client_secret" = {

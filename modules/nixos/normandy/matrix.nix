@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   elementWeb = pkgs.element-web.override {
@@ -52,6 +52,11 @@ in
   systemd.tmpfiles.rules = [
     "d /persist/var/lib/tuwunel 0700 tuwunel tuwunel - -"
   ];
+
+  systemd.services.matrix-tuwunel.serviceConfig = {
+    DynamicUser  = lib.mkForce false;
+    PrivateUsers = lib.mkForce false;
+  };
 
   virtualisation.oci-containers.containers.element-web = {
     image   = "docker.io/library/busybox@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8";

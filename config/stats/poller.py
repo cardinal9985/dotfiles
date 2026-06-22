@@ -68,16 +68,9 @@ def poll_jellyfin():
         return
 
     with get_db() as conn:
+        _jellyfin_discover_users(conn)
         state = get_poll_state(conn, "jellyfin")
-
-        # Auto-discover users on first run
-        if not state:
-            _jellyfin_discover_users(conn)
-
         user_map = reverse_user_map(conn, "jellyfin")
-        if not user_map:
-            _jellyfin_discover_users(conn)
-            user_map = reverse_user_map(conn, "jellyfin")
         if not user_map:
             log.warning("No Jellyfin users mapped")
             return
@@ -290,15 +283,9 @@ def poll_navidrome():
 
     try:
         with get_db() as conn:
+            _navidrome_discover_users(conn, nd_conn)
             state = get_poll_state(conn, "navidrome")
-
-            if not state:
-                _navidrome_discover_users(conn, nd_conn)
-
             user_map = reverse_user_map(conn, "navidrome")
-            if not user_map:
-                _navidrome_discover_users(conn, nd_conn)
-                user_map = reverse_user_map(conn, "navidrome")
             if not user_map:
                 log.warning("No Navidrome users mapped")
                 return
@@ -428,15 +415,9 @@ def poll_romm():
 
     try:
         with get_db() as conn:
+            _romm_discover_users(conn, rm_conn)
             state = get_poll_state(conn, "romm")
-
-            if not state:
-                _romm_discover_users(conn, rm_conn)
-
             user_map = reverse_user_map(conn, "romm")
-            if not user_map:
-                _romm_discover_users(conn, rm_conn)
-                user_map = reverse_user_map(conn, "romm")
             if not user_map:
                 log.warning("No RomM users mapped")
                 return
@@ -566,15 +547,9 @@ def poll_booklore():
 
     try:
         with get_db() as conn:
+            _booklore_discover_users(conn, bl_conn)
             state = get_poll_state(conn, "booklore")
-
-            if not state:
-                _booklore_discover_users(conn, bl_conn)
-
             user_map = reverse_user_map(conn, "booklore")
-            if not user_map:
-                _booklore_discover_users(conn, bl_conn)
-                user_map = reverse_user_map(conn, "booklore")
             if not user_map:
                 log.warning("No BookLore users mapped")
                 return

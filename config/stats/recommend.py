@@ -779,15 +779,16 @@ def _igdb_search(name):
 
 
 def _igdb_similar(game_id, limit=10):
-    """Get similar games for a game. Returns normalized list of dicts."""
-    key = f"igdb:similar:{game_id}"
+    """Get similar games for a game. Returns normalized list of dicts including
+    the list of IGDB platform IDs each game is available on."""
+    key = f"igdb:similar:v2:{game_id}"
     cached = _cache_get(key, RECS_TTL_SECS)
     if cached is not None:
         return cached[:limit]
     body = (
         "fields similar_games.id, similar_games.name, "
         "similar_games.cover.image_id, similar_games.first_release_date, "
-        "similar_games.summary; "
+        "similar_games.summary, similar_games.platforms; "
         f"where id = {game_id};"
     )
     results = _igdb_post("games", body)
@@ -807,9 +808,41 @@ def _igdb_similar(game_id, limit=10):
                 "year":      year,
                 "summary":   (g.get("summary") or "")[:240],
                 "cover_url": f"{IGDB_IMG_BASE}/{cover}.jpg" if cover else None,
+                "platforms": g.get("platforms") or [],
             })
     _cache_set(key, similar)
     return similar[:limit]
+
+
+def _romm_owned_platforms():
+    """Set of IGDB platform IDs the user has ROMs for. Used to filter game
+    recommendations to platforms ROMM can actually serve."""
+    key = "romm:owned_platforms:v1"
+    cached = _cache_get(key, LIBRARY_TTL_SECS)
+    if cached is not None:
+        return set(cached)
+    if not ROMM_DB_PASSWORD:
+        return set()
+    try:
+        import pymysql
+        rm = pymysql.connect(
+            host=ROMM_DB_HOST, port=ROMM_DB_PORT,
+            user=ROMM_DB_USER, password=ROMM_DB_PASSWORD,
+            database=ROMM_DB_NAME,
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=10,
+        )
+        try:
+            with rm.cursor() as cur:
+                cur.execute("SELECT DISTINCT igdb_id FROM platforms WHERE igdb_id IS NOT NULL")
+                ids = [int(r["igdb_id"]) for r in cur.fetchall() if r.get("igdb_id")]
+        finally:
+            rm.close()
+    except Exception as e:
+        log.warning("romm platform scan failed: %s", e)
+        ids = []
+    _cache_set(key, ids)
+    return set(ids)
 
 
 def _romm_existing_games():
@@ -885,6 +918,7 @@ def game_recommendations(user, limit=20):
 
     seed_norm = {_norm(s) for s in seeds}
     owned     = _romm_existing_games()
+    owned_platforms = _romm_owned_platforms()
 
     scores = {}
     for game in seeds:
@@ -898,6 +932,13 @@ def game_recommendations(user, limit=20):
             n = _norm(name)
             if not n or n in seed_norm or n in owned:
                 continue
+            # Only keep games on platforms ROMM can actually serve.
+            # If we have no platform info, fall back to allowing all (safer
+            # than filtering nothing through).
+            if owned_platforms:
+                sim_platforms = set(sim.get("platforms") or [])
+                if not (sim_platforms & owned_platforms):
+                    continue
             sid = sim.get("id")
             entry = scores.setdefault(sid or n, {"score": 0, "data": sim})
             entry["score"] += 1

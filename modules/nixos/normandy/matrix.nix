@@ -39,7 +39,7 @@ in
           name               = "VoidAuth";
           client_id          = "tuwunel";
           client_secret_file = config.sops.secrets."tuwunel/oidc_client_secret".path;
-          issuer_url         = "https://auth.ishimura.lol";
+          issuer_url         = "https://auth.ishimura.lol/oidc";
           callback_url       = "https://chat.ishimura.lol/_matrix/client/unstable/login/sso/callback/tuwunel";
           trusted            = true;
           registration       = true;

@@ -311,7 +311,7 @@ def poll_navidrome():
                                last_poll=datetime.now().isoformat())
                 return
 
-            since = state["last_poll"]
+            since = (state["last_poll"] or "").replace("T", " ")
             now = datetime.now().isoformat()
             _navidrome_poll_since(conn, nd_conn, user_map, since)
             set_poll_state(conn, "navidrome", last_poll=now)
@@ -449,7 +449,7 @@ def poll_romm():
                                last_poll=datetime.now().isoformat())
                 return
 
-            since = state["last_poll"]
+            since = (state["last_poll"] or "").replace("T", " ")
             now = datetime.now().isoformat()
             _romm_poll_since(conn, rm_conn, user_map, since)
             set_poll_state(conn, "romm", last_poll=now)
@@ -587,7 +587,7 @@ def poll_booklore():
                                last_poll=datetime.now().isoformat())
                 return
 
-            since = state["last_poll"]
+            since = (state["last_poll"] or "").replace("T", " ")
             now = datetime.now().isoformat()
             _booklore_poll_since(conn, bl_conn, user_map, since)
             set_poll_state(conn, "booklore", last_poll=now)

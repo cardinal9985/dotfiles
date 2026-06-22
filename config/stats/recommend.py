@@ -18,6 +18,15 @@ _WS_RE        = re.compile(r"\s+")
 _PARENS_RE    = re.compile(r"\s*[\(\[][^\)\]]*[\)\]]")
 _FEAT_RE      = re.compile(r"\s+(feat\.?|ft\.?|featuring|with)\s+.*$", re.IGNORECASE)
 _DASH_TAIL_RE = re.compile(r"\s+-\s+.*$")
+_ARTIST_SPLIT_RE = re.compile(r"\s*(?:,|&|/|;| x | vs\.? | feat\.? | ft\.? | featuring | with )\s*", re.IGNORECASE)
+
+
+def _split_artists(s):
+    """Split a multi-artist string into individual artist names.
+    Handles 'A, B & C', 'A feat. B', 'A x B', 'A / B', 'A vs B', etc."""
+    if not s:
+        return []
+    return [p for p in _ARTIST_SPLIT_RE.split(s) if p.strip()]
 
 
 def _norm(s):
@@ -171,8 +180,9 @@ def _jellyfin_library_items(library_id):
 
 
 def _navidrome_existing_artists():
-    """Set of normalized artist + album_artist names in the user's library."""
-    key = "navidrome:existing_artists:v4"
+    """Set of normalized artist + album_artist names in the user's library.
+    Multi-artist strings are split so each individual artist matches."""
+    key = "navidrome:existing_artists:v5"
     cached = _cache_get(key, LIBRARY_TTL_SECS)
     if cached is not None:
         return set(cached)
@@ -187,20 +197,27 @@ def _navidrome_existing_artists():
             """).fetchall()
         finally:
             nd_conn.close()
-        names = sorted({_norm(r[0]) for r in rows if r[0]})
+        names = set()
+        for r in rows:
+            if not r[0]:
+                continue
+            for part in _split_artists(r[0]):
+                n = _norm(part)
+                if n:
+                    names.add(n)
+        names_list = sorted(names)
     except Exception as e:
         log.warning("navidrome artist scan failed: %s", e)
-        names = []
-    _cache_set(key, names)
-    return set(names)
+        names_list = []
+    _cache_set(key, names_list)
+    return set(names_list)
 
 
 def _navidrome_existing_tracks():
     """Set of (normalized_artist, normalized_title) tuples in the library.
-    Includes BOTH track artist and album_artist variants for each title so a
-    Last.fm rec naming the album-artist still matches a track tagged with the
-    featured artist (and vice-versa)."""
-    key = "navidrome:existing_tracks:v4"
+    Splits multi-artist strings ('A & B', 'A feat. B', etc.) so a Last.fm
+    rec naming just one of the collaborators still matches."""
+    key = "navidrome:existing_tracks:v5"
     cached = _cache_get(key, LIBRARY_TTL_SECS)
     if cached is not None:
         return {(p[0], p[1]) for p in cached}
@@ -219,10 +236,13 @@ def _navidrome_existing_tracks():
             t = _norm(title)
             if not t:
                 continue
-            for a_field in (artist, album_artist):
-                a = _norm(a_field) if a_field else ""
-                if a:
-                    tracks.add((a, t))
+            for field in (artist, album_artist):
+                if not field:
+                    continue
+                for part in _split_artists(field):
+                    a = _norm(part)
+                    if a:
+                        tracks.add((a, t))
         tracks_list = sorted(tracks)
     except Exception as e:
         log.warning("navidrome track scan failed: %s", e)

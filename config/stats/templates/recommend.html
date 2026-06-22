@@ -21,10 +21,13 @@
       <div class="rec-noposter">[NO POSTER]</div>
       {% endif %}
       <div class="rec-body">
-        <div class="rec-title">{{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}</div>
+        <div class="rec-title">
+          <span class="rec-kind rec-kind-{{ m.kind }}">{{ m.request_type|upper }}</span>
+          {{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}
+        </div>
         <div class="rec-overview">{{ m.overview }}</div>
         <form action="https://requests.ishimura.lol/request" method="post">
-          <input type="hidden" name="type" value="Movie">
+          <input type="hidden" name="type" value="{{ m.request_type }}">
           <input type="hidden" name="title" value="{{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}">
           <button type="submit" class="rec-btn">+ REQUEST</button>
         </form>
@@ -65,6 +68,16 @@
   }
   .rec-body { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
   .rec-title { color: var(--bright-cyan); font-weight: bold; }
+  .rec-kind {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    margin-right: 0.4rem;
+    border: 1px solid currentColor;
+    vertical-align: middle;
+  }
+  .rec-kind-movie { color: var(--bright-magenta); }
+  .rec-kind-tv { color: var(--bright-yellow); }
   .rec-overview { font-size: 0.85rem; color: var(--white); flex: 1; }
   .rec-btn {
     background: var(--magenta);

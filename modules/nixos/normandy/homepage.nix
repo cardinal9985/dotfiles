@@ -69,11 +69,11 @@ let
       healthUrl   = "http://${ishimuraTailnetIP}:8888/healthz";
     }
     {
-      name        = "Watch2gether";
+      name        = "SyncTube";
       description = "Watch Together";
       url         = "https://watch.ishimura.lol";
       icon        = "◑";
-      statusPath  = "/health/watch2gether";
+      statusPath  = "/health/synctube";
       healthUrl   = "http://127.0.0.1:4545/";
     }
     {

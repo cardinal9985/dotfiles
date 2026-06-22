@@ -173,7 +173,7 @@ let
         rewrite-degoog-health:
           replacePath:
             path: "/"
-        rewrite-watch2gether-health:
+        rewrite-synctube-health:
           replacePath:
             path: "/"
         rewrite-moodist-health:
@@ -539,9 +539,9 @@ let
           middlewares:
             - noindex-headers
             - rewrite-slskd-health
-        homepage-health-watch2gether-router:
-          rule: "Host(`${domain}`) && Path(`/health/watch2gether`)"
-          service: watch2gether-service
+        homepage-health-synctube-router:
+          rule: "Host(`${domain}`) && Path(`/health/synctube`)"
+          service: synctube-service
           entryPoints:
             - websecure
           tls:
@@ -553,7 +553,7 @@ let
           priority: 50
           middlewares:
             - noindex-headers
-            - rewrite-watch2gether-health
+            - rewrite-synctube-health
         homepage-health-moodist-router:
           rule: "Host(`${domain}`) && Path(`/health/moodist`)"
           service: moodist-service
@@ -915,9 +915,9 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
-        watch2gether-router:
+        synctube-router:
           rule: "Host(`watch.${domain}`)"
-          service: watch2gether-service
+          service: synctube-service
           entryPoints:
             - websecure
           tls:
@@ -1076,7 +1076,7 @@ let
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:4444"
-        watch2gether-service:
+        synctube-service:
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:4545"

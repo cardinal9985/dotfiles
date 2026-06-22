@@ -19,6 +19,6 @@
     ./user.nix
     ./voidauth.nix
     ./moodist.nix
-    ./watch2gether.nix
+    ./synctube.nix
   ];
 }

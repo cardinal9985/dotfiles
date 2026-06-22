@@ -16,11 +16,16 @@ let
   '';
 in
 {
-  systemd.services.navidrome.serviceConfig.UMask = pkgs.lib.mkForce "0027";
+  # Group-writable umask so stats (in navidrome group) can update the WAL
+  # index files - SQLite needs write access to -shm even for read-only queries
+  # to track WAL changes; otherwise readers see stale snapshots.
+  systemd.services.navidrome.serviceConfig.UMask = pkgs.lib.mkForce "0007";
   systemd.tmpfiles.rules = [
     "d /persist/stats 0750 stats stats -"
-    "z /var/lib/navidrome 0750 navidrome navidrome -"
-    "z /var/lib/navidrome/navidrome.db 0640 navidrome navidrome -"
+    "z /var/lib/navidrome              0770 navidrome navidrome -"
+    "z /var/lib/navidrome/navidrome.db     0660 navidrome navidrome -"
+    "z /var/lib/navidrome/navidrome.db-shm 0660 navidrome navidrome -"
+    "z /var/lib/navidrome/navidrome.db-wal 0660 navidrome navidrome -"
   ];
 
   environment.persistence."/persist".directories = [

@@ -14,17 +14,25 @@ import db
 
 
 _NON_ALNUM_RE = re.compile(r"[^a-z0-9 ]+")
-_WS_RE = re.compile(r"\s+")
+_WS_RE        = re.compile(r"\s+")
+_PARENS_RE    = re.compile(r"\s*[\(\[][^\)\]]*[\)\]]")
+_FEAT_RE      = re.compile(r"\s+(feat\.?|ft\.?|featuring|with)\s+.*$", re.IGNORECASE)
 
 
 def _norm(s):
-    """Normalize artist/track/title strings for fuzzy comparison:
-    lowercase, strip diacritics, strip punctuation, collapse whitespace."""
+    """Normalize artist/track/title for fuzzy comparison:
+    - strip diacritics ("Beyoncé" -> "beyonce")
+    - drop parenthesized/bracketed extras ("(Live)", "[Remastered]")
+    - drop "feat./ft./with X" tails ("Artist feat. Other" -> "artist")
+    - lowercase, strip punctuation, collapse whitespace
+    """
     if not s:
         return ""
     s = unicodedata.normalize("NFKD", s)
     s = "".join(c for c in s if not unicodedata.combining(c))
-    s = s.lower().strip()
+    s = s.lower()
+    s = _PARENS_RE.sub("", s)
+    s = _FEAT_RE.sub("", s)
     s = _NON_ALNUM_RE.sub(" ", s)
     s = _WS_RE.sub(" ", s).strip()
     return s
@@ -158,7 +166,7 @@ def _jellyfin_library_items(library_id):
 
 def _navidrome_existing_artists():
     """Set of normalized artist + album_artist names in the user's library."""
-    key = "navidrome:existing_artists:v2"
+    key = "navidrome:existing_artists:v3"
     cached = _cache_get(key, LIBRARY_TTL_SECS)
     if cached is not None:
         return set(cached)
@@ -182,8 +190,11 @@ def _navidrome_existing_artists():
 
 
 def _navidrome_existing_tracks():
-    """Set of (normalized_artist, normalized_title) tuples in the library."""
-    key = "navidrome:existing_tracks:v2"
+    """Set of (normalized_artist, normalized_title) tuples in the library.
+    Includes BOTH track artist and album_artist variants for each title so a
+    Last.fm rec naming the album-artist still matches a track tagged with the
+    featured artist (and vice-versa)."""
+    key = "navidrome:existing_tracks:v3"
     cached = _cache_get(key, LIBRARY_TTL_SECS)
     if cached is not None:
         return {(p[0], p[1]) for p in cached}
@@ -192,18 +203,26 @@ def _navidrome_existing_tracks():
         nd_conn = sql.connect(f"file:{NAVIDROME_DB}?mode=ro", uri=True)
         try:
             rows = nd_conn.execute("""
-                SELECT DISTINCT artist, title FROM media_file
-                WHERE artist != '' AND title != ''
+                SELECT artist, album_artist, title FROM media_file
+                WHERE title != ''
             """).fetchall()
         finally:
             nd_conn.close()
-        tracks = sorted({(_norm(r[0]), _norm(r[1])) for r in rows if r[0] and r[1]})
-        tracks = [[a, t] for a, t in tracks if a and t]
+        tracks = set()
+        for artist, album_artist, title in rows:
+            t = _norm(title)
+            if not t:
+                continue
+            for a_field in (artist, album_artist):
+                a = _norm(a_field) if a_field else ""
+                if a:
+                    tracks.add((a, t))
+        tracks_list = sorted(tracks)
     except Exception as e:
         log.warning("navidrome track scan failed: %s", e)
-        tracks = []
-    _cache_set(key, tracks)
-    return {(t[0], t[1]) for t in tracks}
+        tracks_list = []
+    _cache_set(key, tracks_list)
+    return set(tracks_list)
 
 
 def _tmdb_get(path, params=None):

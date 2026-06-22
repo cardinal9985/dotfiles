@@ -17,6 +17,7 @@ _NON_ALNUM_RE = re.compile(r"[^a-z0-9 ]+")
 _WS_RE        = re.compile(r"\s+")
 _PARENS_RE    = re.compile(r"\s*[\(\[][^\)\]]*[\)\]]")
 _FEAT_RE      = re.compile(r"\s+(feat\.?|ft\.?|featuring|with)\s+.*$", re.IGNORECASE)
+_DASH_TAIL_RE = re.compile(r"\s+-\s+.*$")
 
 
 def _norm(s):
@@ -24,6 +25,10 @@ def _norm(s):
     - strip diacritics ("Beyoncé" -> "beyonce")
     - drop parenthesized/bracketed extras ("(Live)", "[Remastered]")
     - drop "feat./ft./with X" tails ("Artist feat. Other" -> "artist")
+    - drop " - <qualifier>" tails (Last.fm style:
+      'All My Loving - From "Across The Universe" Soundtrack',
+      'Heroes - 1999 Digital Remaster',
+      'Karma Police - Live at Wembley')
     - lowercase, strip punctuation, collapse whitespace
     """
     if not s:
@@ -33,6 +38,7 @@ def _norm(s):
     s = s.lower()
     s = _PARENS_RE.sub("", s)
     s = _FEAT_RE.sub("", s)
+    s = _DASH_TAIL_RE.sub("", s)
     s = _NON_ALNUM_RE.sub(" ", s)
     s = _WS_RE.sub(" ", s).strip()
     return s
@@ -166,7 +172,7 @@ def _jellyfin_library_items(library_id):
 
 def _navidrome_existing_artists():
     """Set of normalized artist + album_artist names in the user's library."""
-    key = "navidrome:existing_artists:v3"
+    key = "navidrome:existing_artists:v4"
     cached = _cache_get(key, LIBRARY_TTL_SECS)
     if cached is not None:
         return set(cached)
@@ -194,7 +200,7 @@ def _navidrome_existing_tracks():
     Includes BOTH track artist and album_artist variants for each title so a
     Last.fm rec naming the album-artist still matches a track tagged with the
     featured artist (and vice-versa)."""
-    key = "navidrome:existing_tracks:v3"
+    key = "navidrome:existing_tracks:v4"
     cached = _cache_get(key, LIBRARY_TTL_SECS)
     if cached is not None:
         return {(p[0], p[1]) for p in cached}

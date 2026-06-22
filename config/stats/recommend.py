@@ -322,6 +322,52 @@ def book_recommendations(user, limit=20):
     return out
 
 
+def library_check(req_type, title):
+    """Used by the requests app to know whether a requested item is already
+    available somewhere in our libraries. Returns {'exists': bool,
+    'match': str|None} where match is a human-readable description of what
+    we found."""
+    n = _norm(title)
+    if not n:
+        return {"exists": False, "match": None}
+
+    rt = (req_type or "").lower()
+
+    if rt in ("movie", "show"):
+        libs = _jellyfin_libraries()
+        kind_filter = "Movie" if rt == "movie" else "Series"
+        for lib in libs:
+            for it in _jellyfin_library_items(lib["id"]):
+                if it.get("type") != kind_filter:
+                    continue
+                if _norm(it.get("name") or "") == n:
+                    return {
+                        "exists": True,
+                        "match":  f"{it['name']} ({lib['name']})",
+                    }
+        return {"exists": False, "match": None}
+
+    if rt == "music":
+        artists = _navidrome_existing_artists()
+        if n in artists:
+            return {"exists": True, "match": f"{title} (Navidrome)"}
+        return {"exists": False, "match": None}
+
+    if rt == "book":
+        owned = _booklore_existing_books()
+        if n in owned:
+            return {"exists": True, "match": f"{title} (BookLore)"}
+        return {"exists": False, "match": None}
+
+    if rt == "game":
+        owned = _romm_existing_games()
+        if n in owned:
+            return {"exists": True, "match": f"{title} (ROMM)"}
+        return {"exists": False, "match": None}
+
+    return {"exists": False, "match": None}
+
+
 def warm_cache_for(user):
     """Run all recommendation builds. Slow first time, fast after (cached)."""
     video_recommendations_by_library(user)

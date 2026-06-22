@@ -247,6 +247,23 @@
     color: var(--bright-cyan);
   }
 
+  .top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .top-nav-right { display: flex; gap: 1rem; align-items: center; }
+  .top-nav a, .top-nav .user-tag {
+    color: var(--bright-cyan);
+    text-decoration: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 6px rgba(110, 200, 230, 0.2);
+  }
+  .top-nav a:hover { color: var(--bright-white); text-shadow: 0 0 10px rgba(110, 200, 230, 0.5); }
+  .top-nav .user-tag { color: var(--bright-green); }
+
   .message {
     font-size: 0.8rem;
     padding: 0.6rem;
@@ -258,6 +275,12 @@
     color: var(--bright-red);
     border-color: var(--red);
     background: rgba(139, 58, 80, 0.1);
+  }
+
+  .message.warning {
+    color: var(--bright-yellow);
+    border-color: var(--yellow);
+    background: rgba(184, 144, 64, 0.1);
   }
 
   .message.success {
@@ -349,9 +372,16 @@
 <body class="crt">
 <canvas id="star-canvas"></canvas>
 <div class="container">
+  <nav class="top-nav">
+    <a href="https://ishimura.lol">[&lt; HOME]</a>
+    <span class="top-nav-right">
+      <a href="https://stats.ishimura.lol">[STATS]</a>
+      {% if user %}<span class="user-tag">[ {{ user|upper }} ]</span>{% endif %}
+    </span>
+  </nav>
   <div class="header">
     <h1>ISHIMURA.LOL</h1>
-    <div class="subtitle">// MEDIA REQUESTS — {{ user }}</div>
+    <div class="subtitle">// MEDIA REQUESTS</div>
   </div>
 
   <div class="box">
@@ -361,20 +391,26 @@
     <div class="message error">{{ error }}</div>
     {% endif %}
 
+    {% if warning %}
+    <div class="message warning">
+      {{ warning }}<br>
+      <span style="font-size: 0.7rem; color: var(--white);">If the current copy is broken or you want a different edition, fill out NOTES below and submit again.</span>
+    </div>
+    {% endif %}
+
     {% if success %}
     <div class="message success">{{ success }}</div>
     {% endif %}
 
     <form method="POST" action="/request">
+      {% if prefill.confirm %}<input type="hidden" name="confirm" value="1">{% endif %}
       <div class="field">
         <label>TYPE</label>
         <select name="type" id="req-type" required>
           <option value="">-- Select --</option>
-          <option value="Movie">Movie</option>
-          <option value="Show">Show</option>
-          <option value="Music">Music</option>
-          <option value="Book">Book</option>
-          <option value="Game">Game</option>
+          {% for t in ['Movie', 'Show', 'Music', 'Book', 'Game'] %}
+          <option value="{{ t }}" {% if prefill.type == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
         </select>
       </div>
       <div class="field" id="platform-field" style="display: none;">
@@ -423,14 +459,14 @@
       <div class="field">
         <label>TITLE</label>
         <div class="search-wrap">
-          <input type="text" name="title" id="req-title" required maxlength="200" placeholder="Start typing to search..." autocomplete="off">
+          <input type="text" name="title" id="req-title" required maxlength="200" placeholder="Start typing to search..." autocomplete="off" value="{{ prefill.title or '' }}">
           <div class="search-results" id="search-results"></div>
         </div>
         <div class="search-hint" id="search-hint"></div>
       </div>
       <div class="field">
         <label>NOTES <span style="color: var(--white); font-size: 0.65rem;">(OPTIONAL)</span></label>
-        <textarea name="notes" id="req-notes" maxlength="500" rows="2" placeholder="Year, edition, specific version..."></textarea>
+        <textarea name="notes" id="req-notes" maxlength="500" rows="2" placeholder="Year, edition, specific version, or why a re-request (broken file, missing chapter, etc.)">{{ prefill.notes or '' }}</textarea>
       </div>
       <button type="submit" class="btn" style="width: 100%;">SUBMIT REQUEST</button>
     </form>
@@ -696,6 +732,18 @@ typeSelect.addEventListener('change', function() {
     titleInput.dispatchEvent(new Event('input'));
   }
 });
+
+// If a prefill came in (from stats /recommend buttons), set the platform
+// value (long select with many options - easier in JS than Jinja) and fire
+// the type-change handler so the Game-only platform field appears.
+(function () {
+  var prefillPlatform = {{ (prefill.platform or '')|tojson }};
+  if (prefillPlatform) {
+    var platSelect = document.getElementById('req-platform');
+    if (platSelect) platSelect.value = prefillPlatform;
+  }
+  if (typeSelect.value) typeSelect.dispatchEvent(new Event('change'));
+})();
 </script>
 </body>
 </html>

@@ -11,7 +11,7 @@ from poller import poll_jellyfin, poll_navidrome, poll_romm, poll_booklore
 from recommend import (video_recommendations_by_library, music_recommendations,
                        song_recommendations, game_recommendations_by_platform,
                        book_recommendations, cache_is_warm, warm_cache_for,
-                       short_platform_name)
+                       short_platform_name, library_check)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -116,6 +116,17 @@ def recommend():
                            artists=artists, songs=songs,
                            games_by_plat=games_by_plat,
                            books=books)
+
+
+@app.route("/api/library_check")
+def api_library_check():
+    """Used by the requests app to soft-warn when a user requests something
+    that's already in our libraries."""
+    req_type = request.args.get("type", "")
+    title    = request.args.get("title", "")
+    if not req_type or not title:
+        return ("missing type or title", 400)
+    return library_check(req_type, title)
 
 
 @app.route("/recommend/_build", methods=["POST"])

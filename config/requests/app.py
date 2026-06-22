@@ -101,7 +101,7 @@ def is_admin(req):
     return "admins" in [grp.strip() for grp in groups.split(",")]
 
 
-def render_index(user, admin, error=None, success=None):
+def render_index(user, admin, error=None, success=None, warning=None, prefill=None):
     db = get_db()
     if admin:
         rows = db.execute(
@@ -114,7 +114,8 @@ def render_index(user, admin, error=None, success=None):
         ).fetchall()
     return render_template(
         "index.html", user=user, admin=admin, requests=rows,
-        error=error, success=success,
+        error=error, success=success, warning=warning,
+        prefill=prefill or {},
     )
 
 
@@ -240,7 +241,15 @@ def index():
     user = get_user(request)
     if not user:
         return "Unauthorized: no Remote-User header", 401
-    return render_index(user, is_admin(request))
+    # Optional prefill from query string (used by stats /recommend buttons so
+    # the user can review and add notes before submitting).
+    prefill = {
+        "type":     request.args.get("type", ""),
+        "title":    request.args.get("title", ""),
+        "platform": request.args.get("platform", ""),
+        "notes":    request.args.get("notes", ""),
+    }
+    return render_index(user, is_admin(request), prefill=prefill)
 
 
 @app.route("/search")
@@ -276,6 +285,23 @@ def search():
     return jsonify(results)
 
 
+STATS_API_BASE = os.environ.get("STATS_API_BASE", "http://127.0.0.1:5005")
+
+
+def library_check(req_type, title):
+    """Ask the stats service whether this item is already in our libraries.
+    Returns {'exists': bool, 'match': str|None}. Failures soft-fall to no match."""
+    try:
+        url = "{}/api/library_check?{}".format(
+            STATS_API_BASE,
+            urllib.parse.urlencode({"type": req_type, "title": title}),
+        )
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            return json.load(resp)
+    except Exception:
+        return {"exists": False, "match": None}
+
+
 @app.route("/request", methods=["POST"])
 def submit_request():
     user = get_user(request)
@@ -291,11 +317,24 @@ def submit_request():
     title = request.form.get("title", "").strip()
     notes = request.form.get("notes", "").strip()
     platform = request.form.get("platform", "").strip()
+    confirm = request.form.get("confirm", "").strip() == "1"
 
     if req_type not in VALID_TYPES:
         return render_index(user, admin, error="Invalid request type.")
     if not title or len(title) > 200:
         return render_index(user, admin, error="Title is required (max 200 characters).")
+
+    # Soft library-existence check. Skipped if user hits "Submit anyway".
+    if not confirm:
+        check = library_check(req_type, title)
+        if check.get("exists"):
+            return render_index(
+                user, admin,
+                warning="Already in your library: {}".format(check["match"]),
+                prefill={"type": req_type, "title": title, "notes": notes,
+                         "platform": platform, "confirm": "1"},
+            )
+
     if req_type == "Game" and platform:
         notes = "[{}] {}".format(platform, notes) if notes else "[{}]".format(platform)
     if len(notes) > 500:

@@ -31,7 +31,7 @@ in
       address            = [ "127.0.0.1" ];
       port               = [ 6167 ];
       allow_registration = false;
-      allow_federation   = false;
+      allow_federation   = true;
       allow_encryption   = true;
       identity_provider = [
         {

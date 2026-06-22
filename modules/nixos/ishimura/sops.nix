@@ -61,6 +61,9 @@
       "stats/jellyfin_api_key" = {
         mode = "0400";
       };
+      "stats/webhook_secret" = {
+        mode = "0400";
+      };
       "slskd/slsk_username" = {
         mode = "0400";
       };

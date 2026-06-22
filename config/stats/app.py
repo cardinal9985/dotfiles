@@ -20,15 +20,17 @@ db.init_db()
 # ── Background Scheduler ─────────────────────────────────────────────────────
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(poll_jellyfin, "interval", minutes=5, id="poll_jellyfin",
+scheduler.add_job(poll_jellyfin, "interval", minutes=1, id="poll_jellyfin",
                   next_run_time=datetime.now() + timedelta(seconds=10))
-scheduler.add_job(poll_navidrome, "interval", minutes=5, id="poll_navidrome",
+scheduler.add_job(poll_navidrome, "interval", minutes=1, id="poll_navidrome",
                   next_run_time=datetime.now() + timedelta(seconds=15))
-scheduler.add_job(poll_romm, "interval", minutes=15, id="poll_romm",
+scheduler.add_job(poll_romm, "interval", minutes=1, id="poll_romm",
                   next_run_time=datetime.now() + timedelta(seconds=20))
-scheduler.add_job(poll_booklore, "interval", minutes=5, id="poll_booklore",
+scheduler.add_job(poll_booklore, "interval", minutes=1, id="poll_booklore",
                   next_run_time=datetime.now() + timedelta(seconds=25))
 scheduler.start()
+
+WEBHOOK_SECRET = os.environ.get("STATS_WEBHOOK_SECRET", "")
 
 
 def _get_user():
@@ -64,6 +66,16 @@ app.jinja_env.filters["parse_meta"] = _parse_metadata
 
 @app.route("/health")
 def health():
+    return "ok", 200
+
+
+@app.route("/webhook/jellyfin", methods=["POST"])
+def webhook_jellyfin():
+    if not WEBHOOK_SECRET or request.headers.get("X-Stats-Secret") != WEBHOOK_SECRET:
+        return "forbidden", 403
+    scheduler.add_job(poll_jellyfin, "date", run_date=datetime.now(),
+                      id="webhook_jellyfin", replace_existing=True,
+                      misfire_grace_time=30)
     return "ok", 200
 
 

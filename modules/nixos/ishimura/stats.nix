@@ -39,6 +39,7 @@ in
     owner = "stats";
     content = ''
       STATS_DB_PATH=/persist/stats/stats.db
+      STATS_WEBHOOK_SECRET=${config.sops.placeholder."stats/webhook_secret"}
       JELLYFIN_URL=http://127.0.0.1:8096
       JELLYFIN_API_KEY=${config.sops.placeholder."stats/jellyfin_api_key"}
       NAVIDROME_DB=/var/lib/navidrome/navidrome.db

@@ -89,13 +89,15 @@
   {% if songs %}
   <div class="rec-subpane {{ 'hidden' if artists }}" data-subcontent="music-songs">
     <table class="list-table song-table">
-      <thead><tr><th>TRACK</th><th>ARTIST</th><th></th></tr></thead>
+      <thead><tr><th>TRACK</th><th>ARTIST</th><th>ALBUM</th><th>GENRE</th><th></th></tr></thead>
       <tbody>
         {% for s in songs %}
         <tr>
           <td>{% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.title }}</a>
               {% else %}{{ s.title }}{% endif %}</td>
           <td>{{ s.artist }}</td>
+          <td class="song-album">{{ s.album or '-' }}</td>
+          <td class="song-genre">{{ s.genre or '-' }}</td>
           <td style="text-align:right">
             <form action="https://requests.ishimura.lol/request" method="post" style="display:inline">
               <input type="hidden" name="type" value="Music">
@@ -230,6 +232,8 @@
 
   .song-table a { color: var(--bright-cyan); text-decoration: none; }
   .song-table a:hover { text-decoration: underline; }
+  .song-album { color: var(--white); font-size: 0.85rem; }
+  .song-genre { color: var(--bright-yellow); font-size: 0.8rem; text-transform: lowercase; }
   .rec-btn-sm {
     background: var(--magenta); color: var(--bright-white);
     border: none; padding: 0.2rem 0.6rem; font-family: inherit;

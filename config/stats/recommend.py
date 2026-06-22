@@ -579,6 +579,36 @@ def _lastfm_similar_tracks(artist, track):
     return results
 
 
+def _lastfm_track_info(artist, track):
+    """track.getInfo - returns {album, genre} for a single track. Cached 30d."""
+    key = f"lastfm:trackinfo:{artist.lower()}::{track.lower()}"
+    cached = _cache_get(key, SEARCH_TTL_SECS)
+    if cached is not None:
+        return cached
+    if not LASTFM_API_KEY:
+        return {"album": "", "genre": ""}
+    try:
+        r = http.get(LASTFM_BASE, params={
+            "method": "track.getInfo",
+            "artist": artist,
+            "track": track,
+            "api_key": LASTFM_API_KEY,
+            "format": "json",
+            "autocorrect": "1",
+        }, timeout=10)
+        r.raise_for_status()
+        t = ((r.json() or {}).get("track") or {})
+        album = ((t.get("album") or {}).get("title") or "").strip()
+        tags = ((t.get("toptags") or {}).get("tag") or [])
+        genre = (tags[0].get("name") or "").strip() if tags else ""
+        result = {"album": album, "genre": genre}
+    except Exception as e:
+        log.warning("lastfm track.getInfo error for %s - %s: %s", artist, track, e)
+        result = {"album": "", "genre": ""}
+    _cache_set(key, result)
+    return result
+
+
 def _seed_tracks(user, limit=10):
     with db.get_db() as conn:
         rows = conn.execute(
@@ -632,12 +662,18 @@ def song_recommendations(user, limit=25):
             })
             entry["score"] += match
 
-    ranked = sorted(scores.values(), key=lambda x: -x["score"])
-    return [{
-        "kind": "song",
-        "title": e["title"],
-        "artist": e["artist"],
-        "url": e["url"],
-        "request_type": "Music",
-        "score": round(e["score"], 2),
-    } for e in ranked[:limit]]
+    ranked = sorted(scores.values(), key=lambda x: -x["score"])[:limit]
+    out = []
+    for e in ranked:
+        info = _lastfm_track_info(e["artist"], e["title"])
+        out.append({
+            "kind": "song",
+            "title":  e["title"],
+            "artist": e["artist"],
+            "album":  info.get("album", ""),
+            "genre":  info.get("genre", ""),
+            "url":    e["url"],
+            "request_type": "Music",
+            "score":  round(e["score"], 2),
+        })
+    return out

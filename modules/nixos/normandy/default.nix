@@ -19,6 +19,7 @@
     ./user.nix
     ./voidauth.nix
     ./moodist.nix
+    ./privatebin.nix
     ./synctube.nix
   ];
 }

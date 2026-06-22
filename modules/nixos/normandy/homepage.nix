@@ -84,6 +84,14 @@ let
       statusPath  = "/health/moodist";
       healthUrl   = "http://127.0.0.1:4546/";
     }
+    {
+      name        = "PrivateBin";
+      description = "Encrypted Pastebin";
+      url         = "https://paste.ishimura.lol";
+      icon        = "✄";
+      statusPath  = "/health/paste";
+      healthUrl   = "http://127.0.0.1:4549/";
+    }
   ];
 
   adminServices = [

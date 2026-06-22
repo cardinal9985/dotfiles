@@ -909,50 +909,107 @@ def _seed_games(user, limit=10):
     return out
 
 
+def _igdb_game_genres(game_id):
+    """Genre IDs for a single IGDB game. Cached 30d."""
+    key = f"igdb:genres:{game_id}"
+    cached = _cache_get(key, SEARCH_TTL_SECS)
+    if cached is not None:
+        return cached
+    results = _igdb_post("games", f"fields genres; where id = {game_id};")
+    genres = (results[0].get("genres") if results else []) or []
+    _cache_set(key, genres)
+    return genres
+
+
+def _igdb_top_in_genres_on_platforms(genre_ids, platform_ids, limit=60):
+    """Highly-rated games matching any of the genres on any of the platforms."""
+    if not genre_ids or not platform_ids:
+        return []
+    g_key = ",".join(str(g) for g in sorted(genre_ids))
+    p_key = ",".join(str(p) for p in sorted(platform_ids))
+    key = f"igdb:topby:{g_key}|{p_key}|{limit}"
+    cached = _cache_get(key, RECS_TTL_SECS)
+    if cached is not None:
+        return cached
+    g_clause = "(" + ",".join(str(g) for g in genre_ids) + ")"
+    p_clause = "(" + ",".join(str(p) for p in platform_ids) + ")"
+    body = (
+        "fields id, name, cover.image_id, first_release_date, summary, "
+        "platforms, total_rating, total_rating_count; "
+        f"where genres = {g_clause} & platforms = {p_clause} "
+        "& total_rating > 70 & total_rating_count > 5; "
+        f"sort total_rating desc; limit {limit};"
+    )
+    results = _igdb_post("games", body)
+    games = []
+    for g in results:
+        cover = (g.get("cover") or {}).get("image_id")
+        year = ""
+        if g.get("first_release_date"):
+            try:
+                year = str(datetime.fromtimestamp(g["first_release_date"]).year)
+            except Exception:
+                year = ""
+        games.append({
+            "id":        g.get("id"),
+            "name":      g.get("name", ""),
+            "year":      year,
+            "summary":   (g.get("summary") or "")[:240],
+            "cover_url": f"{IGDB_IMG_BASE}/{cover}.jpg" if cover else None,
+            "rating":    g.get("total_rating") or 0,
+        })
+    _cache_set(key, games)
+    return games
+
+
 def game_recommendations(user, limit=20):
-    """Ranked IGDB recommendations from the user's recent ROMM plays.
-    Dedupes against the user's ROMM library."""
+    """Recommend retro games on platforms ROMM already serves: aggregate
+    genres from the user's recent seeds, then query IGDB for top-rated
+    games in those genres on the owned platforms. Dedupes against the
+    ROMM library."""
     seeds = _seed_games(user)
     if not seeds:
         return []
 
+    owned_platforms = sorted(_romm_owned_platforms())
+    if not owned_platforms:
+        return []  # nothing to filter to - can't keep recs to ROMs
+
     seed_norm = {_norm(s) for s in seeds}
     owned     = _romm_existing_games()
-    owned_platforms = _romm_owned_platforms()
 
-    scores = {}
+    # Collect genres from each seed game.
+    seed_genres = set()
     for game in seeds:
         gid = _igdb_search(game)
         if not gid:
             continue
-        for sim in _igdb_similar(gid):
-            name = sim.get("name", "")
-            if not name:
-                continue
-            n = _norm(name)
-            if not n or n in seed_norm or n in owned:
-                continue
-            # Only keep games on platforms ROMM can actually serve.
-            # If we have no platform info, fall back to allowing all (safer
-            # than filtering nothing through).
-            if owned_platforms:
-                sim_platforms = set(sim.get("platforms") or [])
-                if not (sim_platforms & owned_platforms):
-                    continue
-            sid = sim.get("id")
-            entry = scores.setdefault(sid or n, {"score": 0, "data": sim})
-            entry["score"] += 1
+        seed_genres.update(_igdb_game_genres(gid))
+    if not seed_genres:
+        return []
 
-    ranked = sorted(scores.values(), key=lambda x: -x["score"])
-    return [{
-        "kind":         "game",
-        "title":        e["data"].get("name", ""),
-        "year":         e["data"].get("year", ""),
-        "overview":     e["data"].get("summary", ""),
-        "cover_url":    e["data"].get("cover_url"),
-        "request_type": "Game",
-        "score":        e["score"],
-    } for e in ranked[:limit]]
+    candidates = _igdb_top_in_genres_on_platforms(
+        sorted(seed_genres), owned_platforms, limit=60
+    )
+
+    out = []
+    for g in candidates:
+        name = g.get("name", "")
+        n = _norm(name)
+        if not n or n in seed_norm or n in owned:
+            continue
+        out.append({
+            "kind":         "game",
+            "title":        name,
+            "year":         g.get("year", ""),
+            "overview":     g.get("summary", ""),
+            "cover_url":    g.get("cover_url"),
+            "request_type": "Game",
+            "score":        round(g.get("rating", 0), 1),
+        })
+        if len(out) >= limit:
+            break
+    return out
 
 
 def song_recommendations(user, limit=25):

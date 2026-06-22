@@ -35,6 +35,12 @@ CREATE TABLE IF NOT EXISTS user_map (
 
 CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id, source);
 CREATE INDEX IF NOT EXISTS idx_events_played ON events(played_at);
+
+CREATE TABLE IF NOT EXISTS api_cache (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    fetched_at TIMESTAMP NOT NULL
+);
 """
 
 

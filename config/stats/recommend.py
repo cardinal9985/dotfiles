@@ -1,8 +1,10 @@
 """Movie recommendations via TMDB, seeded from the user's recent Jellyfin
 movie events in the stats DB."""
 
+import json
 import logging
 import os
+from datetime import datetime
 
 import requests as http
 
@@ -13,6 +15,39 @@ log = logging.getLogger("stats.recommend")
 TMDB_TOKEN = os.environ.get("TMDB_TOKEN", "")
 TMDB_BASE = "https://api.themoviedb.org/3"
 TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w342"
+
+# Cache TTLs. Title->ID rarely changes, so we keep it ~30 days. Recommendations
+# get refreshed weekly since TMDB tweaks their algorithm over time.
+SEARCH_TTL_SECS = 30 * 86400
+RECS_TTL_SECS   = 7 * 86400
+
+
+def _cache_get(key, max_age_secs):
+    with db.get_db() as conn:
+        row = conn.execute(
+            "SELECT value, fetched_at FROM api_cache WHERE key = ?",
+            (key,),
+        ).fetchone()
+    if not row:
+        return None
+    try:
+        age = (datetime.now() - datetime.fromisoformat(row["fetched_at"])).total_seconds()
+    except Exception:
+        return None
+    if age > max_age_secs:
+        return None
+    try:
+        return json.loads(row["value"])
+    except Exception:
+        return None
+
+
+def _cache_set(key, value):
+    with db.get_db() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO api_cache (key, value, fetched_at) VALUES (?, ?, ?)",
+            (key, json.dumps(value), datetime.now().isoformat()),
+        )
 
 
 def _tmdb_get(path, params=None):
@@ -33,18 +68,31 @@ def _tmdb_get(path, params=None):
 
 
 def _search(kind, title):
-    """kind is 'movie' or 'tv'. Returns TMDB id of first result."""
+    """kind is 'movie' or 'tv'. Returns TMDB id of first result. Cached."""
+    key = f"tmdb:search:{kind}:{title}"
+    cached = _cache_get(key, SEARCH_TTL_SECS)
+    if cached is not None:
+        # Cached miss is stored as null; treat as miss.
+        return cached or None
+
     data = _tmdb_get(f"/search/{kind}", {"query": title})
-    if not data or not data.get("results"):
-        return None
-    return data["results"][0]["id"]
+    result = None
+    if data and data.get("results"):
+        result = data["results"][0]["id"]
+    _cache_set(key, result)
+    return result
 
 
 def _recs(kind, tmdb_id, limit=8):
+    key = f"tmdb:recs:{kind}:{tmdb_id}"
+    cached = _cache_get(key, RECS_TTL_SECS)
+    if cached is not None:
+        return cached[:limit]
+
     data = _tmdb_get(f"/{kind}/{tmdb_id}/recommendations")
-    if not data:
-        return []
-    return data.get("results", [])[:limit]
+    results = data.get("results", []) if data else []
+    _cache_set(key, results)
+    return results[:limit]
 
 
 def _parse_show_from_episode(name):

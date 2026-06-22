@@ -19,7 +19,11 @@ db.init_db()
 
 # ── Background Scheduler ─────────────────────────────────────────────────────
 
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(job_defaults={
+    "max_instances": 1,
+    "coalesce": True,
+    "misfire_grace_time": 30,
+})
 scheduler.add_job(poll_jellyfin, "interval", minutes=1, id="poll_jellyfin",
                   next_run_time=datetime.now() + timedelta(seconds=10))
 scheduler.add_job(poll_navidrome, "interval", minutes=1, id="poll_navidrome",

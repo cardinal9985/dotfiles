@@ -556,7 +556,14 @@ def music_recommendations(user, limit=20):
             if not name:
                 continue
             n = _norm(name)
-            if not n or n in seed_norm or n in owned:
+            if not n:
+                continue
+            # Skip if the rec OR any of its split parts overlaps with what
+            # we've seeded or already have in the library.
+            parts = [_norm(p) for p in _split_artists(name)]
+            parts = [p for p in parts if p]
+            check_set = set(parts) | {n}
+            if check_set & seed_norm or check_set & owned:
                 continue
             try:
                 match = float(rec.get("match") or 0.0)
@@ -709,12 +716,17 @@ def song_recommendations(user, limit=25):
             rartist = ((rec.get("artist") or {}).get("name") or "").strip()
             if not rname or not rartist:
                 continue
-            na, nt = _norm(rartist), _norm(rname)
-            if not na or not nt:
+            nt = _norm(rname)
+            if not nt:
+                continue
+            # Check the rec artist string as a whole AND each split part.
+            na = _norm(rartist)
+            parts = [_norm(p) for p in _split_artists(rartist)]
+            parts = [p for p in parts if p]
+            sigs = {(p, nt) for p in parts} | {(na, nt)}
+            if sigs & seed_sig or sigs & owned:
                 continue
             sig = (na, nt)
-            if sig in seed_sig or sig in owned:
-                continue
             try:
                 match = float(rec.get("match") or 0.0)
             except Exception:

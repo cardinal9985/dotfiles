@@ -8,7 +8,8 @@ from flask import Flask, render_template, request, redirect, url_for
 
 import db
 from poller import poll_jellyfin, poll_navidrome, poll_romm, poll_booklore
-from recommend import movie_recommendations, music_recommendations, song_recommendations
+from recommend import (movie_recommendations, music_recommendations,
+                       song_recommendations, cache_is_warm, warm_cache_for)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -97,11 +98,25 @@ def dashboard():
 @app.route("/recommend")
 def recommend():
     user = _get_user()
-    movies = movie_recommendations(user) if user else []
+    # First-time visit (or freshly cleared cache): the upstream API calls take
+    # 30-60s. Show a loading template that fetches /_build then reloads, so
+    # the user knows what's happening instead of staring at a hung page.
+    if user and not cache_is_warm():
+        return render_template("recommend_loading.html", user=user)
+    movies  = movie_recommendations(user) if user else []
     artists = music_recommendations(user) if user else []
     songs   = song_recommendations(user)  if user else []
     return render_template("recommend.html", user=user,
                            movies=movies, artists=artists, songs=songs)
+
+
+@app.route("/recommend/_build", methods=["POST"])
+def recommend_build():
+    user = _get_user()
+    if not user:
+        return ("unauthorized", 401)
+    warm_cache_for(user)
+    return ("ok", 200)
 
 
 @app.route("/wrapped")

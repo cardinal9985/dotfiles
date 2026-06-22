@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Building Recommendations{% endblock %}
+{% block content %}
+<div class="box">
+  <div class="title">&gt; BUILDING RECOMMENDATIONS</div>
+  <div class="loading-wrap">
+    <div class="loading-spinner"></div>
+    <div class="loading-msg">
+      <div class="loading-line">FETCHING SIMILAR ITEMS FROM TMDB &middot; LAST.FM &middot; DEEZER</div>
+      <div class="loading-line">FIRST LOAD TAKES 30 - 60 SECONDS WHILE WE CACHE RESULTS LOCALLY</div>
+      <div class="loading-line">SUBSEQUENT VISITS WILL BE INSTANT</div>
+      <div class="loading-progress" id="progress">connecting...</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .loading-wrap {
+    display: flex; align-items: center; gap: 1.5rem;
+    padding: 2rem 1rem;
+  }
+  .loading-spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--surface-light);
+    border-top-color: var(--bright-cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { display: flex; flex-direction: column; gap: 0.4rem; }
+  .loading-line { color: var(--white); font-size: 0.9rem; }
+  .loading-line:first-child { color: var(--bright-cyan); font-weight: bold; }
+  .loading-progress {
+    color: var(--bright-yellow);
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+  }
+</style>
+
+<script>
+  const progress = document.getElementById('progress');
+  const started = Date.now();
+  const tick = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - started) / 1000);
+    progress.textContent = 'elapsed: ' + elapsed + 's';
+  }, 1000);
+
+  fetch('/recommend/_build', { method: 'POST' })
+    .then(r => {
+      clearInterval(tick);
+      if (r.ok) {
+        progress.textContent = 'done, reloading...';
+        window.location.reload();
+      } else {
+        progress.textContent = 'build failed (' + r.status + '), retrying in 5s...';
+        setTimeout(() => window.location.reload(), 5000);
+      }
+    })
+    .catch(err => {
+      clearInterval(tick);
+      progress.textContent = 'error: ' + err.message + ', retrying in 5s...';
+      setTimeout(() => window.location.reload(), 5000);
+    });
+</script>
+{% endblock %}

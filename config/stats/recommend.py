@@ -27,6 +27,21 @@ SEARCH_TTL_SECS = 30 * 86400
 RECS_TTL_SECS   = 7 * 86400
 
 
+def cache_is_warm():
+    """Quick check: does the api_cache have any entries? Used by the route
+    to decide whether to show a 'building recommendations' loading screen."""
+    with db.get_db() as conn:
+        row = conn.execute("SELECT 1 FROM api_cache LIMIT 1").fetchone()
+    return row is not None
+
+
+def warm_cache_for(user):
+    """Run all recommendation builds. Slow first time, fast after (cached)."""
+    movie_recommendations(user)
+    music_recommendations(user)
+    song_recommendations(user)
+
+
 def _cache_get(key, max_age_secs):
     with db.get_db() as conn:
         row = conn.execute(

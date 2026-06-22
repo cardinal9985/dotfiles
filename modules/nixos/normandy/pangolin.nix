@@ -182,6 +182,9 @@ let
         rewrite-paste-health:
           replacePath:
             path: "/"
+        rewrite-favicon-png:
+          replacePath:
+            path: "/ishimura-favicon.png"
         # EmulatorJS netplay socket.io connects to /socket.io/ (the default
         # path) because ROMM's defineNetplayFunctions override fails on the
         # nightly build — undefined is not callable. Rewrite to the actual
@@ -289,6 +292,50 @@ let
           priority: 100
           middlewares:
             - noindex-headers
+        ishimura-favicon-png-router:
+          rule: "HostRegexp(`^.+\\.${domain}$`) && Path(`/ishimura-favicon.png`)"
+          service: errors-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 100
+          middlewares:
+            - noindex-headers
+        favicon-ico-subdomain-router:
+          rule: "HostRegexp(`^.+\\.${domain}$`) && Path(`/favicon.ico`)"
+          service: errors-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 100
+          middlewares:
+            - noindex-headers
+            - rewrite-favicon-png
+        favicon-ico-root-router:
+          rule: "Host(`${domain}`) && Path(`/favicon.ico`)"
+          service: errors-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 100
+          middlewares:
+            - noindex-headers
+            - rewrite-favicon-png
         auth-router:
           rule: "Host(`auth.${domain}`)"
           service: auth-service
@@ -1237,6 +1284,8 @@ in
         /persist/pangolin/errors/anubis-theme.css
       install -m 0644 ${../../../config/pangolin/ishimura-banner.png} \
         /persist/pangolin/errors/ishimura-banner.png
+      install -m 0644 ${../../../config/resources/ishimura-favicon.png} \
+        /persist/pangolin/errors/ishimura-favicon.png
       ${pkgs.gnused}/bin/sed \
         "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|" \
         ${traefikDynamicConfig} \

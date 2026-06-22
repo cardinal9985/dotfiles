@@ -53,7 +53,7 @@ in
     "d /persist/var/lib/tuwunel 0700 tuwunel tuwunel - -"
   ];
 
-  systemd.services.matrix-tuwunel.serviceConfig = {
+  systemd.services.tuwunel.serviceConfig = {
     DynamicUser  = lib.mkForce false;
     PrivateUsers = lib.mkForce false;
   };

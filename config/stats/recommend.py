@@ -18,6 +18,64 @@ _WS_RE        = re.compile(r"\s+")
 _PARENS_RE    = re.compile(r"\s*[\(\[][^\)\]]*[\)\]]")
 _FEAT_RE      = re.compile(r"\s+(feat\.?|ft\.?|featuring|with)\s+.*$", re.IGNORECASE)
 _DASH_TAIL_RE = re.compile(r"\s+-\s+.*$")
+_ROM_EXT_RE   = re.compile(
+    r"\.(?:zip|7z|rar|gz|tar|nes|smc|sfc|gba|gb|gbc|n64|z64|v64|md|smd|gen|iso|cue|bin|chd|nds|3ds|cia|psp|cso|wbfs|wad|gcm|gcz|d64|t64|a26|a52|a78|lnx|ngp|ngc|pce|sgg|sms|adf|atr|xex|rom)$",
+    re.IGNORECASE,
+)
+
+
+# Map ROMM platform names to short tab labels.
+PLATFORM_SHORT_NAMES = {
+    "Arcade":                              "ARCADE",
+    "Atari 2600":                          "2600",
+    "Atari 5200":                          "5200",
+    "Atari 7800":                          "7800",
+    "Atari Lynx":                          "LYNX",
+    "Atari Jaguar":                        "JAGUAR",
+    "Browser (Flash/HTML5)":               "BROWSER",
+    "ColecoVision":                        "COLECO",
+    "Commodore 64":                        "C64",
+    "Sega Game Gear":                      "GAME GEAR",
+    "Sega Master System":                  "MASTER SYSTEM",
+    "Sega Mega Drive/Genesis":             "GENESIS",
+    "Sega Saturn":                         "SATURN",
+    "Sega 32X":                            "32X",
+    "Sega CD":                             "SEGA CD",
+    "Sega Dreamcast":                      "DREAMCAST",
+    "Nintendo 64":                         "N64",
+    "Nintendo Entertainment System":       "NES",
+    "Super Nintendo Entertainment System": "SNES",
+    "Nintendo GameCube":                   "GAMECUBE",
+    "Nintendo Wii":                        "WII",
+    "Nintendo Wii U":                      "WII U",
+    "Nintendo Switch":                     "SWITCH",
+    "Game Boy":                            "GAME BOY",
+    "Game Boy Color":                      "GBC",
+    "Game Boy Advance":                    "GBA",
+    "Nintendo DS":                         "DS",
+    "Nintendo 3DS":                        "3DS",
+    "Virtual Boy":                         "VBOY",
+    "PlayStation":                         "PSX",
+    "PlayStation 2":                       "PS2",
+    "PlayStation 3":                       "PS3",
+    "PlayStation Portable":                "PSP",
+    "PlayStation Vita":                    "PS VITA",
+    "Xbox":                                "XBOX",
+    "Xbox 360":                            "X360",
+    "TurboGrafx-16/PC Engine":             "TG16",
+    "PC Engine CD/TurboGrafx-CD":          "TG-CD",
+    "Neo Geo":                             "NEO GEO",
+    "Neo Geo Pocket":                      "NGP",
+    "Neo Geo Pocket Color":                "NGPC",
+    "WonderSwan":                          "WSWAN",
+    "WonderSwan Color":                    "WSWANC",
+    "Magnavox Odyssey 2":                  "ODYSSEY 2",
+    "Intellivision":                       "INTV",
+}
+
+
+def short_platform_name(name):
+    return PLATFORM_SHORT_NAMES.get(name, (name or "").upper())
 _ARTIST_SPLIT_RE = re.compile(r"\s*(?:,|&|/|;| x | vs\.? | feat\.? | ft\.? | featuring | with )\s*", re.IGNORECASE)
 
 
@@ -910,7 +968,11 @@ def _seed_games_by_platform(user, limit_per=10):
         ).fetchall()
     by_platform = {}
     for r in rows:
-        cleaned = _PARENS_RE.sub("", r["item_name"]).strip()
+        name = r["item_name"]
+        # Strip ROM file extension (.zip / .a26 / .nes / etc.) then regional
+        # tags like (USA), (Disc 1) so IGDB search has a clean title.
+        name = _ROM_EXT_RE.sub("", name)
+        cleaned = _PARENS_RE.sub("", name).strip()
         if cleaned:
             by_platform.setdefault(r["platform"], []).append(cleaned)
     # Cap seeds per platform.

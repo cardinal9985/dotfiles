@@ -123,7 +123,7 @@
   <div class="rec-subtabs">
     {% for plat_name, items in games_by_plat.items() %}
     <button class="rec-subtab {{ 'active' if loop.first }}" data-subtab="games-{{ loop.index }}">
-      {{ plat_name|upper }} ({{ items|length }})
+      {{ plat_name|platform_short }} ({{ items|length }})
     </button>
     {% endfor %}
   </div>

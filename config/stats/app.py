@@ -10,13 +10,14 @@ import db
 from poller import poll_jellyfin, poll_navidrome, poll_romm, poll_booklore
 from recommend import (video_recommendations_by_library, music_recommendations,
                        song_recommendations, game_recommendations_by_platform,
-                       cache_is_warm, warm_cache_for)
+                       cache_is_warm, warm_cache_for, short_platform_name)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 log = logging.getLogger("stats")
 
 app = Flask(__name__)
+app.add_template_filter(short_platform_name, "platform_short")
 
 db.init_db()
 

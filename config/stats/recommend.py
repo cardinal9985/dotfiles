@@ -579,9 +579,46 @@ def _lastfm_similar_tracks(artist, track):
     return results
 
 
+def _pick_genre(tags, artist):
+    """First 'real' tag, skipping the artist name itself (often the top tag
+    for famous artists is just their name e.g. 'radiohead')."""
+    a_norm = _norm(artist)
+    for tag in tags or []:
+        name = (tag.get("name") or "").strip()
+        if name and _norm(name) != a_norm:
+            return name
+    return ""
+
+
+def _lastfm_artist_top_tag(artist):
+    """artist.getTopTags - genre fallback when a track has no tags. Cached 30d."""
+    key = f"lastfm:artisttoptag:{artist.lower()}"
+    cached = _cache_get(key, SEARCH_TTL_SECS)
+    if cached is not None:
+        return cached or ""
+    if not LASTFM_API_KEY:
+        return ""
+    try:
+        r = http.get(LASTFM_BASE, params={
+            "method": "artist.getTopTags",
+            "artist": artist,
+            "api_key": LASTFM_API_KEY,
+            "format": "json",
+            "autocorrect": "1",
+        }, timeout=10)
+        r.raise_for_status()
+        tags = (((r.json() or {}).get("toptags") or {}).get("tag") or [])
+        genre = _pick_genre(tags, artist)
+    except Exception as e:
+        log.warning("lastfm artist.getTopTags error for %s: %s", artist, e)
+        genre = ""
+    _cache_set(key, genre)
+    return genre
+
+
 def _lastfm_track_info(artist, track):
-    """track.getInfo - returns {album, genre} for a single track. Cached 30d."""
-    key = f"lastfm:trackinfo:{artist.lower()}::{track.lower()}"
+    """track.getInfo + artist tag fallback. Returns {album, genre}. Cached 30d."""
+    key = f"lastfm:trackinfo:v2:{artist.lower()}::{track.lower()}"
     cached = _cache_get(key, SEARCH_TTL_SECS)
     if cached is not None:
         return cached
@@ -599,8 +636,10 @@ def _lastfm_track_info(artist, track):
         r.raise_for_status()
         t = ((r.json() or {}).get("track") or {})
         album = ((t.get("album") or {}).get("title") or "").strip()
-        tags = ((t.get("toptags") or {}).get("tag") or [])
-        genre = (tags[0].get("name") or "").strip() if tags else ""
+        track_tags = ((t.get("toptags") or {}).get("tag") or [])
+        genre = _pick_genre(track_tags, artist)
+        if not genre:
+            genre = _lastfm_artist_top_tag(artist)
         result = {"album": album, "genre": genre}
     except Exception as e:
         log.warning("lastfm track.getInfo error for %s - %s: %s", artist, track, e)

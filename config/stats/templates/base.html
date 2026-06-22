@@ -71,15 +71,37 @@
     margin-bottom: 2rem;
   }
 
+  .top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .top-nav a {
+    color: var(--bright-cyan);
+    text-decoration: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 6px rgba(110, 200, 230, 0.2);
+  }
+  .top-nav a:hover {
+    color: var(--bright-white);
+    text-shadow: 0 0 10px rgba(110, 200, 230, 0.5);
+  }
+
   .header {
     text-align: center;
     margin-bottom: 1.5rem;
   }
 
-  .header h1 {
+  .header .ascii-art {
     color: var(--bright-cyan);
-    font-size: 1.5rem;
-    letter-spacing: 0.15em;
+    font-size: clamp(0.35rem, 1.4vw, 0.85rem);
+    line-height: 1.15;
+    white-space: pre;
+    display: table;
+    margin: 0 auto 0.75rem;
+    user-select: none;
   }
 
   .header .subtitle {
@@ -391,10 +413,21 @@
 <body class="crt">
 <canvas id="star-canvas"></canvas>
 <div class="container">
+  <nav class="top-nav">
+    <a href="https://ishimura.lol">[&lt; HOME]</a>
+    {% if user %}<span class="user-tag">[ {{ user|upper }} ]</span>{% endif %}
+  </nav>
   <div class="header">
-    <h1>ISHIMURA.LOL</h1>
+    <pre class="ascii-art"> ██▓  ██████  ██░ ██  ██▓ ███▄ ▄███▓ █    ██  ██▀███   ▄▄▄
+▓██▒▒██    ▒ ▓██░ ██▒▓██▒▓██▒▀█▀ ██▒ ██  ▓██▒▓██ ▒ ██▒▒████▄
+▒██▒░ ▓██▄   ▒██▀▀██░▒██▒▓██    ▓██░▓██  ▒██░▓██ ░▄█ ▒▒██  ▀█▄
+░██░  ▒   ██▒░▓█ ░██ ░██░▒██    ▒██ ▓▓█  ░██░▒██▀▀█▄  ░██▄▄▄▄██
+░██░▒██████▒▒░▓█▒░██▓░██░▒██▒   ░██▒▒▒█████▓ ░██▓ ▒██▒ ▓█   ▓██▒
+░▓  ▒ ▒▓▒ ▒ ░ ▒ ░░▒░▒░▓  ░ ▒░   ░  ░░▒▓▒ ▒ ▒ ░ ▒▓ ░▒▓░ ▒▒   ▓▒█░
+ ▒ ░░ ░▒  ░ ░ ▒ ░▒░ ░ ▒ ░░  ░      ░░░▒░ ░ ░   ░▒ ░ ▒░  ▒   ▒▒ ░
+ ▒ ░░  ░  ░   ░  ░░ ░ ▒ ░░      ░    ░░░ ░ ░   ░░   ░   ░   ▒
+ ░        ░   ░  ░  ░ ░         ░      ░        ░           ░  ░</pre>
     <div class="subtitle">// MEDIA STATS TERMINAL</div>
-    {% if user %}<div class="user-tag">LOGGED IN: {{ user|upper }}</div>{% endif %}
   </div>
 
   <nav>

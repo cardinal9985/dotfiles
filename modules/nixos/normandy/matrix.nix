@@ -16,6 +16,9 @@ let
         "mozilla.org"
         "gitter.im"
         "libera.chat"
+        "nixos.org"
+        "envs.net"
+        "hackliberty.org"
       ];
     };
   };

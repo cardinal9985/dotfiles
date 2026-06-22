@@ -49,6 +49,10 @@ in
     { directory = "/var/lib/tuwunel"; user = "tuwunel"; group = "tuwunel"; mode = "0700"; }
   ];
 
+  systemd.tmpfiles.rules = [
+    "d /persist/var/lib/tuwunel 0700 tuwunel tuwunel - -"
+  ];
+
   virtualisation.oci-containers.containers.element-web = {
     image   = "docker.io/library/busybox@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8";
     cmd     = [ "httpd" "-f" "-p" "80" "-h" "/www" ];

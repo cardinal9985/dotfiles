@@ -179,9 +179,6 @@ let
         rewrite-moodist-health:
           replacePath:
             path: "/"
-        rewrite-chat-health:
-          replacePath:
-            path: "/_matrix/client/versions"
         # EmulatorJS netplay socket.io connects to /socket.io/ (the default
         # path) because ROMM's defineNetplayFunctions override fails on the
         # nightly build — undefined is not callable. Rewrite to the actual
@@ -557,35 +554,6 @@ let
           middlewares:
             - noindex-headers
             - rewrite-watch2gether-health
-        matrix-well-known-router:
-          rule: "Host(`${domain}`) && PathPrefix(`/.well-known/matrix`)"
-          service: errors-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: porkbun
-            domains:
-              - main: "${domain}"
-                sans:
-                  - "*.${domain}"
-          priority: 55
-          middlewares:
-            - noindex-headers
-        homepage-health-chat-router:
-          rule: "Host(`${domain}`) && Path(`/health/chat`)"
-          service: tuwunel-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: porkbun
-            domains:
-              - main: "${domain}"
-                sans:
-                  - "*.${domain}"
-          priority: 50
-          middlewares:
-            - noindex-headers
-            - rewrite-chat-health
         homepage-health-moodist-router:
           rule: "Host(`${domain}`) && Path(`/health/moodist`)"
           service: moodist-service
@@ -962,35 +930,6 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
-        matrix-api-router:
-          rule: "Host(`chat.${domain}`) && PathPrefix(`/_matrix`)"
-          service: tuwunel-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: porkbun
-            domains:
-              - main: "${domain}"
-                sans:
-                  - "*.${domain}"
-          priority: 20
-          middlewares:
-            - noindex-headers
-        chat-router:
-          rule: "Host(`chat.${domain}`)"
-          service: element-web-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: porkbun
-            domains:
-              - main: "${domain}"
-                sans:
-                  - "*.${domain}"
-          priority: 10
-          middlewares:
-            - noindex-headers
-            - error-pages
         moodist-router:
           rule: "Host(`moodist.${domain}`)"
           service: moodist-service
@@ -1145,14 +1084,6 @@ let
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:4546"
-        tuwunel-service:
-          loadBalancer:
-            servers:
-              - url: "http://127.0.0.1:6167"
-        element-web-service:
-          loadBalancer:
-            servers:
-              - url: "http://127.0.0.1:4548"
   '';
 
   traefikStaticConfig = pkgs.writeText "traefik_config.yml" ''

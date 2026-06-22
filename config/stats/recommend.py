@@ -21,6 +21,12 @@ LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
 
 DEEZER_BASE = "https://api.deezer.com"
 
+JELLYFIN_URL = os.environ.get("JELLYFIN_URL", "http://127.0.0.1:8096")
+JELLYFIN_API_KEY = os.environ.get("JELLYFIN_API_KEY", "")
+NAVIDROME_DB = os.environ.get("NAVIDROME_DB", "/var/lib/navidrome/navidrome.db")
+
+LIBRARY_TTL_SECS = 6 * 3600   # Refresh library snapshot every 6h
+
 # Cache TTLs. Title->ID rarely changes, so we keep it ~30 days. Recommendations
 # get refreshed weekly since TMDB tweaks their algorithm over time.
 SEARCH_TTL_SECS = 30 * 86400
@@ -37,7 +43,7 @@ def cache_is_warm():
 
 def warm_cache_for(user):
     """Run all recommendation builds. Slow first time, fast after (cached)."""
-    movie_recommendations(user)
+    video_recommendations_by_library(user)
     music_recommendations(user)
     song_recommendations(user)
 
@@ -68,6 +74,111 @@ def _cache_set(key, value):
             "INSERT OR REPLACE INTO api_cache (key, value, fetched_at) VALUES (?, ?, ?)",
             (key, json.dumps(value), datetime.now().isoformat()),
         )
+
+
+def _jellyfin_get(path, params=None):
+    if not JELLYFIN_API_KEY:
+        return None
+    try:
+        r = http.get(
+            f"{JELLYFIN_URL}{path}",
+            headers={"Authorization": f'MediaBrowser Token="{JELLYFIN_API_KEY}"'},
+            params=params,
+            timeout=30,
+        )
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        log.warning("jellyfin error %s %s: %s", path, params, e)
+        return None
+
+
+def _jellyfin_libraries():
+    """Return [{id, name, type}] for the user's media folders. Cached 6h."""
+    key = "jellyfin:libraries"
+    cached = _cache_get(key, LIBRARY_TTL_SECS)
+    if cached is not None:
+        return cached
+    data = _jellyfin_get("/Library/MediaFolders") or {}
+    libs = [{
+        "id":   lib["Id"],
+        "name": lib["Name"],
+        "type": (lib.get("CollectionType") or "").lower(),
+    } for lib in data.get("Items", []) if lib.get("CollectionType") in ("movies", "tvshows", "homevideos", "mixed", None)]
+    _cache_set(key, libs)
+    return libs
+
+
+def _jellyfin_library_items(library_id):
+    """Return [{id, name, type, tmdb_id}] for items in a library. Cached 6h."""
+    key = f"jellyfin:items:{library_id}"
+    cached = _cache_get(key, LIBRARY_TTL_SECS)
+    if cached is not None:
+        return cached
+    data = _jellyfin_get("/Items", {
+        "ParentId": library_id,
+        "Recursive": "true",
+        "IncludeItemTypes": "Movie,Series",
+        "Fields": "ProviderIds",
+        "Limit": 5000,
+    }) or {}
+    items = []
+    for it in data.get("Items", []):
+        items.append({
+            "id":      it.get("Id"),
+            "name":    it.get("Name"),
+            "type":    it.get("Type"),
+            "tmdb_id": (it.get("ProviderIds") or {}).get("Tmdb"),
+        })
+    _cache_set(key, items)
+    return items
+
+
+def _navidrome_existing_artists():
+    key = "navidrome:existing_artists"
+    cached = _cache_get(key, LIBRARY_TTL_SECS)
+    if cached is not None:
+        return set(cached)
+    try:
+        import sqlite3 as sql
+        nd_conn = sql.connect(f"file:{NAVIDROME_DB}?mode=ro", uri=True)
+        try:
+            rows = nd_conn.execute("""
+                SELECT DISTINCT LOWER(artist) FROM media_file WHERE artist != ''
+                UNION
+                SELECT DISTINCT LOWER(album_artist) FROM media_file WHERE album_artist != ''
+            """).fetchall()
+        finally:
+            nd_conn.close()
+        names = [r[0] for r in rows if r[0]]
+    except Exception as e:
+        log.warning("navidrome artist scan failed: %s", e)
+        names = []
+    _cache_set(key, names)
+    return set(names)
+
+
+def _navidrome_existing_tracks():
+    key = "navidrome:existing_tracks"
+    cached = _cache_get(key, LIBRARY_TTL_SECS)
+    if cached is not None:
+        return {(p[0], p[1]) for p in cached}
+    try:
+        import sqlite3 as sql
+        nd_conn = sql.connect(f"file:{NAVIDROME_DB}?mode=ro", uri=True)
+        try:
+            rows = nd_conn.execute("""
+                SELECT DISTINCT LOWER(artist), LOWER(title) FROM media_file
+                WHERE artist != '' AND title != ''
+            """).fetchall()
+        finally:
+            nd_conn.close()
+        tracks = [[r[0], r[1]] for r in rows if r[0] and r[1]]
+    except Exception as e:
+        log.warning("navidrome track scan failed: %s", e)
+        tracks = []
+    _cache_set(key, tracks)
+    return {(t[0], t[1]) for t in tracks}
 
 
 def _tmdb_get(path, params=None):
@@ -192,28 +303,91 @@ def _normalize(kind, item, score):
     }
 
 
-def movie_recommendations(user, limit=20):
-    """Return up to `limit` ranked TMDB recommendations seeded from the
-    user's recent movies and TV shows. Mixed movie + TV output."""
-    seeds = _seed_titles(user)
-    if not seeds:
-        return []
+def video_recommendations_by_library(user, limit_per_lib=15):
+    """Group video recommendations by Jellyfin library (Anime / Films / etc.).
+    Dedupes against TMDB IDs already present in any of the user's libraries."""
+    libraries = _jellyfin_libraries()
+    if not libraries:
+        return {}
 
-    scores = {}  # (kind, tmdb_id) -> {"score": int, "data": ...}
-    for kind, title in seeds:
-        tmdb_id = _search(kind, title)
-        if not tmdb_id:
+    # Build maps: item_id -> library_name, and global set of owned TMDB IDs.
+    item_to_lib = {}
+    owned_tmdb = {"movie": set(), "tv": set()}
+    for lib in libraries:
+        for it in _jellyfin_library_items(lib["id"]):
+            if it.get("id"):
+                item_to_lib[it["id"]] = lib["name"]
+            tmdb = it.get("tmdb_id")
+            if tmdb:
+                try:
+                    tmdb_int = int(tmdb)
+                except (TypeError, ValueError):
+                    continue
+                if it.get("type") == "Movie":
+                    owned_tmdb["movie"].add(tmdb_int)
+                elif it.get("type") == "Series":
+                    owned_tmdb["tv"].add(tmdb_int)
+
+    # Pull user's recent video events.
+    with db.get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT item_id, item_name, item_type, played_at
+            FROM events
+            WHERE user_id = ? AND source = 'jellyfin'
+              AND played_at > date('now', '-180 days')
+              AND LOWER(item_type) IN ('movie', 'episode')
+            ORDER BY played_at DESC
+            """,
+            (user,),
+        ).fetchall()
+
+    # Bucket seeds by library.
+    seeds_by_lib = {}     # lib_name -> [(kind, title), ...]
+    seen_by_lib  = {}     # lib_name -> set of (kind, title.lower())
+    for row in rows:
+        lib_name = item_to_lib.get(row["item_id"])
+        if not lib_name:
             continue
-        for rec in _recs(kind, tmdb_id):
-            rid = rec.get("id")
-            if not rid:
+        it_type = (row["item_type"] or "").lower()
+        if it_type == "movie":
+            kind, title = "movie", row["item_name"]
+        elif it_type == "episode":
+            title = _parse_show_from_episode(row["item_name"])
+            if not title:
                 continue
-            key = (kind, rid)
-            entry = scores.setdefault(key, {"score": 0, "data": rec, "kind": kind})
-            entry["score"] += 1
+            kind = "tv"
+        else:
+            continue
+        sig = (kind, title.lower())
+        seen = seen_by_lib.setdefault(lib_name, set())
+        if sig in seen:
+            continue
+        seen.add(sig)
+        seeds_by_lib.setdefault(lib_name, []).append((kind, title))
 
-    ranked = sorted(scores.values(), key=lambda x: -x["score"])
-    return [_normalize(e["kind"], e["data"], e["score"]) for e in ranked[:limit]]
+    # Generate ranked recommendations per library (capped seed pool per lib).
+    result = {}
+    for lib_name, seeds in seeds_by_lib.items():
+        scores = {}
+        for kind, title in seeds[:10]:
+            tmdb_id = _search(kind, title)
+            if not tmdb_id:
+                continue
+            for rec in _recs(kind, tmdb_id):
+                rid = rec.get("id")
+                if not rid:
+                    continue
+                if rid in owned_tmdb.get(kind, set()):
+                    continue
+                k = (kind, rid)
+                entry = scores.setdefault(k, {"score": 0, "data": rec, "kind": kind})
+                entry["score"] += 1
+        ranked = sorted(scores.values(), key=lambda x: -x["score"])
+        if ranked:
+            result[lib_name] = [_normalize(e["kind"], e["data"], e["score"])
+                               for e in ranked[:limit_per_lib]]
+    return result
 
 
 # ── Music (Last.fm) ──────────────────────────────────────────────────────────
@@ -291,11 +465,15 @@ def music_recommendations(user, limit=20):
         return []
 
     seed_lower = {s.lower() for s in seeds}
+    owned = _navidrome_existing_artists()
     scores = {}  # artist_lower -> {"score": float, "name": str, "url": str}
     for artist in seeds:
         for rec in _lastfm_similar_artists(artist):
             name = (rec.get("name") or "").strip()
-            if not name or name.lower() in seed_lower:
+            if not name:
+                continue
+            n_lower = name.lower()
+            if n_lower in seed_lower or n_lower in owned:
                 continue
             try:
                 match = float(rec.get("match") or 0.0)
@@ -371,6 +549,7 @@ def song_recommendations(user, limit=25):
         return []
 
     seed_sig = {f"{a.lower()}::{t.lower()}" for a, t in seeds}
+    owned = _navidrome_existing_tracks()
     scores = {}
     for artist, track in seeds:
         for rec in _lastfm_similar_tracks(artist, track):
@@ -380,6 +559,8 @@ def song_recommendations(user, limit=25):
                 continue
             sig = f"{rartist.lower()}::{rname.lower()}"
             if sig in seed_sig:
+                continue
+            if (rartist.lower(), rname.lower()) in owned:
                 continue
             try:
                 match = float(rec.get("match") or 0.0)

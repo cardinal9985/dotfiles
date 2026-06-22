@@ -1,46 +1,49 @@
 {% extends "base.html" %}
 {% block title %}Recommendations{% endblock %}
 {% block content %}
+{% set video_total = video_by_lib.values()|map('length')|sum %}
 {% if not user %}
 <div class="box">
   <div class="empty">No user detected. Are you authenticated through VoidAuth?</div>
 </div>
-{% elif not movies and not artists and not songs %}
+{% elif not video_by_lib and not artists and not songs %}
 <div class="box">
   <div class="empty">Watch movies or play music first, then come back for recommendations.</div>
 </div>
 {% else %}
 
 <div class="rec-tabs">
-  <button class="rec-tab active" data-tab="video">VIDEO ({{ movies|length }})</button>
+  <button class="rec-tab active" data-tab="video">VIDEO ({{ video_total }})</button>
   <button class="rec-tab" data-tab="music">MUSIC ({{ artists|length + songs|length }})</button>
 </div>
 
 <section data-content="video" class="rec-pane">
-  {% if movies %}
-  <div class="box">
-    <div class="title">&gt; SEEDED FROM YOUR WATCH HISTORY</div>
-    <div class="rec-grid">
-      {% for m in movies %}
-      <div class="rec-card">
-        {% if m.poster_url %}<img src="{{ m.poster_url }}" alt="">
-        {% else %}<div class="rec-noposter">[NO POSTER]</div>{% endif %}
-        <div class="rec-body">
-          <div class="rec-title">
-            <span class="rec-kind rec-kind-{{ m.kind }}">{{ m.request_type|upper }}</span>
-            {{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}
+  {% if video_by_lib %}
+    {% for lib_name, items in video_by_lib.items() %}
+    <div class="box">
+      <div class="title">&gt; {{ lib_name|upper }} // {{ items|length }} RECOMMENDATIONS</div>
+      <div class="rec-grid">
+        {% for m in items %}
+        <div class="rec-card">
+          {% if m.poster_url %}<img src="{{ m.poster_url }}" alt="">
+          {% else %}<div class="rec-noposter">[NO POSTER]</div>{% endif %}
+          <div class="rec-body">
+            <div class="rec-title">
+              <span class="rec-kind rec-kind-{{ m.kind }}">{{ m.request_type|upper }}</span>
+              {{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}
+            </div>
+            <div class="rec-overview">{{ m.overview }}</div>
+            <form action="https://requests.ishimura.lol/request" method="post">
+              <input type="hidden" name="type" value="{{ m.request_type }}">
+              <input type="hidden" name="title" value="{{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}">
+              <button type="submit" class="rec-btn">+ REQUEST</button>
+            </form>
           </div>
-          <div class="rec-overview">{{ m.overview }}</div>
-          <form action="https://requests.ishimura.lol/request" method="post">
-            <input type="hidden" name="type" value="{{ m.request_type }}">
-            <input type="hidden" name="title" value="{{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}">
-            <button type="submit" class="rec-btn">+ REQUEST</button>
-          </form>
         </div>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
-  </div>
+    {% endfor %}
   {% else %}
   <div class="box"><div class="empty">No video recommendations yet - watch some movies or shows first.</div></div>
   {% endif %}

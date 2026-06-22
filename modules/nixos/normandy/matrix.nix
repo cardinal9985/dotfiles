@@ -10,7 +10,13 @@ let
       brand = "USG Ishimura";
       default_theme = "dark";
       disable_guests = true;
-      room_directory.servers = [ "ishimura.lol" ];
+      room_directory.servers = [
+        "ishimura.lol"
+        "matrix.org"
+        "mozilla.org"
+        "gitter.im"
+        "libera.chat"
+      ];
     };
   };
   elementWeb = pkgs.runCommand "element-web-self-contained" { } ''

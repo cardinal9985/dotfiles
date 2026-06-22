@@ -19,40 +19,51 @@
 
 <section data-content="video" class="rec-pane">
   {% if video_by_lib %}
+  <div class="rec-subtabs">
     {% for lib_name, items in video_by_lib.items() %}
-    <div class="box">
-      <div class="title">&gt; {{ lib_name|upper }} // {{ items|length }} RECOMMENDATIONS</div>
-      <div class="rec-grid">
-        {% for m in items %}
-        <div class="rec-card">
-          {% if m.poster_url %}<img src="{{ m.poster_url }}" alt="">
-          {% else %}<div class="rec-noposter">[NO POSTER]</div>{% endif %}
-          <div class="rec-body">
-            <div class="rec-title">
-              <span class="rec-kind rec-kind-{{ m.kind }}">{{ m.request_type|upper }}</span>
-              {{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}
-            </div>
-            <div class="rec-overview">{{ m.overview }}</div>
-            <form action="https://requests.ishimura.lol/request" method="post">
-              <input type="hidden" name="type" value="{{ m.request_type }}">
-              <input type="hidden" name="title" value="{{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}">
-              <button type="submit" class="rec-btn">+ REQUEST</button>
-            </form>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
+    <button class="rec-subtab {{ 'active' if loop.first }}" data-subtab="video-{{ loop.index }}">
+      {{ lib_name|upper }} ({{ items|length }})
+    </button>
     {% endfor %}
+  </div>
+  {% for lib_name, items in video_by_lib.items() %}
+  <div class="rec-subpane {{ 'hidden' if not loop.first }}" data-subcontent="video-{{ loop.index }}">
+    <div class="rec-grid">
+      {% for m in items %}
+      <div class="rec-card">
+        {% if m.poster_url %}<img src="{{ m.poster_url }}" alt="">
+        {% else %}<div class="rec-noposter">[NO POSTER]</div>{% endif %}
+        <div class="rec-body">
+          <div class="rec-title">
+            <span class="rec-kind rec-kind-{{ m.kind }}">{{ m.request_type|upper }}</span>
+            {{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}
+          </div>
+          <div class="rec-overview">{{ m.overview }}</div>
+          <form action="https://requests.ishimura.lol/request" method="post">
+            <input type="hidden" name="type" value="{{ m.request_type }}">
+            <input type="hidden" name="title" value="{{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}">
+            <button type="submit" class="rec-btn">+ REQUEST</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
   {% else %}
   <div class="box"><div class="empty">No video recommendations yet - watch some movies or shows first.</div></div>
   {% endif %}
 </section>
 
 <section data-content="music" class="rec-pane hidden">
+  {% if artists or songs %}
+  <div class="rec-subtabs">
+    {% if artists %}<button class="rec-subtab active" data-subtab="music-artists">ARTISTS ({{ artists|length }})</button>{% endif %}
+    {% if songs %}<button class="rec-subtab {{ 'active' if not artists }}" data-subtab="music-songs">SONGS ({{ songs|length }})</button>{% endif %}
+  </div>
+
   {% if artists %}
-  <div class="box">
-    <div class="title">&gt; SIMILAR ARTISTS</div>
+  <div class="rec-subpane" data-subcontent="music-artists">
     <div class="artist-grid">
       {% for a in artists %}
       <div class="artist-card">
@@ -76,8 +87,7 @@
   {% endif %}
 
   {% if songs %}
-  <div class="box">
-    <div class="title">&gt; SIMILAR SONGS</div>
+  <div class="rec-subpane {{ 'hidden' if artists }}" data-subcontent="music-songs">
     <table class="list-table song-table">
       <thead><tr><th>TRACK</th><th>ARTIST</th><th></th></tr></thead>
       <tbody>
@@ -99,8 +109,7 @@
     </table>
   </div>
   {% endif %}
-
-  {% if not artists and not songs %}
+  {% else %}
   <div class="box"><div class="empty">No music recommendations yet - play more songs on Navidrome first.</div></div>
   {% endif %}
 </section>
@@ -129,6 +138,30 @@
   }
   .rec-tab:hover:not(.active) { background: var(--surface-light); }
   .rec-pane.hidden { display: none; }
+
+  .rec-subtabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .rec-subtab {
+    background: var(--surface);
+    color: var(--white);
+    border: 1px solid var(--surface-light);
+    padding: 0.35rem 1rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+  }
+  .rec-subtab.active {
+    background: var(--surface-light);
+    color: var(--bright-cyan);
+    border-color: var(--cyan);
+  }
+  .rec-subtab:hover:not(.active) { color: var(--bright-white); }
+  .rec-subpane.hidden { display: none; }
 
   .rec-grid {
     display: grid;
@@ -212,6 +245,18 @@
       document.querySelectorAll('.rec-tab').forEach(x => x.classList.toggle('active', x === t));
       document.querySelectorAll('.rec-pane').forEach(p =>
         p.classList.toggle('hidden', p.dataset.content !== target));
+    });
+  });
+
+  document.querySelectorAll('.rec-subtab').forEach(t => {
+    t.addEventListener('click', () => {
+      const target = t.dataset.subtab;
+      // Only flip the subtabs/subpanes inside the same parent pane.
+      const pane = t.closest('.rec-pane');
+      if (!pane) return;
+      pane.querySelectorAll('.rec-subtab').forEach(x => x.classList.toggle('active', x === t));
+      pane.querySelectorAll('.rec-subpane').forEach(p =>
+        p.classList.toggle('hidden', p.dataset.subcontent !== target));
     });
   });
 </script>

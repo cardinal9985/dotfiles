@@ -34,10 +34,13 @@ RECS_TTL_SECS   = 7 * 86400
 
 
 def cache_is_warm():
-    """Quick check: does the api_cache have any entries? Used by the route
-    to decide whether to show a 'building recommendations' loading screen."""
+    """Check that the library-aware cache has been built for the current code
+    path. Looks for the Jellyfin library snapshot - that key only exists once
+    the new build has run end-to-end."""
     with db.get_db() as conn:
-        row = conn.execute("SELECT 1 FROM api_cache LIMIT 1").fetchone()
+        row = conn.execute(
+            "SELECT 1 FROM api_cache WHERE key = 'jellyfin:libraries' LIMIT 1"
+        ).fetchone()
     return row is not None
 
 
@@ -310,22 +313,34 @@ def video_recommendations_by_library(user, limit_per_lib=15):
     if not libraries:
         return {}
 
-    # Build maps: item_id -> library_name, and global set of owned TMDB IDs.
-    item_to_lib = {}
+    # Build lookup maps from the user's Jellyfin libraries.
+    # - movie_item_to_lib: jellyfin movie item_id -> library name (events store
+    #   the movie's own item_id, so direct lookup works for movies)
+    # - show_name_to_lib: lowercase series name -> library name (events store
+    #   the episode's item_id, NOT the series id, so we resolve via the show
+    #   name we parse out of "Show - sNNeNN - Title")
+    # - owned_tmdb: per-kind set for dedup against what the user already has
+    movie_item_to_lib = {}
+    show_name_to_lib  = {}
     owned_tmdb = {"movie": set(), "tv": set()}
     for lib in libraries:
         for it in _jellyfin_library_items(lib["id"]):
-            if it.get("id"):
-                item_to_lib[it["id"]] = lib["name"]
+            it_type = it.get("type")
+            it_id   = it.get("id")
+            it_name = it.get("name")
+            if it_type == "Movie" and it_id:
+                movie_item_to_lib[it_id] = lib["name"]
+            elif it_type == "Series" and it_name:
+                show_name_to_lib[it_name.lower()] = lib["name"]
             tmdb = it.get("tmdb_id")
             if tmdb:
                 try:
                     tmdb_int = int(tmdb)
                 except (TypeError, ValueError):
                     continue
-                if it.get("type") == "Movie":
+                if it_type == "Movie":
                     owned_tmdb["movie"].add(tmdb_int)
-                elif it.get("type") == "Series":
+                elif it_type == "Series":
                     owned_tmdb["tv"].add(tmdb_int)
 
     # Pull user's recent video events.
@@ -346,19 +361,20 @@ def video_recommendations_by_library(user, limit_per_lib=15):
     seeds_by_lib = {}     # lib_name -> [(kind, title), ...]
     seen_by_lib  = {}     # lib_name -> set of (kind, title.lower())
     for row in rows:
-        lib_name = item_to_lib.get(row["item_id"])
-        if not lib_name:
-            continue
         it_type = (row["item_type"] or "").lower()
         if it_type == "movie":
+            lib_name = movie_item_to_lib.get(row["item_id"])
             kind, title = "movie", row["item_name"]
         elif it_type == "episode":
             title = _parse_show_from_episode(row["item_name"])
             if not title:
                 continue
+            lib_name = show_name_to_lib.get(title.lower())
             kind = "tv"
         else:
             continue
+        if not lib_name:
+            continue  # item no longer in any tracked library
         sig = (kind, title.lower())
         seen = seen_by_lib.setdefault(lib_name, set())
         if sig in seen:

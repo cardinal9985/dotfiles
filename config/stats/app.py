@@ -8,6 +8,7 @@ from flask import Flask, render_template, request, redirect, url_for
 
 import db
 from poller import poll_jellyfin, poll_navidrome, poll_romm, poll_booklore
+from recommend import movie_recommendations
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -91,6 +92,13 @@ def dashboard():
     with db.get_db() as conn:
         stats = db.get_dashboard_stats(conn, user)
     return render_template("dashboard.html", user=user, stats=stats)
+
+
+@app.route("/recommend")
+def recommend():
+    user = _get_user()
+    movies = movie_recommendations(user) if user else []
+    return render_template("recommend.html", user=user, movies=movies)
 
 
 @app.route("/wrapped")

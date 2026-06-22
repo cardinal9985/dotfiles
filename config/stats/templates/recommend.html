@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Recommendations{% endblock %}
+{% block content %}
+{% if not user %}
+<div class="box">
+  <div class="empty">No user detected. Are you authenticated through VoidAuth?</div>
+</div>
+{% elif not movies %}
+<div class="box">
+  <div class="empty">Watch some movies on Jellyfin first, then come back for recommendations.</div>
+</div>
+{% else %}
+<div class="box">
+  <div class="title">&gt; RECOMMENDED MOVIES // SEEDED FROM YOUR WATCH HISTORY</div>
+  <div class="rec-grid">
+    {% for m in movies %}
+    <div class="rec-card">
+      {% if m.poster_url %}
+      <img src="{{ m.poster_url }}" alt="">
+      {% else %}
+      <div class="rec-noposter">[NO POSTER]</div>
+      {% endif %}
+      <div class="rec-body">
+        <div class="rec-title">{{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}</div>
+        <div class="rec-overview">{{ m.overview }}</div>
+        <form action="https://requests.ishimura.lol/request" method="post">
+          <input type="hidden" name="type" value="Movie">
+          <input type="hidden" name="title" value="{{ m.title }}{% if m.year %} ({{ m.year }}){% endif %}">
+          <button type="submit" class="rec-btn">+ REQUEST</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<style>
+  .rec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+  }
+  .rec-card {
+    background: var(--surface-light);
+    border: 1px solid var(--cyan);
+    display: flex;
+    flex-direction: column;
+  }
+  .rec-card img {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    display: block;
+  }
+  .rec-noposter {
+    width: 100%;
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    background: var(--black);
+  }
+  .rec-body { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+  .rec-title { color: var(--bright-cyan); font-weight: bold; }
+  .rec-overview { font-size: 0.85rem; color: var(--white); flex: 1; }
+  .rec-btn {
+    background: var(--magenta);
+    color: var(--bright-white);
+    border: none;
+    padding: 0.5rem;
+    font-family: inherit;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .rec-btn:hover { background: var(--bright-magenta); color: var(--black); }
+</style>
+{% endblock %}

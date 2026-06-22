@@ -12,7 +12,7 @@ let
 
   app = pkgs.runCommand "ishimura-stats" {} ''
     mkdir -p $out
-    cp -r ${src}/app.py ${src}/db.py ${src}/poller.py ${src}/templates $out/
+    cp -r ${src}/app.py ${src}/db.py ${src}/poller.py ${src}/recommend.py ${src}/templates $out/
   '';
 in
 {
@@ -45,6 +45,7 @@ in
     content = ''
       STATS_DB_PATH=/persist/stats/stats.db
       STATS_WEBHOOK_SECRET=${config.sops.placeholder."stats/webhook_secret"}
+      TMDB_TOKEN=${config.sops.placeholder."requests/tmdb_token"}
       JELLYFIN_URL=http://127.0.0.1:8096
       JELLYFIN_API_KEY=${config.sops.placeholder."stats/jellyfin_api_key"}
       NAVIDROME_DB=/var/lib/navidrome/navidrome.db

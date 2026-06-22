@@ -4,11 +4,30 @@ movie events in the stats DB."""
 import json
 import logging
 import os
+import re
+import unicodedata
 from datetime import datetime
 
 import requests as http
 
 import db
+
+
+_NON_ALNUM_RE = re.compile(r"[^a-z0-9 ]+")
+_WS_RE = re.compile(r"\s+")
+
+
+def _norm(s):
+    """Normalize artist/track/title strings for fuzzy comparison:
+    lowercase, strip diacritics, strip punctuation, collapse whitespace."""
+    if not s:
+        return ""
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = s.lower().strip()
+    s = _NON_ALNUM_RE.sub(" ", s)
+    s = _WS_RE.sub(" ", s).strip()
+    return s
 
 log = logging.getLogger("stats.recommend")
 
@@ -138,7 +157,8 @@ def _jellyfin_library_items(library_id):
 
 
 def _navidrome_existing_artists():
-    key = "navidrome:existing_artists"
+    """Set of normalized artist + album_artist names in the user's library."""
+    key = "navidrome:existing_artists:v2"
     cached = _cache_get(key, LIBRARY_TTL_SECS)
     if cached is not None:
         return set(cached)
@@ -147,13 +167,13 @@ def _navidrome_existing_artists():
         nd_conn = sql.connect(f"file:{NAVIDROME_DB}?mode=ro", uri=True)
         try:
             rows = nd_conn.execute("""
-                SELECT DISTINCT LOWER(artist) FROM media_file WHERE artist != ''
+                SELECT DISTINCT artist FROM media_file WHERE artist != ''
                 UNION
-                SELECT DISTINCT LOWER(album_artist) FROM media_file WHERE album_artist != ''
+                SELECT DISTINCT album_artist FROM media_file WHERE album_artist != ''
             """).fetchall()
         finally:
             nd_conn.close()
-        names = [r[0] for r in rows if r[0]]
+        names = sorted({_norm(r[0]) for r in rows if r[0]})
     except Exception as e:
         log.warning("navidrome artist scan failed: %s", e)
         names = []
@@ -162,7 +182,8 @@ def _navidrome_existing_artists():
 
 
 def _navidrome_existing_tracks():
-    key = "navidrome:existing_tracks"
+    """Set of (normalized_artist, normalized_title) tuples in the library."""
+    key = "navidrome:existing_tracks:v2"
     cached = _cache_get(key, LIBRARY_TTL_SECS)
     if cached is not None:
         return {(p[0], p[1]) for p in cached}
@@ -171,12 +192,13 @@ def _navidrome_existing_tracks():
         nd_conn = sql.connect(f"file:{NAVIDROME_DB}?mode=ro", uri=True)
         try:
             rows = nd_conn.execute("""
-                SELECT DISTINCT LOWER(artist), LOWER(title) FROM media_file
+                SELECT DISTINCT artist, title FROM media_file
                 WHERE artist != '' AND title != ''
             """).fetchall()
         finally:
             nd_conn.close()
-        tracks = [[r[0], r[1]] for r in rows if r[0] and r[1]]
+        tracks = sorted({(_norm(r[0]), _norm(r[1])) for r in rows if r[0] and r[1]})
+        tracks = [[a, t] for a, t in tracks if a and t]
     except Exception as e:
         log.warning("navidrome track scan failed: %s", e)
         tracks = []
@@ -480,22 +502,22 @@ def music_recommendations(user, limit=20):
     if not seeds:
         return []
 
-    seed_lower = {s.lower() for s in seeds}
+    seed_norm = {_norm(s) for s in seeds}
     owned = _navidrome_existing_artists()
-    scores = {}  # artist_lower -> {"score": float, "name": str, "url": str}
+    scores = {}  # norm_name -> {"score": float, "name": str, "url": str}
     for artist in seeds:
         for rec in _lastfm_similar_artists(artist):
             name = (rec.get("name") or "").strip()
             if not name:
                 continue
-            n_lower = name.lower()
-            if n_lower in seed_lower or n_lower in owned:
+            n = _norm(name)
+            if not n or n in seed_norm or n in owned:
                 continue
             try:
                 match = float(rec.get("match") or 0.0)
             except Exception:
                 match = 0.0
-            entry = scores.setdefault(name.lower(), {
+            entry = scores.setdefault(n, {
                 "score": 0.0,
                 "name": name,
                 "url": rec.get("url", ""),
@@ -564,7 +586,7 @@ def song_recommendations(user, limit=25):
     if not seeds:
         return []
 
-    seed_sig = {f"{a.lower()}::{t.lower()}" for a, t in seeds}
+    seed_sig = {(_norm(a), _norm(t)) for a, t in seeds}
     owned = _navidrome_existing_tracks()
     scores = {}
     for artist, track in seeds:
@@ -573,10 +595,11 @@ def song_recommendations(user, limit=25):
             rartist = ((rec.get("artist") or {}).get("name") or "").strip()
             if not rname or not rartist:
                 continue
-            sig = f"{rartist.lower()}::{rname.lower()}"
-            if sig in seed_sig:
+            na, nt = _norm(rartist), _norm(rname)
+            if not na or not nt:
                 continue
-            if (rartist.lower(), rname.lower()) in owned:
+            sig = (na, nt)
+            if sig in seed_sig or sig in owned:
                 continue
             try:
                 match = float(rec.get("match") or 0.0)

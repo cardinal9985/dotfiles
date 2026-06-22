@@ -19,6 +19,8 @@ TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w342"
 LASTFM_API_KEY = os.environ.get("LASTFM_API_KEY", "")
 LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
 
+DEEZER_BASE = "https://api.deezer.com"
+
 # Cache TTLs. Title->ID rarely changes, so we keep it ~30 days. Recommendations
 # get refreshed weekly since TMDB tweaks their algorithm over time.
 SEARCH_TTL_SECS = 30 * 86400
@@ -201,6 +203,25 @@ def movie_recommendations(user, limit=20):
 
 # ── Music (Last.fm) ──────────────────────────────────────────────────────────
 
+def _deezer_artist_image(artist):
+    """Look up an artist's image via Deezer's free search API. Cached."""
+    key = f"deezer:artist:{artist.lower()}"
+    cached = _cache_get(key, SEARCH_TTL_SECS)
+    if cached is not None:
+        return cached or None
+    try:
+        r = http.get(f"{DEEZER_BASE}/search/artist",
+                     params={"q": artist, "limit": 1}, timeout=10)
+        r.raise_for_status()
+        results = (r.json() or {}).get("data") or []
+        image = results[0].get("picture_medium") if results else None
+    except Exception as e:
+        log.warning("deezer error for %s: %s", artist, e)
+        image = None
+    _cache_set(key, image)
+    return image
+
+
 def _lastfm_similar_artists(artist):
     """Last.fm artist.getSimilar, returns list of {name, match} dicts."""
     key = f"lastfm:similar:artist:{artist.lower()}"
@@ -275,12 +296,94 @@ def music_recommendations(user, limit=20):
     ranked = sorted(scores.values(), key=lambda x: -x["score"])
     return [{
         "kind": "music",
-        "tmdb_id": None,
         "title": e["name"],
-        "year": "",
-        "overview": "",
-        "poster_url": None,
+        "image_url": _deezer_artist_image(e["name"]),
         "request_type": "Music",
         "score": round(e["score"], 2),
         "url": e["url"],
+    } for e in ranked[:limit]]
+
+
+def _lastfm_similar_tracks(artist, track):
+    key = f"lastfm:similar:track:{artist.lower()}::{track.lower()}"
+    cached = _cache_get(key, RECS_TTL_SECS)
+    if cached is not None:
+        return cached
+    if not LASTFM_API_KEY:
+        return []
+    try:
+        r = http.get(LASTFM_BASE, params={
+            "method": "track.getSimilar",
+            "artist": artist,
+            "track": track,
+            "api_key": LASTFM_API_KEY,
+            "format": "json",
+            "limit": 10,
+        }, timeout=10)
+        r.raise_for_status()
+        results = ((r.json() or {}).get("similartracks") or {}).get("track") or []
+    except Exception as e:
+        log.warning("lastfm track error for %s - %s: %s", artist, track, e)
+        results = []
+    _cache_set(key, results)
+    return results
+
+
+def _seed_tracks(user, limit=10):
+    with db.get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT item_name AS title,
+                   json_extract(item_metadata, '$.artist') AS artist,
+                   COUNT(*) AS plays
+            FROM events
+            WHERE user_id = ? AND source = 'navidrome'
+              AND played_at > date('now', '-180 days')
+              AND artist IS NOT NULL AND artist != ''
+              AND item_name IS NOT NULL AND item_name != ''
+            GROUP BY artist, title
+            ORDER BY plays DESC
+            LIMIT ?
+            """,
+            (user, limit),
+        ).fetchall()
+    return [(r["artist"], r["title"]) for r in rows]
+
+
+def song_recommendations(user, limit=25):
+    seeds = _seed_tracks(user)
+    if not seeds:
+        return []
+
+    seed_sig = {f"{a.lower()}::{t.lower()}" for a, t in seeds}
+    scores = {}
+    for artist, track in seeds:
+        for rec in _lastfm_similar_tracks(artist, track):
+            rname = (rec.get("name") or "").strip()
+            rartist = ((rec.get("artist") or {}).get("name") or "").strip()
+            if not rname or not rartist:
+                continue
+            sig = f"{rartist.lower()}::{rname.lower()}"
+            if sig in seed_sig:
+                continue
+            try:
+                match = float(rec.get("match") or 0.0)
+            except Exception:
+                match = 0.0
+            entry = scores.setdefault(sig, {
+                "score": 0.0,
+                "title": rname,
+                "artist": rartist,
+                "url": rec.get("url", ""),
+            })
+            entry["score"] += match
+
+    ranked = sorted(scores.values(), key=lambda x: -x["score"])
+    return [{
+        "kind": "song",
+        "title": e["title"],
+        "artist": e["artist"],
+        "url": e["url"],
+        "request_type": "Music",
+        "score": round(e["score"], 2),
     } for e in ranked[:limit]]

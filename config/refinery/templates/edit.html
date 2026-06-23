@@ -46,12 +46,14 @@
       <div><label>YEAR</label>
         <input type="number" name="year" value="{{ item.year or '' }}"></div>
       <div><label>GENRE</label>
-        <select name="genre">
-          <option value="">-- (none) --</option>
+        <input type="text" name="genre" value="{{ item.genre or '' }}"
+               list="genres-list"
+               placeholder="Start typing - pick from list or type your own">
+        <datalist id="genres-list">
           {% for g in genres %}
-          <option value="{{ g }}" {% if g == item.genre %}selected{% endif %}>{{ g }}</option>
+          <option value="{{ g }}">
           {% endfor %}
-        </select>
+        </datalist>
       </div>
       <div style="grid-column: span 2;">
         <label>SOURCES</label>

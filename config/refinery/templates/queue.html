@@ -29,13 +29,19 @@
     &gt; IN PROGRESS ({{ processing|length }}) - WORKERS BUSY
   </div>
   <table>
-    <thead><tr><th>TYPE</th><th>SOURCE</th><th>STARTED</th></tr></thead>
+    <thead><tr><th>TYPE</th><th>SOURCE</th><th>STARTED</th><th></th></tr></thead>
     <tbody>
       {% for p in processing %}
       <tr>
         <td>{{ p.media_type|upper }}</td>
         <td>{{ p.source_path }}</td>
         <td>{{ p.processed_at }}</td>
+        <td style="text-align:right;">
+          <form method="POST" action="/item/{{ p.id }}/forget" style="display:inline"
+                onsubmit="return confirm('Forget this entry? Removes the row only - files on disk are untouched, but they will NOT be auto-rescanned (tombstoned).')">
+            <button type="submit" class="btn danger">×</button>
+          </form>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -79,8 +85,12 @@
           <td>{{ r.year or '?' }}</td>
           <td>{{ r.genre or '-' }}</td>
           <td>{{ r.processed_at }}</td>
-          <td style="text-align:right">
+          <td style="text-align:right; white-space:nowrap;">
             <a class="btn" href="/item/{{ r.id }}">REVIEW</a>
+            <form method="POST" action="/item/{{ r.id }}/forget" style="display:inline"
+                  onsubmit="return confirm('Forget this entry? It will not auto-rescan (tombstoned). Files on disk are untouched.')">
+              <button type="submit" class="btn danger">×</button>
+            </form>
           </td>
         </tr>
         {% endfor %}

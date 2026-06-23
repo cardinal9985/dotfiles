@@ -437,14 +437,17 @@ def reanalyze(item_id):
 
 @app.route("/item/<int:item_id>/forget", methods=["POST"])
 def forget(item_id):
-    """Remove an item's row from the DB without touching files on disk.
-    Used to clean up the Recent Decisions list once a test/leftover entry
-    has been handled."""
+    """Tombstone the item so it disappears from the UI but the source path
+    remains 'already seen' - otherwise the next scan would re-import the
+    same files from disk."""
     user = _get_user()
     if not user:
         return "unauthorized", 401
     with db.get_db() as conn:
-        conn.execute("DELETE FROM items WHERE id=?", (item_id,))
+        conn.execute(
+            "UPDATE items SET status='forgotten', decided_at=datetime('now') "
+            "WHERE id=?", (item_id,)
+        )
     return redirect(url_for("queue"))
 
 

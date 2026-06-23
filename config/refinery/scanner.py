@@ -101,6 +101,7 @@ def _existing_status(source_path):
 def _process_one(full):
     """Worker entry point: classify and dispatch a single download entry."""
     kind = None
+    work = full
     try:
         work = maybe_extract_zip(full)
         kind = classify_folder(work)
@@ -135,6 +136,21 @@ def _process_one(full):
                    VALUES (?, 'failed', ?, ?, datetime('now'))""",
                 (kind or "unknown", full, str(e)[:500]),
             )
+    finally:
+        # The book processor writes per-file rows at source_path=file, so the
+        # folder placeholder we set above is never overwritten and gets stuck
+        # in 'processing'. Music writes at source_path=folder (same key) so
+        # its placeholder is naturally replaced. Clean up any leftover
+        # placeholder here. Tombstones ('forgotten') and real failures are
+        # left alone.
+        try:
+            with db.get_db() as conn:
+                conn.execute(
+                    "DELETE FROM items WHERE source_path=? AND status='processing'",
+                    (work,),
+                )
+        except Exception:
+            log.exception("placeholder cleanup failed for %s", work)
 
 
 def scan_once(force=False):

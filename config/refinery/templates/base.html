@@ -79,6 +79,29 @@
   }
   th { color: var(--cyan); letter-spacing: 0.1em; font-size: 0.7rem; }
 
+  .rec-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--cyan);
+  }
+  .rec-tab {
+    flex: 1;
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--cyan);
+    border-bottom: none;
+    padding: 0.5rem 1rem;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+  }
+  .rec-tab.active {
+    background: var(--cyan);
+    color: var(--black);
+  }
+  .rec-tab:hover:not(.active) { background: var(--surface-light); }
+
   .badge {
     display: inline-block; padding: 0.15rem 0.5rem;
     font-size: 0.7rem; letter-spacing: 0.1em; border: 1px solid currentColor;

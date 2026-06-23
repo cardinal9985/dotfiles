@@ -66,6 +66,29 @@ in
     '';
   };
 
+  # Grant the refinery user write access to the music library via ACL.
+  # The dir is owned by maxwell:systemd-oom 0775, but mergerfs +
+  # default_permissions doesn't reliably honor supplementary groups, so
+  # adding refinery to systemd-oom alone isn't enough. ACL grants the user
+  # specifically. The -d default ACL is inherited by any new artist/album
+  # folders refinery creates. Re-applied on every activation so a backup
+  # restore or stray chacl can't permanently break imports.
+  systemd.services.refinery-media-acl = {
+    description = "Grant refinery user ACL write on /mnt/storage/media/music";
+    wantedBy = [ "multi-user.target" ];
+    after    = [ "mnt-storage.mount" ];
+    serviceConfig = {
+      Type            = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      if [ -d /mnt/storage/media/music ]; then
+        ${pkgs.acl}/bin/setfacl -R -m u:refinery:rwx /mnt/storage/media/music || true
+        ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx /mnt/storage/media/music || true
+      fi
+    '';
+  };
+
   systemd.services.ishimura-refinery = {
     description = "USG Refinery - media intake, tagging, approval, and library import";
     after       = [ "network-online.target" ];

@@ -7,6 +7,22 @@
   <button type="submit" class="btn">FILTER</button>
 </form>
 
+<details style="margin-bottom: 0.75rem;">
+  <summary style="cursor: pointer; color: var(--bright-cyan); font-size: 0.8rem; padding: 0.5rem; border: 1px dashed var(--cyan);">+ UPLOAD FILES TO INBOX</summary>
+  <form method="POST" action="/_upload" enctype="multipart/form-data"
+        style="padding: 0.75rem; border: 1px solid var(--cyan); border-top: none; display: flex; flex-direction: column; gap: 0.5rem;">
+    <div>
+      <label>FOLDER NAME (OPTIONAL - groups multi-file uploads, like one album)</label>
+      <input type="text" name="folder" placeholder="auto: upload-YYYYMMDD-HHMMSS">
+    </div>
+    <div>
+      <label>FILES (UP TO 1 GB TOTAL)</label>
+      <input type="file" name="files" multiple required>
+    </div>
+    <button type="submit" class="btn">UPLOAD + SCAN</button>
+  </form>
+</details>
+
 {% if processing %}
 <div class="box" style="border-color: var(--yellow);">
   <div class="title" style="color: var(--bright-yellow);">

@@ -62,6 +62,8 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger("refinery")
 
 app = Flask(__name__)
+# Books can be ~100MB, comic archives larger; allow up to 1GB per upload
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024
 db.init_db()
 
 MUSIC_TARGET = os.environ.get("REFINERY_MUSIC_TARGET",
@@ -566,6 +568,45 @@ def library_reprocess():
     with db.get_db() as conn:
         conn.execute("DELETE FROM items WHERE source_path = ?", (folder,))
     music.process_album(folder)
+    return redirect(url_for("queue"))
+
+
+@app.route("/_upload", methods=["POST"])
+def upload():
+    """Manually upload one or more files into the slskd-complete inbox so
+    refinery picks them up on the next scan. Files get grouped into a
+    timestamped subfolder (or user-provided folder name)."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+
+    files = [f for f in request.files.getlist("files") if f and f.filename]
+    if not files:
+        return redirect(url_for("queue"))
+
+    name = (request.form.get("folder") or "").strip()
+    if not name:
+        name = "upload-" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    # Strip filesystem-hostile characters from folder name
+    import re as _re
+    name = _re.sub(r'[<>:"|?*\\\\/]', "", name)[:120] or "upload"
+
+    dest = Path(scanner.DOWNLOADS_DIR) / name
+    dest.mkdir(parents=True, exist_ok=True)
+
+    saved = 0
+    for f in files:
+        # Use only the filename, never any path the client may have sent
+        safe = os.path.basename(f.filename)
+        if not safe:
+            continue
+        f.save(str(dest / safe))
+        saved += 1
+
+    notify("Refinery: manual upload",
+           f"{saved} file(s) uploaded to {name}")
+    # Kick off an immediate scan so the user doesn't wait for the timer
+    scanner.scan_once(force=True)
     return redirect(url_for("queue"))
 
 

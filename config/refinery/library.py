@@ -2,13 +2,16 @@
 scans the music folder), and cross-references against MusicBrainz to find
 missing albums per artist."""
 
+import json
 import logging
 import os
 import re
 import sqlite3
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
-import music  # for _http_get, _norm, MB_BASE
+import music  # for _http_get, MB_BASE
 
 log = logging.getLogger("refinery.library")
 
@@ -16,6 +19,9 @@ NAVIDROME_DB = os.environ.get("NAVIDROME_DB", "/var/lib/navidrome/navidrome.db")
 MUSIC_ROOT   = os.environ.get("REFINERY_MUSIC_TARGET", "/mnt/storage/media/music")
 MB_ARTIST_CACHE = os.environ.get("REFINERY_MB_ARTIST_CACHE",
                                  "/persist/refinery/mb_artists")
+MB_DISCO_CACHE  = os.environ.get("REFINERY_MB_DISCO_CACHE",
+                                 "/persist/refinery/mb_discography")
+DISCO_TTL_SECS  = 7 * 86400   # 1 week - refresh weekly so new releases land
 
 
 def _norm(s):
@@ -123,11 +129,23 @@ def _mb_artist_id(name):
 
 
 def discography(artist_name):
-    """All ALBUM-type release groups from MusicBrainz. Singles/EPs excluded
-    to keep the list focused."""
+    """All ALBUM-type release groups from MusicBrainz. Cached to disk for
+    one week so the radar can iterate every library artist quickly."""
     mbid = _mb_artist_id(artist_name)
     if not mbid:
         return []
+
+    os.makedirs(MB_DISCO_CACHE, exist_ok=True)
+    cache_path = os.path.join(MB_DISCO_CACHE, f"{mbid}.json")
+    if os.path.exists(cache_path):
+        age = time.time() - os.path.getmtime(cache_path)
+        if age < DISCO_TTL_SECS:
+            try:
+                with open(cache_path) as f:
+                    return json.load(f)
+            except Exception:
+                pass
+
     r = music._http_get(f"{music.MB_BASE}/release-group", params={
         "artist": mbid,
         "type":   "album",
@@ -140,13 +158,69 @@ def discography(artist_name):
         groups = (r.json() or {}).get("release-groups") or []
     except Exception:
         return []
-    return [{
+    result = [{
         "title":              g.get("title"),
         "first_release_date": g.get("first-release-date") or "",
         "primary_type":       g.get("primary-type"),
         "secondary_types":    g.get("secondary-types") or [],
         "mbid":               g.get("id"),
     } for g in groups if g.get("title")]
+
+    try:
+        with open(cache_path, "w") as f:
+            json.dump(result, f)
+    except Exception:
+        pass
+    return result
+
+
+def radar(days=180, include_upcoming=True):
+    """Cross-artist release radar. For every artist in the library, return
+    release-groups dated within the last `days` (and optionally in the
+    future) that we don't already own. Sorted newest first."""
+    today  = datetime.now().date()
+    cutoff = today - timedelta(days=days)
+    out    = []
+    artists = list_artists()
+    log.info("radar: scanning %d library artists (cutoff=%s)",
+             len(artists), cutoff)
+    for a in artists:
+        name = a["name"]
+        try:
+            owned = {_norm(x["title"]) for x in albums_for(name)}
+            for rg in discography(name):
+                date = rg.get("first_release_date") or ""
+                if not date:
+                    continue
+                # MB dates can be YYYY or YYYY-MM - pad to a real date.
+                try:
+                    parts = [int(p) for p in date.split("-")]
+                    while len(parts) < 3:
+                        parts.append(1)
+                    rdate = datetime(*parts[:3]).date()
+                except Exception:
+                    continue
+                if rdate < cutoff:
+                    continue
+                if rdate > today and not include_upcoming:
+                    continue
+                if any(t in {"Live", "Compilation", "Soundtrack", "Demo",
+                             "Interview", "Spokenword"}
+                       for t in (rg.get("secondary_types") or [])):
+                    continue
+                if _norm(rg["title"]) in owned:
+                    continue
+                out.append({
+                    "artist":             name,
+                    "title":              rg["title"],
+                    "first_release_date": date,
+                    "primary_type":       rg.get("primary_type"),
+                    "mbid":               rg.get("mbid"),
+                    "upcoming":           rdate > today,
+                })
+        except Exception as e:
+            log.warning("radar: failed for %s: %s", name, e)
+    return sorted(out, key=lambda x: x["first_release_date"], reverse=True)
 
 
 def missing_albums(artist_name):

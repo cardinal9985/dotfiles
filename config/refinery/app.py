@@ -85,9 +85,22 @@ with db.get_db() as _conn:
         "WHERE status='processing'"
     )
 
+def _radar_prewarm():
+    """Walk every library artist so the discography cache is warm.
+    Runs on a daily timer; rate limiting (1 req/s to MB) makes the first
+    pass slow but subsequent ones touch only stale entries."""
+    try:
+        for a in library.list_artists():
+            library.discography(a["name"])
+    except Exception:
+        log.exception("radar prewarm failed")
+
+
 sched = BackgroundScheduler(job_defaults={"max_instances": 1, "coalesce": True})
 sched.add_job(scanner.scan_once, "interval", minutes=1, id="scan",
               next_run_time=datetime.now() + timedelta(seconds=15))
+sched.add_job(_radar_prewarm, "interval", hours=24, id="radar_prewarm",
+              next_run_time=datetime.now() + timedelta(minutes=5))
 sched.start()
 
 
@@ -501,6 +514,19 @@ def library_index():
     user = _get_user()
     artists = library.list_artists()
     return render_template("library.html", user=user, artists=artists)
+
+
+@app.route("/library/radar")
+def library_radar():
+    user = _get_user()
+    try:
+        days = max(1, min(int(request.args.get("days", 180)), 3650))
+    except (TypeError, ValueError):
+        days = 180
+    upcoming = request.args.get("upcoming", "1") != "0"
+    releases = library.radar(days=days, include_upcoming=upcoming)
+    return render_template("library_radar.html", user=user,
+                           releases=releases, days=days, upcoming=upcoming)
 
 
 @app.route("/library/<path:artist>")

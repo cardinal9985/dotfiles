@@ -19,6 +19,7 @@
     ./requests.nix
     ./romm.nix
     ./slskd.nix
+    ./slskd-retry.nix
     ./stats.nix
     ./network.nix
     ./nfs.nix

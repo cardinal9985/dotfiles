@@ -8,12 +8,13 @@ let
     apscheduler
     requests
     mutagen
+    numpy
   ]);
 
   app = pkgs.runCommand "ishimura-refinery" {} ''
     mkdir -p $out
     cp -r ${src}/app.py ${src}/db.py ${src}/genres.py ${src}/music.py \
-          ${src}/scanner.py ${src}/templates $out/
+          ${src}/quality.py ${src}/scanner.py ${src}/templates $out/
   '';
 in
 {
@@ -57,6 +58,11 @@ in
       User             = "refinery";
       Group            = "refinery";
       EnvironmentFile  = config.sops.templates."refinery.env".path;
+      # flac + ffmpeg-headless are called as subprocesses by quality.py for
+      # integrity verification and spectral analysis.
+      Environment      = [
+        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin"
+      ];
       ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
       WorkingDirectory = app;
       Restart          = "on-failure";

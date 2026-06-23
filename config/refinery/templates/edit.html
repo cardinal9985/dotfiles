@@ -46,7 +46,7 @@
 <div class="box">
   <div class="title">&gt; TRACKS ({{ tracks|length }})</div>
   <table>
-    <thead><tr><th style="width:60px">DISC</th><th style="width:60px">#</th><th>TITLE</th><th style="width:80px">DUR</th><th style="width:90px">LYRICS</th><th style="width:260px">PREVIEW</th></tr></thead>
+    <thead><tr><th style="width:60px">DISC</th><th style="width:60px">#</th><th>TITLE</th><th style="width:70px">DUR</th><th style="width:80px">LYRICS</th><th style="width:130px">QUALITY</th><th style="width:240px">PREVIEW</th></tr></thead>
     <tbody>
       {% for t in tracks %}
       <tr>
@@ -58,6 +58,14 @@
           {% if t.lyrics_synced %}<span class="badge approved">SYNCED</span>
           {% elif t.lyrics_plain %}<span class="badge ready">PLAIN</span>
           {% else %}<span class="badge rejected">NONE</span>{% endif %}
+        </td>
+        <td>
+          {% set verdict = t.quality_verdict or 'unknown' %}
+          {% if verdict == 'verified' %}<span class="badge approved" title="{{ t.quality_cutoff }} Hz cutoff">VERIFIED</span>
+          {% elif verdict == 'borderline' %}<span class="badge ready" title="{{ t.quality_cutoff }} Hz cutoff">BORDERLINE</span>
+          {% elif verdict == 'suspect' %}<span class="badge failed" title="{{ t.quality_cutoff }} Hz cutoff - likely transcoded">SUSPECT</span>
+          {% else %}<span class="badge rejected">UNKNOWN</span>{% endif %}
+          {% if t.quality_ok == 0 %}<br><span class="badge failed" title="{{ t.quality_error }}">CORRUPT</span>{% endif %}
         </td>
         <td>
           <audio controls preload="none" style="width: 100%; height: 28px;">

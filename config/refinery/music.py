@@ -14,6 +14,7 @@ import requests as http
 
 import db
 import genres
+import quality
 
 log = logging.getLogger("refinery.music")
 
@@ -462,6 +463,13 @@ def process_album(folder):
             t["lyrics_synced"] = lyr.get("synced") or ""
             t["lyrics_plain"]  = lyr.get("plain")  or ""
 
+        # Quality verification (FLAC integrity + spectral cutoff)
+        q = quality.analyze(t["source_path"])
+        t["quality_ok"]      = 1 if q["verified"] else 0
+        t["quality_cutoff"]  = q["freq_cutoff_hz"]
+        t["quality_verdict"] = q["verdict"]
+        t["quality_error"]   = q.get("error")
+
     meta = {
         "embedded":     existing,
         "musicbrainz":  mb,
@@ -488,13 +496,16 @@ def process_album(folder):
             conn.execute(
                 """INSERT INTO tracks
                      (item_id, source_path, track_no, disc_no, title,
-                      duration_secs, lyrics_synced, lyrics_plain)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                      duration_secs, lyrics_synced, lyrics_plain,
+                      quality_ok, quality_cutoff, quality_verdict, quality_error)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (item_id, t["source_path"], t.get("track_no"),
                  t.get("disc_no") or 1,
                  t.get("title_suggestion") or t.get("title"),
                  t.get("duration_secs"),
-                 t.get("lyrics_synced"), t.get("lyrics_plain")),
+                 t.get("lyrics_synced"), t.get("lyrics_plain"),
+                 t.get("quality_ok"), t.get("quality_cutoff"),
+                 t.get("quality_verdict"), t.get("quality_error")),
             )
 
     log.info("Staged music album id=%d: %s - %s", item_id, artist, album)

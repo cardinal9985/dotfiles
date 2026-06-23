@@ -25,15 +25,19 @@ CREATE TABLE IF NOT EXISTS items (
 );
 
 CREATE TABLE IF NOT EXISTS tracks (
-    id            INTEGER PRIMARY KEY,
-    item_id       INTEGER NOT NULL,
-    source_path   TEXT NOT NULL,
-    track_no      INTEGER,
-    disc_no       INTEGER DEFAULT 1,
-    title         TEXT,
-    duration_secs INTEGER,
-    lyrics_synced TEXT,
-    lyrics_plain  TEXT,
+    id             INTEGER PRIMARY KEY,
+    item_id        INTEGER NOT NULL,
+    source_path    TEXT NOT NULL,
+    track_no       INTEGER,
+    disc_no        INTEGER DEFAULT 1,
+    title          TEXT,
+    duration_secs  INTEGER,
+    lyrics_synced  TEXT,
+    lyrics_plain   TEXT,
+    quality_ok     INTEGER,   -- 1 = decoder verified clean, 0 = failed
+    quality_cutoff INTEGER,   -- spectral cutoff Hz
+    quality_verdict TEXT,     -- 'verified', 'borderline', 'suspect', 'unknown'
+    quality_error  TEXT,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 
@@ -64,3 +68,11 @@ def init_db():
             conn.execute("ALTER TABLE tracks ADD COLUMN lyrics_synced TEXT")
         if "lyrics_plain" not in cols:
             conn.execute("ALTER TABLE tracks ADD COLUMN lyrics_plain TEXT")
+        if "quality_ok" not in cols:
+            conn.execute("ALTER TABLE tracks ADD COLUMN quality_ok INTEGER")
+        if "quality_cutoff" not in cols:
+            conn.execute("ALTER TABLE tracks ADD COLUMN quality_cutoff INTEGER")
+        if "quality_verdict" not in cols:
+            conn.execute("ALTER TABLE tracks ADD COLUMN quality_verdict TEXT")
+        if "quality_error" not in cols:
+            conn.execute("ALTER TABLE tracks ADD COLUMN quality_error TEXT")

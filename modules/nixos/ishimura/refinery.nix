@@ -40,7 +40,10 @@ in
     # `navidrome` group gives read on /var/lib/navidrome/navidrome.db so the
     # library view can list owned artists/albums (we already widened the WAL
     # files to group-write for the stats SQLite reader).
-    extraGroups  = [ "users" "navidrome" ];
+    # systemd-oom is the group on /mnt/storage/media (default ownership from
+    # mergerfs creation - weird but real). Without it refinery can't create
+    # artist folders in the music library on approve.
+    extraGroups  = [ "users" "navidrome" "systemd-oom" ];
   };
   users.groups.refinery = {};
 

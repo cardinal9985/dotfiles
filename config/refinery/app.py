@@ -1,8 +1,10 @@
 import json
 import logging
 import os
+import shutil
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -364,6 +366,82 @@ def library_artist(artist):
     missing = library.missing_albums(artist)
     return render_template("library_artist.html", user=user,
                            artist=artist, owned=owned, missing=missing)
+
+
+def _safe_under_root(target_str, root_str):
+    """Return resolved Path if `target_str` is strictly under `root_str`
+    (and not equal to it). Otherwise None. Guards delete actions."""
+    try:
+        root   = Path(root_str).resolve()
+        target = Path(target_str).resolve()
+    except Exception:
+        return None
+    if target == root:
+        return None
+    try:
+        target.relative_to(root)
+    except ValueError:
+        return None
+    return target
+
+
+def _cleanup_empty_parents(start, root):
+    """Walk up from `start` (exclusive), rmdir-ing each parent that's now
+    empty. Stops at `root` (won't delete the root itself)."""
+    current = Path(start).parent
+    root_resolved = Path(root).resolve()
+    while current.resolve() != root_resolved and current.exists():
+        try:
+            current.rmdir()
+        except OSError:
+            break
+        current = current.parent
+
+
+@app.route("/library/delete-album", methods=["POST"])
+def library_delete_album():
+    """Recursively delete one album folder, then walk up to remove an
+    artist folder that has no albums left."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+    folder = request.form.get("folder", "")
+    target = _safe_under_root(folder, MUSIC_TARGET)
+    if not target or not target.is_dir():
+        return "bad folder", 400
+    artist_name = request.form.get("artist", "")
+    try:
+        shutil.rmtree(target)
+        _cleanup_empty_parents(target, MUSIC_TARGET)
+        notify("Refinery: deleted album", f"{artist_name} - {target.name}")
+    except Exception as e:
+        log.exception("delete-album failed for %s", target)
+        return f"delete failed: {e}", 500
+    if artist_name and (Path(MUSIC_TARGET) / artist_name).exists():
+        return redirect(url_for("library_artist", artist=artist_name))
+    return redirect(url_for("library_index"))
+
+
+@app.route("/library/delete-artist", methods=["POST"])
+def library_delete_artist():
+    """Delete an entire artist folder (all their albums)."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+    artist = (request.form.get("artist", "") or "").strip()
+    if not artist:
+        return "missing artist", 400
+    candidate = str(Path(MUSIC_TARGET) / artist)
+    target = _safe_under_root(candidate, MUSIC_TARGET)
+    if not target or not target.is_dir():
+        return "artist folder not found", 400
+    try:
+        shutil.rmtree(target)
+        notify("Refinery: deleted artist", artist)
+    except Exception as e:
+        log.exception("delete-artist failed for %s", target)
+        return f"delete failed: {e}", 500
+    return redirect(url_for("library_index"))
 
 
 @app.route("/library/reprocess", methods=["POST"])

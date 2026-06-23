@@ -838,14 +838,18 @@ def write_and_move(item, tracks, target_root):
     _run_replaygain(dest_album)
 
     # Clean up the (now-empty) source folder so the inbox stays tidy. Only
-    # when we actually moved (not copied), and only if there's nothing
-    # important left behind (skip if anything we don't recognize remains).
+    # when we actually moved (not copied). After deleting the source dir,
+    # walk UP the parent chain - if slskd preserved an artist folder above
+    # the album, we want that gone too once it's empty. Stop at the
+    # configured downloads root to never delete it.
     if not KEEP_SOURCE:
         try:
             src_root = Path(item["source_path"])
+            downloads_root = Path(os.environ.get(
+                "REFINERY_DOWNLOADS",
+                "/mnt/storage/downloads/slskd/complete",
+            )).resolve()
             if src_root.is_dir():
-                # Remove any leftover sidecar junk (.nfo, .m3u, .cue, .sfv,
-                # .log, hidden files, empty subdirs)
                 JUNK_EXTS = {".nfo", ".m3u", ".m3u8", ".cue", ".sfv",
                              ".log", ".txt", ".jpg", ".jpeg", ".png", ".pdf"}
                 for f in src_root.rglob("*"):
@@ -853,16 +857,26 @@ def write_and_move(item, tracks, target_root):
                                         or f.suffix.lower() in JUNK_EXTS):
                         try: f.unlink()
                         except Exception: pass
-                # Remove all empty subdirectories bottom-up
+                # Remove empty subdirs bottom-up
                 for d in sorted([p for p in src_root.rglob("*") if p.is_dir()],
                                 key=lambda p: -len(p.parts)):
                     try: d.rmdir()
                     except OSError: pass
-                # Finally drop the root if empty
+                # Drop the root itself if empty
                 try: src_root.rmdir()
                 except OSError as e:
                     log.info("source not empty, leaving in place: %s (%s)",
                              src_root, e)
+                # Walk up parents while empty, never above downloads_root
+                current = src_root.parent
+                while (current.exists()
+                       and current.resolve() != downloads_root
+                       and downloads_root in current.resolve().parents):
+                    try:
+                        current.rmdir()
+                    except OSError:
+                        break
+                    current = current.parent
         except Exception as e:
             log.warning("source cleanup failed: %s", e)
 

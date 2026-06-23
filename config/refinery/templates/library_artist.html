@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ artist }}{% endblock %}
 {% block content %}
-<div style="margin-bottom: 0.75rem;">
+<div style="margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
   <a href="/library">&lt; ALL ARTISTS</a>
+  <form method="POST" action="/library/delete-artist" style="display:inline"
+        onsubmit="return confirm('PERMANENT: delete EVERY album by {{ artist }} from disk?')">
+    <input type="hidden" name="artist" value="{{ artist }}">
+    <button type="submit" class="btn danger">DELETE ENTIRE ARTIST</button>
+  </form>
 </div>
 
 <div class="box">
@@ -18,12 +23,18 @@
         <td>{{ a.year or '?' }}</td>
         <td>{{ a.title }}</td>
         <td>{{ a.track_count }}</td>
-        <td style="text-align:right">
+        <td style="text-align:right; white-space: nowrap;">
           {% if a.folder %}
           <form method="POST" action="/library/reprocess" style="display:inline"
                 onsubmit="return confirm('Re-tag, re-cover, re-analyze this album? Files stay in place until you approve.')">
             <input type="hidden" name="folder" value="{{ a.folder }}">
             <button type="submit" class="btn ghost">RE-PROCESS</button>
+          </form>
+          <form method="POST" action="/library/delete-album" style="display:inline"
+                onsubmit="return confirm('PERMANENT: delete album from disk?\n\n{{ a.title }}')">
+            <input type="hidden" name="folder" value="{{ a.folder }}">
+            <input type="hidden" name="artist" value="{{ artist }}">
+            <button type="submit" class="btn danger">DELETE</button>
           </form>
           {% endif %}
         </td>

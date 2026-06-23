@@ -98,6 +98,29 @@ def classify_cutoff(hz):
     return "borderline"
 
 
+def generate_spectrogram(audio_path, output_path,
+                         width=1500, height=800):
+    """Render a frequency-vs-time spectrogram PNG via sox. This is the same
+    type of image people post on Soulseek to prove a file is real lossless.
+    Returns True on success."""
+    if not _have("sox"):
+        return False
+    try:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        r = subprocess.run([
+            "sox", audio_path, "-n",
+            "spectrogram",
+            "-o", output_path,
+            "-x", str(width),
+            "-y", str(height),
+            "-c", os.path.basename(audio_path)[:60],
+        ], capture_output=True, timeout=120)
+        return r.returncode == 0 and os.path.exists(output_path)
+    except Exception as e:
+        log.warning("spectrogram failed %s: %s", audio_path, e)
+        return False
+
+
 def analyze(path):
     """Run both checks. Returns dict with verified bool, cutoff Hz, verdict,
     and an error string if integrity failed."""

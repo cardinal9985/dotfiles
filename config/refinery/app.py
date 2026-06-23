@@ -176,6 +176,20 @@ def reprocess(item_id):
     return redirect(url_for("queue"))
 
 
+@app.route("/item/<int:item_id>/spectrogram.png")
+def item_spectrogram(item_id):
+    if not _get_user():
+        return "unauthorized", 401
+    with db.get_db() as conn:
+        row = conn.execute(
+            "SELECT spectrogram_local FROM items WHERE id=?",
+            (item_id,),
+        ).fetchone()
+    if not row or not row["spectrogram_local"] or not os.path.exists(row["spectrogram_local"]):
+        abort(404)
+    return send_file(row["spectrogram_local"], mimetype="image/png")
+
+
 @app.route("/track/<int:track_id>/audio")
 def track_audio(track_id):
     """Stream the source audio file for in-browser preview during approval.

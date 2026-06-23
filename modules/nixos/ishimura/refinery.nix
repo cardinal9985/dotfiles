@@ -19,8 +19,9 @@ let
 in
 {
   systemd.tmpfiles.rules = [
-    "d /persist/refinery        0750 refinery refinery -"
-    "d /persist/refinery/covers 0750 refinery refinery -"
+    "d /persist/refinery              0750 refinery refinery -"
+    "d /persist/refinery/covers       0750 refinery refinery -"
+    "d /persist/refinery/spectrograms 0750 refinery refinery -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -42,6 +43,7 @@ in
     content = ''
       REFINERY_DB_PATH=/persist/refinery/refinery.db
       REFINERY_COVER_DIR=/persist/refinery/covers
+      REFINERY_SPECTROGRAM_DIR=/persist/refinery/spectrograms
       REFINERY_DOWNLOADS=/mnt/storage/downloads/slskd/complete
       REFINERY_MUSIC_TARGET=/mnt/storage/media/music
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
@@ -58,10 +60,10 @@ in
       User             = "refinery";
       Group            = "refinery";
       EnvironmentFile  = config.sops.templates."refinery.env".path;
-      # flac + ffmpeg-headless are called as subprocesses by quality.py for
-      # integrity verification and spectral analysis.
+      # flac + ffmpeg + sox are called as subprocesses by quality.py for
+      # integrity verification, spectral analysis, and spectrogram rendering.
       Environment      = [
-        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin"
+        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin"
       ];
       ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
       WorkingDirectory = app;

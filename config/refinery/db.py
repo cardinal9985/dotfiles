@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS items (
     genre         TEXT,
     cover_url     TEXT,
     cover_local   TEXT,
+    spectrogram_local TEXT,
     meta_json     TEXT,                     -- everything else
     error         TEXT,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -76,3 +77,6 @@ def init_db():
             conn.execute("ALTER TABLE tracks ADD COLUMN quality_verdict TEXT")
         if "quality_error" not in cols:
             conn.execute("ALTER TABLE tracks ADD COLUMN quality_error TEXT")
+        item_cols = {r["name"] for r in conn.execute("PRAGMA table_info(items)").fetchall()}
+        if "spectrogram_local" not in item_cols:
+            conn.execute("ALTER TABLE items ADD COLUMN spectrogram_local TEXT")

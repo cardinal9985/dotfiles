@@ -15,6 +15,14 @@
       {% if item.cover_local %}
       <div style="font-size: 0.65rem; color: var(--white); margin-top: 0.3rem;">cached: {{ item.cover_local }}</div>
       {% endif %}
+      {% if item.spectrogram_local %}
+      <div style="margin-top: 0.5rem;">
+        <a href="/item/{{ item.id }}/spectrogram.png" target="_blank" title="Spectrogram (longest track)">
+          <img src="/item/{{ item.id }}/spectrogram.png" alt="spectrogram" style="width: 100%; border: 1px solid var(--cyan);">
+        </a>
+        <div style="font-size: 0.6rem; color: var(--white); text-align: center; margin-top: 0.2rem;">SPECTROGRAM (click for full size)</div>
+      </div>
+      {% endif %}
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">

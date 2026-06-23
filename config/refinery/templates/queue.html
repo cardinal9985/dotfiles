@@ -71,6 +71,13 @@
 
 <div class="box">
   <div class="title">&gt; RECENT DECISIONS</div>
+  {% set failed_count = recent|selectattr('status', 'in', ['failed', 'rejected'])|list|length %}
+  {% if failed_count %}
+  <form method="POST" action="/_retry_failed" style="margin-bottom: 0.75rem;"
+        onsubmit="return confirm('Re-queue every failed/rejected item whose source still exists?')">
+    <button type="submit" class="btn ghost">RETRY ALL FAILED ({{ failed_count }})</button>
+  </form>
+  {% endif %}
   {% if not recent %}
   <div class="empty">No history yet.</div>
   {% else %}

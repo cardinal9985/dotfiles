@@ -250,6 +250,41 @@ def approve(item_id):
     return redirect(url_for("queue"))
 
 
+@app.route("/_retry_failed", methods=["POST"])
+def retry_failed():
+    """Bulk re-run the music processor on every item in failed/rejected
+    state whose source folder still exists."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+
+    with db.get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, source_path, media_type FROM items "
+            "WHERE status IN ('failed', 'rejected')"
+        ).fetchall()
+
+    requeued = 0
+    skipped  = 0
+    for r in rows:
+        src = r["source_path"]
+        if not src or not os.path.isdir(src):
+            skipped += 1
+            continue
+        with db.get_db() as conn:
+            conn.execute("DELETE FROM items WHERE id=?", (r["id"],))
+        if r["media_type"] == "music":
+            try:
+                music.process_album(src)
+                requeued += 1
+            except Exception:
+                log.exception("retry failed for %s", src)
+
+    notify("Refinery: retry failed",
+           f"Re-queued {requeued}, skipped {skipped} (source gone)")
+    return redirect(url_for("queue"))
+
+
 @app.route("/_approve_verified", methods=["POST"])
 def approve_verified():
     """Bulk-approve every ready item where ALL tracks are VERIFIED and no

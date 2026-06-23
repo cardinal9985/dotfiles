@@ -170,7 +170,7 @@ def edit(item_id):
         if target.exists():
             conflict = str(target)
         return render_template("edit_book.html", user=user, item=item,
-                               meta=meta, genres=genres.ALL, conflict=conflict)
+                               meta=meta, genres=genres.BOOKS, conflict=conflict)
     return render_template("edit.html", user=user, item=item, tracks=tracks,
                            meta=meta, genres=genres.ALL, conflict=conflict)
 

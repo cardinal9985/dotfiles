@@ -87,6 +87,57 @@ TOP_GENRES = {
 
 ALL = sorted(TOP_GENRES.keys())
 
+# Book genres / subject categories. Free-text input with this as autocomplete,
+# matching the music flow (anything OpenLibrary returns can also be entered).
+BOOKS = sorted([
+    "Art",
+    "Biography",
+    "Business",
+    "Children's",
+    "Classics",
+    "Comics",
+    "Computers",
+    "Cooking",
+    "Drama",
+    "Education",
+    "Essays",
+    "Fantasy",
+    "Fiction",
+    "Graphic Novel",
+    "Health",
+    "Historical Fiction",
+    "History",
+    "Horror",
+    "Humor",
+    "Light Novel",
+    "Literary Fiction",
+    "Manga",
+    "Mathematics",
+    "Memoir",
+    "Mystery",
+    "Mythology",
+    "Nonfiction",
+    "Philosophy",
+    "Poetry",
+    "Politics",
+    "Psychedelics",
+    "Psychology",
+    "Reference",
+    "Religion",
+    "Romance",
+    "Science",
+    "Science Fiction",
+    "Self-Help",
+    "Short Stories",
+    "Spirituality",
+    "Technology",
+    "Textbook",
+    "Thriller",
+    "Travel",
+    "True Crime",
+    "Young Adult",
+])
+
 
 def _norm(s):
     return (s or "").lower().replace("-", " ").replace("_", " ").strip()

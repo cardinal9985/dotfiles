@@ -193,10 +193,12 @@ def track_audio(track_id):
 
 @app.route("/_scan", methods=["POST"])
 def scan_now():
+    """Manual scan from the SCAN NOW button - bypass the stability check so
+    the user can process a download immediately without waiting for the timer."""
     user = _get_user()
     if not user:
         return "unauthorized", 401
-    scanner.scan_once()
+    scanner.scan_once(force=True)
     return redirect(url_for("queue"))
 
 

@@ -15,7 +15,10 @@ log = logging.getLogger("refinery.scanner")
 
 DOWNLOADS_DIR = os.environ.get("REFINERY_DOWNLOADS",
                                 "/mnt/storage/downloads")
-STABILITY_SECS = int(os.environ.get("REFINERY_STABILITY_SECS", "300"))  # 5 min
+# 0 = no wait. slskd already separates in-progress (incomplete/) from done
+# (complete/), so anything we see is finished. Raise via env if a future
+# source writes directly without atomic moves (e.g. mergerfs cross-disk).
+STABILITY_SECS = int(os.environ.get("REFINERY_STABILITY_SECS", "0"))
 
 MUSIC_EXTS = {".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wma", ".wav",
               ".alac", ".aiff", ".aif"}
@@ -48,6 +51,8 @@ def classify_folder(path):
 
 def is_stable(path):
     """Return True if no file in `path` has been modified in STABILITY_SECS."""
+    if STABILITY_SECS <= 0:
+        return True
     cutoff = time.time() - STABILITY_SECS
     p = Path(path)
     if p.is_file():
@@ -82,7 +87,7 @@ def already_seen(source_path):
     return row is not None
 
 
-def scan_once():
+def scan_once(force=False):
     if not os.path.isdir(DOWNLOADS_DIR):
         log.warning("downloads dir missing: %s", DOWNLOADS_DIR)
         return
@@ -92,7 +97,7 @@ def scan_once():
         full = os.path.join(DOWNLOADS_DIR, entry)
         if already_seen(full):
             continue
-        if not is_stable(full):
+        if not force and not is_stable(full):
             log.debug("not stable yet: %s", full)
             continue
 

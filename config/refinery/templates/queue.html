@@ -7,6 +7,30 @@
   <button type="submit" class="btn">FILTER</button>
 </form>
 
+{% if processing %}
+<div class="box" style="border-color: var(--yellow);">
+  <div class="title" style="color: var(--bright-yellow);">
+    &gt; IN PROGRESS ({{ processing|length }}) - WORKERS BUSY
+  </div>
+  <table>
+    <thead><tr><th>TYPE</th><th>SOURCE</th><th>STARTED</th></tr></thead>
+    <tbody>
+      {% for p in processing %}
+      <tr>
+        <td>{{ p.media_type|upper }}</td>
+        <td>{{ p.source_path }}</td>
+        <td>{{ p.processed_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div style="font-size: 0.7rem; color: var(--white); margin-top: 0.5rem;">
+    Page auto-refreshes every 15s while items are in progress.
+  </div>
+</div>
+<meta http-equiv="refresh" content="15">
+{% endif %}
+
 <div class="box">
   <div class="title">&gt; PENDING APPROVAL ({{ ready|length }})</div>
   {% if not ready %}

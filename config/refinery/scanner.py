@@ -6,10 +6,13 @@ import os
 import time
 import zipfile
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import db
 import music
+
+WORKERS = int(os.environ.get("REFINERY_WORKERS", "3"))
 
 log = logging.getLogger("refinery.scanner")
 
@@ -87,10 +90,48 @@ def already_seen(source_path):
     return row is not None
 
 
+def _process_one(full):
+    """Worker entry point: classify and dispatch a single download entry."""
+    kind = None
+    try:
+        work = maybe_extract_zip(full)
+        kind = classify_folder(work)
+        if not kind:
+            log.warning("could not classify %s", work)
+            return
+        log.info("New %s detected: %s", kind, work)
+        # Mark as processing so the UI can show in-flight items.
+        with db.get_db() as conn:
+            conn.execute(
+                """INSERT OR REPLACE INTO items
+                     (media_type, status, source_path, processed_at)
+                   VALUES (?, 'processing', ?, datetime('now'))""",
+                (kind, work),
+            )
+        if kind == "music":
+            music.process_album(work)
+        else:
+            with db.get_db() as conn:
+                conn.execute(
+                    "UPDATE items SET status='failed', error=? WHERE source_path=?",
+                    (f"{kind} processor not implemented yet", work),
+                )
+    except Exception as e:
+        log.exception("processing failed for %s", full)
+        with db.get_db() as conn:
+            conn.execute(
+                """INSERT OR REPLACE INTO items
+                     (media_type, status, source_path, error, processed_at)
+                   VALUES (?, 'failed', ?, ?, datetime('now'))""",
+                (kind or "unknown", full, str(e)[:500]),
+            )
+
+
 def scan_once(force=False):
     if not os.path.isdir(DOWNLOADS_DIR):
         log.warning("downloads dir missing: %s", DOWNLOADS_DIR)
         return
+    todo = []
     for entry in sorted(os.listdir(DOWNLOADS_DIR)):
         if entry.startswith("_") or entry.startswith("."):
             continue
@@ -100,33 +141,10 @@ def scan_once(force=False):
         if not force and not is_stable(full):
             log.debug("not stable yet: %s", full)
             continue
-
-        work = maybe_extract_zip(full)
-        kind = classify_folder(work)
-        if not kind:
-            log.warning("could not classify %s", work)
-            continue
-
-        log.info("New %s detected: %s", kind, work)
-        try:
-            if kind == "music":
-                music.process_album(work)
-            else:
-                # Other types not yet implemented - record as failed
-                with db.get_db() as conn:
-                    conn.execute(
-                        """INSERT OR REPLACE INTO items
-                             (media_type, status, source_path, error,
-                              processed_at)
-                           VALUES (?, 'failed', ?, ?, datetime('now'))""",
-                        (kind, work, f"{kind} processor not implemented yet"),
-                    )
-        except Exception as e:
-            log.exception("processing failed for %s", work)
-            with db.get_db() as conn:
-                conn.execute(
-                    """INSERT OR REPLACE INTO items
-                         (media_type, status, source_path, error, processed_at)
-                       VALUES (?, 'failed', ?, ?, datetime('now'))""",
-                    (kind or "unknown", work, str(e)[:500]),
-                )
+        todo.append(full)
+    if not todo:
+        return
+    log.info("dispatching %d item(s) to %d worker(s)", len(todo), WORKERS)
+    with ThreadPoolExecutor(max_workers=WORKERS, thread_name_prefix="refinery-worker") as ex:
+        for full in todo:
+            ex.submit(_process_one, full)

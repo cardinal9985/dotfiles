@@ -55,6 +55,7 @@ in
       REFINERY_SPECTROGRAM_DIR=/persist/refinery/spectrograms
       REFINERY_ARTIST_PHOTO_DIR=/persist/refinery/artists
       REFINERY_MB_ARTIST_CACHE=/persist/refinery/mb_artists
+      REFINERY_WORKERS=3
       NAVIDROME_DB=/var/lib/navidrome/navidrome.db
       REFINERY_DOWNLOADS=/mnt/storage/downloads/slskd/complete
       REFINERY_MUSIC_TARGET=/mnt/storage/media/music

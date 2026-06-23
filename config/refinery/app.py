@@ -101,6 +101,10 @@ def queue():
             "SELECT * FROM items WHERE status = 'ready' "
             "ORDER BY processed_at DESC"
         ).fetchall()
+        processing = conn.execute(
+            "SELECT * FROM items WHERE status = 'processing' "
+            "ORDER BY processed_at DESC"
+        ).fetchall()
         recent = conn.execute(
             "SELECT * FROM items WHERE status IN ('approved', 'rejected', 'failed') "
             "ORDER BY decided_at DESC, processed_at DESC LIMIT 20"
@@ -109,9 +113,11 @@ def queue():
         def _match(r):
             return any(q in (r[c] or "").lower()
                        for c in ("title", "artist", "source_path"))
-        ready  = [r for r in ready  if _match(r)]
-        recent = [r for r in recent if _match(r)]
-    return render_template("queue.html", user=user, ready=ready, recent=recent, q=q)
+        ready      = [r for r in ready      if _match(r)]
+        processing = [r for r in processing if _match(r)]
+        recent     = [r for r in recent     if _match(r)]
+    return render_template("queue.html", user=user, ready=ready,
+                           processing=processing, recent=recent, q=q)
 
 
 @app.route("/item/<int:item_id>")
@@ -162,6 +168,19 @@ def approve(item_id):
         item_dict["year"]   = int(year) if year.isdigit() else item_dict["year"]
         item_dict["genre"]  = genre  or item_dict["genre"]
 
+        # Manual cover upload override
+        cover_file = request.files.get("cover_upload")
+        if cover_file and cover_file.filename:
+            cover_dir = os.environ.get("REFINERY_COVER_DIR",
+                                       "/persist/refinery/covers")
+            os.makedirs(cover_dir, exist_ok=True)
+            ext = os.path.splitext(cover_file.filename)[1].lower() or ".jpg"
+            cover_path = os.path.join(cover_dir, f"manual_{item_id}{ext}")
+            cover_file.save(cover_path)
+            item_dict["cover_local"] = cover_path
+            conn.execute("UPDATE items SET cover_local=? WHERE id=?",
+                         (cover_path, item_id))
+
         # Update each track from form
         tracks_rows = conn.execute(
             "SELECT * FROM tracks WHERE item_id = ? ORDER BY disc_no, track_no",
@@ -186,9 +205,27 @@ def approve(item_id):
              item_dict["genre"], item_id),
         )
         for td in tracks:
+            # Manual lyrics overrides per track. If the user uploaded a .lrc
+            # or pasted into the textareas, persist those before approve.
+            tid = td["id"]
+            new_plain  = request.form.get(f"lyrics_plain_{tid}", None)
+            new_synced = request.form.get(f"lyrics_synced_{tid}", None)
+            lrc_file = request.files.get(f"lrc_upload_{tid}")
+            if lrc_file and lrc_file.filename:
+                try:
+                    new_synced = lrc_file.read().decode("utf-8", errors="ignore")
+                except Exception:
+                    pass
+            if new_plain is not None:
+                td["lyrics_plain"] = new_plain.strip()
+            if new_synced is not None:
+                td["lyrics_synced"] = new_synced.strip()
             conn.execute(
-                "UPDATE tracks SET title=?, track_no=?, disc_no=? WHERE id=?",
-                (td["title"], td["track_no"], td["disc_no"], td["id"]),
+                "UPDATE tracks SET title=?, track_no=?, disc_no=?, "
+                "  lyrics_plain=?, lyrics_synced=? WHERE id=?",
+                (td["title"], td["track_no"], td["disc_no"],
+                 td.get("lyrics_plain"), td.get("lyrics_synced"),
+                 td["id"]),
             )
 
     # Do the actual write + move outside the DB transaction

@@ -8,11 +8,32 @@ import os
 import re
 import shutil
 import subprocess
+import threading
+import time
 from pathlib import Path
 from urllib.parse import quote_plus
 
 import mutagen
 import requests as http
+
+
+# ── Per-service rate limiting ─────────────────────────────────────────────────
+# Protects parallel workers from blowing past upstream rate limits. MB is
+# strict (1 req/s anonymous); others get a polite throttle.
+_rate_locks = {}
+_rate_state = {}
+
+
+def _rate_limited(service, min_interval_secs=1.0):
+    """Block until at least `min_interval_secs` has elapsed since the last
+    call for this service (process-wide)."""
+    lock = _rate_locks.setdefault(service, threading.Lock())
+    with lock:
+        last = _rate_state.get(service, 0.0)
+        elapsed = time.time() - last
+        if elapsed < min_interval_secs:
+            time.sleep(min_interval_secs - elapsed)
+        _rate_state[service] = time.time()
 
 import db
 import genres
@@ -116,6 +137,9 @@ def read_existing_metadata(folder):
         year     = _read_tag(audio, "date", "year")
         genre    = _read_tag(audio, "genre")
         comment  = _read_tag(audio, "comment")
+        mb_album_id = _read_tag(audio, "musicbrainz_albumid")
+        if mb_album_id and "mb_album_id" not in album_tags:
+            album_tags["mb_album_id"] = mb_album_id
 
         # Bandcamp puts the album URL in the COMMENT/description field
         if comment and "bandcamp.com" in comment and not bandcamp_url:
@@ -165,6 +189,7 @@ def read_existing_metadata(folder):
         "album":        album_tags.get("album"),
         "artist":       album_tags.get("artist"),
         "year":         album_tags.get("year"),
+        "mb_album_id":  album_tags.get("mb_album_id"),
         "genre_tags":   genre_tags,
         "bandcamp_url": bandcamp_url,
         "tracks":       tracks,
@@ -176,6 +201,7 @@ def read_existing_metadata(folder):
 def lookup_musicbrainz(artist, album):
     if not (artist and album):
         return None
+    _rate_limited("musicbrainz")
     r = _http_get(f"{MB_BASE}/release/", params={
         "query": f'artist:"{artist}" AND release:"{album}"',
         "fmt": "json",
@@ -196,10 +222,33 @@ def lookup_musicbrainz(artist, album):
     }
 
 
+def lookup_musicbrainz_by_id(mb_release_id):
+    """Direct MB release lookup by MBID. Skips the slow search-by-name path.
+    Used during reimport when files already have musicbrainz_albumid tagged
+    (every file in a properly-tagged Navidrome library has this)."""
+    if not mb_release_id:
+        return None
+    _rate_limited("musicbrainz")
+    r = _http_get(f"{MB_BASE}/release/{mb_release_id}", params={"fmt": "json"})
+    if not r:
+        return None
+    try:
+        data = r.json()
+    except Exception:
+        return None
+    return {
+        "mb_release_id": data.get("id"),
+        "title":         data.get("title"),
+        "year":          (data.get("date") or "")[:4],
+        "country":       data.get("country"),
+    }
+
+
 def cover_art_archive_url(mb_release_id):
     """Front cover URL for a MusicBrainz release ID, or None."""
     if not mb_release_id:
         return None
+    _rate_limited("coverartarchive", 0.5)
     r = _http_get(f"{CAA_BASE}/release/{mb_release_id}")
     if not r:
         return None
@@ -224,6 +273,7 @@ def bandcamp_search(artist, album):
     """Find a likely Bandcamp album URL for (artist, album)."""
     if not (artist and album):
         return None
+    _rate_limited("bandcamp", 1.0)
     q = quote_plus(f"{artist} {album}")
     r = _http_get(f"{BC_BASE}/search", params={"q": f"{artist} {album}",
                                                 "item_type": "a"})
@@ -239,6 +289,7 @@ def bandcamp_album(url):
     cover_url, tags, tracks}."""
     if not url:
         return None
+    _rate_limited("bandcamp", 1.0)
     r = _http_get(url)
     if not r:
         return None
@@ -509,8 +560,13 @@ def process_album(folder):
     album  = existing.get("album")
     year   = existing.get("year")
 
-    # Cross-source lookups
-    mb     = lookup_musicbrainz(artist, album)
+    # Cross-source lookups. If the file already has a MusicBrainz album ID
+    # (true for any properly tagged library), skip the search-by-name path
+    # and go straight to /release/<id>. ~3x fewer MB calls per album.
+    if existing.get("mb_album_id"):
+        mb = lookup_musicbrainz_by_id(existing["mb_album_id"])
+    else:
+        mb = lookup_musicbrainz(artist, album)
     bc_url = existing.get("bandcamp_url") or bandcamp_search(artist, album)
     bc     = bandcamp_album(bc_url) if bc_url else None
     lfm    = lastfm_album_info(artist, album)

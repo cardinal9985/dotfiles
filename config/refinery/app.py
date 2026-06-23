@@ -265,6 +265,45 @@ def reject(item_id):
     return redirect(url_for("queue"))
 
 
+@app.route("/item/<int:item_id>/reanalyze", methods=["POST"])
+def reanalyze(item_id):
+    """Re-run quality + lyrics analysis on an existing item's tracks. Useful
+    when columns were added later or when LRCLib failed first time around.
+    Doesn't redo MB/Bandcamp lookups - use /reprocess for that."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+    import quality
+    with db.get_db() as conn:
+        item = conn.execute("SELECT * FROM items WHERE id=?",
+                            (item_id,)).fetchone()
+        if not item:
+            abort(404)
+        tracks = conn.execute(
+            "SELECT id, source_path, title, duration_secs FROM tracks WHERE item_id=?",
+            (item_id,),
+        ).fetchall()
+    for t in tracks:
+        q   = quality.analyze(t["source_path"])
+        lyr = music.lrclib_get(item["artist"], t["title"],
+                               item["title"], t["duration_secs"]) or {}
+        with db.get_db() as conn:
+            conn.execute("""
+                UPDATE tracks SET
+                  quality_ok      = ?,
+                  quality_cutoff  = ?,
+                  quality_verdict = ?,
+                  quality_error   = ?,
+                  lyrics_synced   = ?,
+                  lyrics_plain    = ?
+                WHERE id = ?
+            """, (1 if q["verified"] else 0, q["freq_cutoff_hz"],
+                  q["verdict"], q.get("error"),
+                  lyr.get("synced") or "", lyr.get("plain") or "",
+                  t["id"]))
+    return redirect(url_for("edit", item_id=item_id))
+
+
 @app.route("/item/<int:item_id>/reprocess", methods=["POST"])
 def reprocess(item_id):
     """Re-run the processor for a failed/rejected item."""

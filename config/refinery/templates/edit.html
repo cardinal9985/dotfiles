@@ -101,7 +101,16 @@
 </div>
 </form>
 
-<form method="POST" action="/item/{{ item.id }}/reject" style="margin-top: 0.5rem;">
-  <button type="submit" class="btn danger" onclick="return confirm('Mark this as rejected? Files stay in inbox.')">REJECT</button>
-</form>
+<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+  <form method="POST" action="/item/{{ item.id }}/reanalyze">
+    <button type="submit" class="btn ghost" title="Re-run FLAC test, spectral cutoff, and LRCLib lookup">RE-RUN ANALYSIS</button>
+  </form>
+  <form method="POST" action="/item/{{ item.id }}/reprocess"
+        onsubmit="return confirm('Full re-process: re-read tags, re-query MusicBrainz/Bandcamp/Last.fm, re-fetch cover, re-spectrogram. Slower than re-analyze.')">
+    <button type="submit" class="btn ghost">FULL RE-PROCESS</button>
+  </form>
+  <form method="POST" action="/item/{{ item.id }}/reject">
+    <button type="submit" class="btn danger" onclick="return confirm('Mark this as rejected? Files stay in inbox.')">REJECT</button>
+  </form>
+</div>
 {% endblock %}

@@ -345,24 +345,63 @@ def listenbrainz_release_lookup(mb_release_id):
 # ── Lyrics (LRCLib) ──────────────────────────────────────────────────────────
 
 def lrclib_get(artist, track, album=None, duration=None):
-    """Fetch synced + plain lyrics from LRCLib for one track. Returns
-    {synced, plain} dict or None."""
+    """Fetch synced + plain lyrics from LRCLib for one track. LRCLib's /get
+    is exact-match, so we try a couple of cleaned-up variants and finally
+    fall back to the fuzzy /search endpoint. Returns {synced, plain} dict
+    or None."""
     if not (artist and track):
         return None
-    params = {"artist_name": artist, "track_name": track}
-    if album:
-        params["album_name"] = album
-    if duration:
-        params["duration"] = int(duration)
-    r = _http_get(f"{LRC_BASE}/get", params=params)
+
+    def _try_get(t, a=None):
+        params = {"artist_name": artist, "track_name": t}
+        if a:
+            params["album_name"] = a
+        if duration:
+            params["duration"] = int(duration)
+        r = _http_get(f"{LRC_BASE}/get", params=params)
+        if not r:
+            return None
+        d = r.json() or {}
+        if d.get("syncedLyrics") or d.get("plainLyrics"):
+            return {
+                "synced": (d.get("syncedLyrics") or "").strip(),
+                "plain":  (d.get("plainLyrics")  or "").strip(),
+            }
+        return None
+
+    # 1) exact match as-is
+    result = _try_get(track, album)
+    if result:
+        return result
+
+    # 2) strip parenthesized / "- Remastered" / "feat" tails, retry
+    cleaned = _PARENS_RE.sub("", track)
+    cleaned = _DASH_TAIL_RE.sub("", cleaned)
+    cleaned = _FEAT_RE.sub("", cleaned).strip()
+    if cleaned and cleaned.lower() != track.lower():
+        result = _try_get(cleaned, album)
+        if result:
+            return result
+
+    # 3) fuzzy /search fallback - returns a ranked list, pick top hit that
+    # has actual lyrics
+    r = _http_get(f"{LRC_BASE}/search", params={
+        "artist_name": artist,
+        "track_name":  cleaned or track,
+    })
     if not r:
         return None
-    data = r.json() or {}
-    synced = data.get("syncedLyrics") or ""
-    plain  = data.get("plainLyrics")  or ""
-    if not (synced or plain):
+    try:
+        items = r.json() or []
+    except Exception:
         return None
-    return {"synced": synced.strip(), "plain": plain.strip()}
+    for it in items[:5]:
+        if it.get("syncedLyrics") or it.get("plainLyrics"):
+            return {
+                "synced": (it.get("syncedLyrics") or "").strip(),
+                "plain":  (it.get("plainLyrics")  or "").strip(),
+            }
+    return None
 
 
 # ── Multi-disc folder detection ──────────────────────────────────────────────

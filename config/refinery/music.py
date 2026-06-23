@@ -42,6 +42,13 @@ LASTFM_API_KEY = os.environ.get("LASTFM_API_KEY", "")
 
 USER_AGENT = "ishimura-refinery/1.0 (https://refinery.ishimura.lol)"
 
+# Title-cleaning regexes - shared by lrclib_get fallback chain, ROM tag
+# stripping, etc.
+_PARENS_RE    = re.compile(r"\s*[\(\[][^\)\]]*[\)\]]")
+_DASH_TAIL_RE = re.compile(r"\s+-\s+.*$")
+_FEAT_RE      = re.compile(r"\s+(feat\.?|ft\.?|featuring|with)\s+.*$",
+                            re.IGNORECASE)
+
 
 def _http_get(url, params=None, headers=None, timeout=15):
     h = {"User-Agent": USER_AGENT}

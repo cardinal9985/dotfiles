@@ -18,6 +18,21 @@ MB_ARTIST_CACHE = os.environ.get("REFINERY_MB_ARTIST_CACHE",
                                  "/persist/refinery/mb_artists")
 
 
+def _norm(s):
+    """Light normalization for fuzzy album-title comparison: lowercase,
+    strip diacritics and punctuation, collapse whitespace."""
+    if not s:
+        return ""
+    import unicodedata
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = s.lower()
+    s = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", s)   # drop (Live), [Remaster]
+    s = re.sub(r"[^a-z0-9 ]+", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
 def _nd():
     return sqlite3.connect(f"file:{NAVIDROME_DB}?mode=ro", uri=True)
 
@@ -137,7 +152,7 @@ def discography(artist_name):
 def missing_albums(artist_name):
     """Release groups in MB discography that aren't in the local library
     (fuzzy match on normalized title)."""
-    owned_titles = {music._norm(a["title"]) for a in albums_for(artist_name)}
+    owned_titles = {_norm(a["title"]) for a in albums_for(artist_name)}
     out = []
     for rg in discography(artist_name):
         # Skip live/compilation/soundtrack secondary types - usually noisy
@@ -145,6 +160,6 @@ def missing_albums(artist_name):
                      "Interview", "Spokenword"}
                for t in (rg.get("secondary_types") or [])):
             continue
-        if music._norm(rg["title"]) not in owned_titles:
+        if _norm(rg["title"]) not in owned_titles:
             out.append(rg)
     return sorted(out, key=lambda x: x.get("first_release_date") or "")

@@ -9,13 +9,14 @@ let
     requests
     mutagen
     numpy
+    ebooklib
   ]);
 
   app = pkgs.runCommand "ishimura-refinery" {} ''
     mkdir -p $out
-    cp -r ${src}/app.py ${src}/db.py ${src}/genres.py ${src}/library.py \
-          ${src}/music.py ${src}/quality.py ${src}/scanner.py \
-          ${src}/templates $out/
+    cp -r ${src}/app.py ${src}/book.py ${src}/db.py ${src}/genres.py \
+          ${src}/library.py ${src}/music.py ${src}/quality.py \
+          ${src}/scanner.py ${src}/templates $out/
   '';
 in
 {
@@ -25,6 +26,7 @@ in
     "d /persist/refinery/spectrograms 0750 refinery refinery -"
     "d /persist/refinery/artists      0750 refinery refinery -"
     "d /persist/refinery/mb_artists   0750 refinery refinery -"
+    "d /persist/refinery/book_covers  0750 refinery refinery -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -59,6 +61,8 @@ in
       NAVIDROME_DB=/var/lib/navidrome/navidrome.db
       REFINERY_DOWNLOADS=/mnt/storage/downloads/slskd/complete
       REFINERY_MUSIC_TARGET=/mnt/storage/media/music
+      REFINERY_BOOK_TARGET=/mnt/storage/media/books
+      REFINERY_BOOK_COVER_DIR=/persist/refinery/book_covers
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
       NTFY_URL=http://normandy:8080
       NTFY_TOPIC=ishimura-refinery
@@ -87,7 +91,8 @@ in
     # The -d default ACL makes any new subfolder slskd creates inherit the
     # grant, so newly-downloaded albums are writable without re-running this.
     script = ''
-      for dir in /mnt/storage/media/music /mnt/storage/downloads/slskd; do
+      for dir in /mnt/storage/media/music /mnt/storage/media/books \
+                 /mnt/storage/downloads/slskd; do
         if [ -d "$dir" ]; then
           ${pkgs.acl}/bin/setfacl -R -m u:refinery:rwx "$dir" || true
           ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx "$dir" || true
@@ -106,11 +111,12 @@ in
       User             = "refinery";
       Group            = "refinery";
       EnvironmentFile  = config.sops.templates."refinery.env".path;
-      # flac + ffmpeg + sox + rsgain are called as subprocesses by
-      # quality.py and music.py for integrity verification, spectral
-      # analysis, spectrogram rendering, and cross-album ReplayGain.
+      # External CLI subprocesses:
+      #   flac/ffmpeg/sox/rsgain - music quality + spectrogram + replaygain
+      #   calibre                - book format conversion (MOBI/AZW -> EPUB)
+      #                            and cover/metadata embedding
       Environment      = [
-        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin"
+        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin:${pkgs.calibre}/bin"
       ];
       ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
       WorkingDirectory = app;

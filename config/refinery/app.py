@@ -11,6 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from flask import (Flask, render_template, request, redirect, url_for, abort,
                    send_file)
 
+import book
 import db
 import genres
 import library
@@ -65,6 +66,8 @@ db.init_db()
 
 MUSIC_TARGET = os.environ.get("REFINERY_MUSIC_TARGET",
                               "/mnt/storage/media/music")
+BOOK_TARGET  = os.environ.get("REFINERY_BOOK_TARGET",
+                              "/mnt/storage/media/books")
 
 
 # Reset any items left in 'processing' state from a previous crash so they
@@ -133,13 +136,21 @@ def edit(item_id):
             (item_id,)
         ).fetchall()
     meta = json.loads(item["meta_json"] or "{}")
-    # Conflict check: is there already a folder where we'd write this?
     conflict = None
     if item["media_type"] == "music":
         target = music.library_path_for(MUSIC_TARGET, item["artist"],
                                         item["year"], item["title"])
         if target.exists():
             conflict = str(target)
+        return render_template("edit.html", user=user, item=item, tracks=tracks,
+                               meta=meta, genres=genres.ALL, conflict=conflict)
+    if item["media_type"] == "book":
+        target = book.library_path_for(BOOK_TARGET, item["artist"],
+                                       item["title"], item["year"])
+        if target.exists():
+            conflict = str(target)
+        return render_template("edit_book.html", user=user, item=item,
+                               meta=meta, genres=genres.ALL, conflict=conflict)
     return render_template("edit.html", user=user, item=item, tracks=tracks,
                            meta=meta, genres=genres.ALL, conflict=conflict)
 
@@ -181,11 +192,14 @@ def approve(item_id):
             conn.execute("UPDATE items SET cover_local=? WHERE id=?",
                          (cover_path, item_id))
 
-        # Update each track from form
-        tracks_rows = conn.execute(
-            "SELECT * FROM tracks WHERE item_id = ? ORDER BY disc_no, track_no",
-            (item_id,)
-        ).fetchall()
+        # Books are single-file items; no tracks table to update
+        if item_dict["media_type"] == "book":
+            tracks_rows = []
+        else:
+            tracks_rows = conn.execute(
+                "SELECT * FROM tracks WHERE item_id = ? ORDER BY disc_no, track_no",
+                (item_id,)
+            ).fetchall()
         tracks = []
         for t in tracks_rows:
             tid = t["id"]
@@ -229,18 +243,24 @@ def approve(item_id):
             )
 
     # Do the actual write + move outside the DB transaction
-    if item_dict["media_type"] == "music":
-        try:
+    try:
+        if item_dict["media_type"] == "music":
             dest = music.write_and_move(item_dict, tracks, MUSIC_TARGET)
-            log.info("Approved music album %d → %s", item_id, dest)
-        except Exception as e:
-            log.exception("approve write failed")
-            with db.get_db() as conn:
-                conn.execute(
-                    "UPDATE items SET status='failed', error=?, decided_at=datetime('now') WHERE id=?",
-                    (str(e)[:500], item_id),
-                )
-            return redirect(url_for("queue"))
+        elif item_dict["media_type"] == "book":
+            convert_pdf = request.form.get("convert_pdf") == "1"
+            dest = book.write_and_move(item_dict, BOOK_TARGET,
+                                       convert_pdf=convert_pdf)
+        else:
+            raise ValueError(f"unknown media_type {item_dict['media_type']}")
+        log.info("Approved %s %d → %s", item_dict["media_type"], item_id, dest)
+    except Exception as e:
+        log.exception("approve write failed")
+        with db.get_db() as conn:
+            conn.execute(
+                "UPDATE items SET status='failed', error=?, decided_at=datetime('now') WHERE id=?",
+                (str(e)[:500], item_id),
+            )
+        return redirect(url_for("queue"))
 
     with db.get_db() as conn:
         conn.execute(
@@ -392,7 +412,21 @@ def reprocess(item_id):
         conn.execute("DELETE FROM items WHERE id=?", (item_id,))
     if item["media_type"] == "music":
         music.process_album(item["source_path"])
+    elif item["media_type"] == "book":
+        book.process_book_file(item["source_path"])
     return redirect(url_for("queue"))
+
+
+@app.route("/item/<int:item_id>/cover.jpg")
+def item_cover(item_id):
+    if not _get_user():
+        return "unauthorized", 401
+    with db.get_db() as conn:
+        row = conn.execute("SELECT cover_local FROM items WHERE id=?",
+                           (item_id,)).fetchone()
+    if not row or not row["cover_local"] or not os.path.exists(row["cover_local"]):
+        abort(404)
+    return send_file(row["cover_local"])
 
 
 @app.route("/item/<int:item_id>/spectrogram.png")

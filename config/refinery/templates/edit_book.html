@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Review {{ item.title or item.id }}{% endblock %}
+{% block content %}
+{% if conflict %}
+<div class="box" style="border-color: var(--yellow);">
+  <div class="title" style="color: var(--bright-yellow);">&gt; ALREADY IN LIBRARY</div>
+  <div style="padding: 0.5rem 0; color: var(--white); font-size: 0.85rem;">
+    A folder already exists at <code style="color: var(--bright-yellow);">{{ conflict }}</code>.
+    Approving will move/overwrite files there.
+  </div>
+</div>
+{% endif %}
+<form method="POST" action="/item/{{ item.id }}/approve" enctype="multipart/form-data">
+<div class="box">
+  <div class="title">&gt; BOOK // {{ item.source_path }}</div>
+
+  <div style="display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem; align-items: start;">
+    <div>
+      {% if item.cover_local %}
+      <img src="/item/{{ item.id }}/cover.jpg" alt="cover"
+           style="width: 100%; aspect-ratio: 2/3; object-fit: cover; border: 1px solid var(--cyan);">
+      {% else %}
+      <div style="aspect-ratio: 2/3; border: 1px solid var(--cyan); display: flex; align-items: center; justify-content: center; color: var(--white);">[NO COVER]</div>
+      {% endif %}
+      <div style="margin-top: 0.5rem;">
+        <label style="font-size: 0.65rem;">REPLACE COVER</label>
+        <input type="file" name="cover_upload" accept="image/*" style="font-size: 0.7rem;">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+      <div style="grid-column: span 2;">
+        <label>TITLE</label>
+        <input type="text" name="title" value="{{ item.title or '' }}">
+      </div>
+      <div>
+        <label>AUTHOR</label>
+        <input type="text" name="artist" value="{{ item.artist or '' }}">
+      </div>
+      <div>
+        <label>YEAR</label>
+        <input type="number" name="year" value="{{ item.year or '' }}">
+      </div>
+      <div style="grid-column: span 2;">
+        <label>GENRE / SUBJECT</label>
+        <input type="text" name="genre" value="{{ item.genre or '' }}"
+               list="genres-list"
+               placeholder="Start typing - pick from list or type your own">
+        <datalist id="genres-list">
+          {% for g in genres %}<option value="{{ g }}">{% endfor %}
+        </datalist>
+      </div>
+      <div style="grid-column: span 2;">
+        <label>FORMAT &amp; SOURCES</label>
+        <div style="font-size: 0.75rem; color: var(--white);">
+          Format: <span style="color: var(--bright-cyan);">{{ meta.format|upper }}</span>
+          {% if meta.format in ['mobi', 'azw', 'azw3'] %}
+          <span class="badge ready" style="margin-left: 0.5rem;">WILL CONVERT TO EPUB ON APPROVE</span>
+          {% endif %}
+          <br>
+          {% if meta.openlibrary %}
+            OpenLibrary: <a href="https://openlibrary.org{{ meta.openlibrary.ol_key }}" target="_blank" rel="noopener">{{ meta.openlibrary.ol_key }}</a>
+            {% if meta.openlibrary.isbn %}<br>ISBN: {{ meta.openlibrary.isbn }}{% endif %}
+          {% else %}OpenLibrary: no match{% endif %}
+        </div>
+        {% if meta.format == 'pdf' %}
+        <div style="margin-top: 0.5rem;">
+          <label style="display: inline; font-size: 0.7rem;">
+            <input type="checkbox" name="convert_pdf" value="1">
+            CONVERT PDF TO EPUB (results vary - layouts may not translate well)
+          </label>
+        </div>
+        {% endif %}
+      </div>
+      {% if meta.embedded and meta.embedded.description %}
+      <div style="grid-column: span 2;">
+        <label>DESCRIPTION (FROM FILE)</label>
+        <div style="font-size: 0.75rem; color: var(--white); max-height: 6rem; overflow-y: auto; border: 1px solid var(--surface-light); padding: 0.4rem;">
+          {{ meta.embedded.description }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div style="display: flex; gap: 0.5rem;">
+  <button type="submit" class="btn">APPROVE &amp; MOVE TO LIBRARY</button>
+  <a class="btn ghost" href="/">CANCEL</a>
+</div>
+</form>
+
+<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+  <form method="POST" action="/item/{{ item.id }}/reprocess"
+        onsubmit="return confirm('Full re-process: re-read tags, re-query OpenLibrary, re-fetch cover.')">
+    <button type="submit" class="btn ghost">FULL RE-PROCESS</button>
+  </form>
+  <form method="POST" action="/item/{{ item.id }}/reject">
+    <button type="submit" class="btn danger" onclick="return confirm('Mark as rejected? File stays in inbox.')">REJECT</button>
+  </form>
+</div>
+{% endblock %}

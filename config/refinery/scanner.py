@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import db
+import book
 import music
 
 WORKERS = int(os.environ.get("REFINERY_WORKERS", "3"))
@@ -117,6 +118,8 @@ def _process_one(full):
             )
         if kind == "music":
             music.process_album(work)
+        elif kind == "book":
+            book.process_book(work)
         else:
             with db.get_db() as conn:
                 conn.execute(

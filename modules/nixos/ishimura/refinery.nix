@@ -14,9 +14,10 @@ let
 
   app = pkgs.runCommand "ishimura-refinery" {} ''
     mkdir -p $out
-    cp -r ${src}/app.py ${src}/book.py ${src}/db.py ${src}/downloader.py \
-          ${src}/genres.py ${src}/library.py ${src}/music.py \
-          ${src}/quality.py ${src}/scanner.py ${src}/templates $out/
+    cp -r ${src}/app.py ${src}/bandcamp.py ${src}/book.py ${src}/db.py \
+          ${src}/downloader.py ${src}/genres.py ${src}/library.py \
+          ${src}/music.py ${src}/quality.py ${src}/scanner.py \
+          ${src}/templates $out/
   '';
 in
 {

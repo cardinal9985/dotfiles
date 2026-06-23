@@ -1,6 +1,6 @@
-"""URL downloader using yt-dlp. Accepts bandcamp / youtube / soundcloud /
-anything yt-dlp supports, drops audio into the inbox so the scanner picks
-it up like any other download."""
+"""URL downloader. Bandcamp URLs go through our custom free-download client
+(bandcamp.py) to get real FLAC/MP3-320 zips; everything else falls back to
+yt-dlp, which on Bandcamp would just rip the 128k stream."""
 
 import logging
 import os
@@ -10,6 +10,8 @@ import time
 import uuid
 from pathlib import Path
 
+import bandcamp
+
 log = logging.getLogger("refinery.downloader")
 
 DOWNLOADS_DIR = os.environ.get("REFINERY_DOWNLOADS",
@@ -17,6 +19,20 @@ DOWNLOADS_DIR = os.environ.get("REFINERY_DOWNLOADS",
 
 
 def download(url):
+    """Pick the right downloader for the URL and run it. Returns a list of
+    inbox folder paths the scanner should pick up."""
+    if bandcamp.is_bandcamp(url):
+        try:
+            return bandcamp.download(url)
+        except Exception as e:
+            # Fall back to yt-dlp (128k stream) so the user still gets
+            # something; flag clearly in the log why we degraded.
+            log.warning("bandcamp free-download failed (%s); "
+                        "falling back to yt-dlp 128k stream", e)
+    return _yt_dlp_download(url)
+
+
+def _yt_dlp_download(url):
     """Run yt-dlp into a hidden temp folder, then promote each resulting
     album folder into the inbox root so the scanner sees it as a new entry.
     Returns the list of promoted folder paths."""

@@ -33,9 +33,10 @@
              placeholder="https://artist.bandcamp.com/album/... or https://youtube.com/playlist?list=...">
     </div>
     <div style="font-size: 0.7rem; color: var(--white);">
-      Output: MP3 at best available quality (Bandcamp streams = ~128k source,
-      YouTube re-encoded to 320k). Buy lossless from the artist if you want FLAC.
-      Runs in background; you'll get an ntfy ping when scanning starts.
+      Bandcamp: free / name-your-price releases get real FLAC (then MP3-320 fallback)
+      via the freeDownloadPage flow; paid releases will fail - buy + upload the zip.
+      Everything else (YouTube, SoundCloud, etc.): MP3 320 via yt-dlp.
+      Runs in background; ntfy ping when done.
     </div>
     <button type="submit" class="btn">DOWNLOAD</button>
   </form>

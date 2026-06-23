@@ -277,10 +277,27 @@ def approve(item_id):
     return redirect(url_for("queue"))
 
 
+def _bg_process(media_type, source_path):
+    """Process one item in a background thread so the HTTP response is
+    instant. The user watches progress via the IN PROGRESS section."""
+    try:
+        if media_type == "music":
+            music.process_album(source_path)
+        elif media_type == "book":
+            # Books: source_path is the actual file (one item per file)
+            if os.path.isfile(source_path):
+                book.process_book_file(source_path)
+            elif os.path.isdir(source_path):
+                book.process_book(source_path)
+    except Exception:
+        log.exception("bg processing failed for %s", source_path)
+
+
 @app.route("/_retry_failed", methods=["POST"])
 def retry_failed():
-    """Bulk re-run the music processor on every item in failed/rejected
-    state whose source folder still exists."""
+    """Bulk re-run the processor on every failed/rejected item whose source
+    still exists. Spawns a background thread per item so the response is
+    instant - items show up in IN PROGRESS as workers chew through them."""
     user = _get_user()
     if not user:
         return "unauthorized", 401
@@ -295,17 +312,17 @@ def retry_failed():
     skipped  = 0
     for r in rows:
         src = r["source_path"]
-        if not src or not os.path.isdir(src):
+        if not src or not (os.path.isdir(src) or os.path.isfile(src)):
             skipped += 1
             continue
         with db.get_db() as conn:
             conn.execute("DELETE FROM items WHERE id=?", (r["id"],))
-        if r["media_type"] == "music":
-            try:
-                music.process_album(src)
-                requeued += 1
-            except Exception:
-                log.exception("retry failed for %s", src)
+        threading.Thread(
+            target=_bg_process,
+            args=(r["media_type"], src),
+            daemon=True,
+        ).start()
+        requeued += 1
 
     notify("Refinery: retry failed",
            f"Re-queued {requeued}, skipped {skipped} (source gone)")
@@ -430,10 +447,11 @@ def reprocess(item_id):
         if not item:
             abort(404)
         conn.execute("DELETE FROM items WHERE id=?", (item_id,))
-    if item["media_type"] == "music":
-        music.process_album(item["source_path"])
-    elif item["media_type"] == "book":
-        book.process_book_file(item["source_path"])
+    threading.Thread(
+        target=_bg_process,
+        args=(item["media_type"], item["source_path"]),
+        daemon=True,
+    ).start()
     return redirect(url_for("queue"))
 
 
@@ -585,7 +603,9 @@ def library_reprocess():
     # Drop any prior queue row for this folder (re-process invalidates it)
     with db.get_db() as conn:
         conn.execute("DELETE FROM items WHERE source_path = ?", (folder,))
-    music.process_album(folder)
+    threading.Thread(
+        target=_bg_process, args=("music", folder), daemon=True,
+    ).start()
     return redirect(url_for("queue"))
 
 

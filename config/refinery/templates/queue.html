@@ -129,12 +129,16 @@
         </td>
         <td>{{ r.artist or '-' }}</td>
         <td>{{ r.decided_at or r.processed_at }}</td>
-        <td style="text-align:right">
+        <td style="text-align:right; white-space:nowrap;">
           {% if r.status in ('failed', 'rejected') %}
           <form method="POST" action="/item/{{ r.id }}/reprocess" style="display:inline">
             <button type="submit" class="btn ghost">RETRY</button>
           </form>
           {% endif %}
+          <form method="POST" action="/item/{{ r.id }}/forget" style="display:inline"
+                onsubmit="return confirm('Forget this entry? Only removes the row from refinery; files on disk are untouched.')">
+            <button type="submit" class="btn danger">×</button>
+          </form>
         </td>
       </tr>
       {% endfor %}

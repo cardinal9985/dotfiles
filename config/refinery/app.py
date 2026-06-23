@@ -405,6 +405,19 @@ def reanalyze(item_id):
     return redirect(url_for("edit", item_id=item_id))
 
 
+@app.route("/item/<int:item_id>/forget", methods=["POST"])
+def forget(item_id):
+    """Remove an item's row from the DB without touching files on disk.
+    Used to clean up the Recent Decisions list once a test/leftover entry
+    has been handled."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+    with db.get_db() as conn:
+        conn.execute("DELETE FROM items WHERE id=?", (item_id,))
+    return redirect(url_for("queue"))
+
+
 @app.route("/item/<int:item_id>/reprocess", methods=["POST"])
 def reprocess(item_id):
     """Re-run the processor for a failed/rejected item."""

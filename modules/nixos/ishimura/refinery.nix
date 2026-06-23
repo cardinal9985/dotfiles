@@ -125,8 +125,9 @@ in
       #   flac/ffmpeg/sox/rsgain - music quality + spectrogram + replaygain
       #   calibre                - book format conversion (MOBI/AZW -> EPUB)
       #                            and cover/metadata embedding
+      #   yt-dlp                 - URL downloader (bandcamp/youtube/etc) -> inbox
       Environment      = [
-        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin:${pkgs.calibre}/bin"
+        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin:${pkgs.calibre}/bin:${pkgs.yt-dlp}/bin"
       ];
       ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
       WorkingDirectory = app;

@@ -23,6 +23,24 @@
   </form>
 </details>
 
+<details style="margin-bottom: 0.75rem;">
+  <summary style="cursor: pointer; color: var(--bright-cyan); font-size: 0.8rem; padding: 0.5rem; border: 1px dashed var(--cyan);">+ DOWNLOAD FROM URL (BANDCAMP / YOUTUBE / SOUNDCLOUD / yt-dlp)</summary>
+  <form method="POST" action="/_download"
+        style="padding: 0.75rem; border: 1px solid var(--cyan); border-top: none; display: flex; flex-direction: column; gap: 0.5rem;">
+    <div>
+      <label>URL (ALBUM, PLAYLIST, OR SINGLE TRACK)</label>
+      <input type="url" name="url" required
+             placeholder="https://artist.bandcamp.com/album/... or https://youtube.com/playlist?list=...">
+    </div>
+    <div style="font-size: 0.7rem; color: var(--white);">
+      Output: MP3 at best available quality (Bandcamp streams = ~128k source,
+      YouTube re-encoded to 320k). Buy lossless from the artist if you want FLAC.
+      Runs in background; you'll get an ntfy ping when scanning starts.
+    </div>
+    <button type="submit" class="btn">DOWNLOAD</button>
+  </form>
+</details>
+
 {% if processing %}
 <div class="box" style="border-color: var(--yellow);">
   <div class="title" style="color: var(--bright-yellow);">

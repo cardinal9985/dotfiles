@@ -14,6 +14,7 @@ from flask import (Flask, render_template, request, redirect, url_for, abort,
 
 import book
 import db
+import downloader
 import genres
 import library
 import music
@@ -635,6 +636,37 @@ def library_reprocess():
     threading.Thread(
         target=_bg_process, args=("music", folder), daemon=True,
     ).start()
+    return redirect(url_for("queue"))
+
+
+@app.route("/_download", methods=["POST"])
+def download_url():
+    """Pull a URL (bandcamp/youtube/soundcloud/etc) via yt-dlp into the
+    inbox. Audio always lands as MP3 at the best quality the source offers.
+    Runs in the background so the user gets the queue page back immediately."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+    url = (request.form.get("url") or "").strip()
+    if not url:
+        return redirect(url_for("queue"))
+
+    def _run():
+        try:
+            promoted = downloader.download(url)
+            if promoted:
+                notify("Refinery: download done",
+                       f"{len(promoted)} folder(s) from {url} - scanning")
+                # Kick a scan so the new folders get classified right away
+                scanner.scan_once(force=True)
+            else:
+                notify("Refinery: download empty", url)
+        except Exception as e:
+            log.exception("download failed: %s", url)
+            notify("Refinery: download FAILED", f"{url}\n{e}")
+
+    threading.Thread(target=_run, daemon=True,
+                     name="refinery-downloader").start()
     return redirect(url_for("queue"))
 
 

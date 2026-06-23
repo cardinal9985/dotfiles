@@ -102,20 +102,29 @@ def generate_spectrogram(audio_path, output_path,
                          width=1500, height=800):
     """Render a frequency-vs-time spectrogram PNG via sox. This is the same
     type of image people post on Soulseek to prove a file is real lossless.
-    Returns True on success."""
+    Returns True on success.
+
+    Trims to the first 5 minutes so high-res FLAC (24/96, long tracks) doesn't
+    blow past the subprocess timeout - the cutoff pattern is stable across a
+    track, so a 5-minute window shows the same thing as the whole file."""
     if not _have("sox"):
         return False
     try:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         r = subprocess.run([
             "sox", audio_path, "-n",
+            "trim", "0", "300",
             "spectrogram",
             "-o", output_path,
             "-x", str(width),
             "-y", str(height),
             "-c", os.path.basename(audio_path)[:60],
-        ], capture_output=True, timeout=120)
-        return r.returncode == 0 and os.path.exists(output_path)
+        ], capture_output=True, timeout=300)
+        if r.returncode != 0:
+            log.warning("sox spectrogram failed %s: %s",
+                        audio_path, (r.stderr or b"")[-400:])
+            return False
+        return os.path.exists(output_path)
     except Exception as e:
         log.warning("spectrogram failed %s: %s", audio_path, e)
         return False

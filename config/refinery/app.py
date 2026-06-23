@@ -520,6 +520,72 @@ def library_index():
     return render_template("library.html", user=user, artists=artists)
 
 
+@app.route("/library/fix-missing-art", methods=["POST"])
+def library_fix_missing_art():
+    """One-shot: for every approved music item missing a spectrogram or
+    cover, find the files in the music library (source_path stays pointing
+    at the long-deleted download folder), regenerate the spectrogram with
+    the new sox-trim defaults, and extract embedded cover art when none was
+    found on first pass."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+
+    def _run():
+        import hashlib, quality
+        with db.get_db() as conn:
+            rows = conn.execute(
+                """SELECT id, artist, year, title, cover_local,
+                          spectrogram_local
+                   FROM items
+                   WHERE media_type='music' AND status='approved'
+                     AND (spectrogram_local IS NULL OR spectrogram_local=''
+                          OR cover_local IS NULL OR cover_local='')"""
+            ).fetchall()
+        log.info("fix-missing-art: %d candidate item(s)", len(rows))
+        for r in rows:
+            dest = music.library_path_for(MUSIC_TARGET, r["artist"],
+                                          r["year"], r["title"])
+            if not dest.exists():
+                log.warning("fix-missing-art: %s not on disk, skipping", dest)
+                continue
+            audio_files = sorted(
+                str(p) for p in dest.rglob("*")
+                if p.is_file() and p.suffix.lower() in music.MUSIC_EXTS
+            )
+            if not audio_files:
+                continue
+
+            updates = {}
+
+            if not r["spectrogram_local"]:
+                # Pick the longest by file size (approximation - avoids
+                # parsing each file just to get duration).
+                longest = max(audio_files, key=os.path.getsize)
+                key  = hashlib.sha1(str(dest).encode()).hexdigest()[:16]
+                spec = os.path.join(music.SPECTROGRAM_DIR, f"{key}.png")
+                if quality.generate_spectrogram(longest, spec):
+                    updates["spectrogram_local"] = spec
+
+            if not r["cover_local"]:
+                cover = music.extract_embedded_cover(
+                    audio_files, music.COVER_DIR)
+                if cover:
+                    updates["cover_local"] = cover
+
+            if updates:
+                cols = ", ".join(f"{k}=?" for k in updates)
+                with db.get_db() as conn:
+                    conn.execute(f"UPDATE items SET {cols} WHERE id=?",
+                                 (*updates.values(), r["id"]))
+                log.info("fix-missing-art: id=%d %s", r["id"],
+                         ", ".join(updates))
+
+    threading.Thread(target=_run, daemon=True,
+                     name="refinery-fixart").start()
+    return redirect(url_for("library_index"))
+
+
 @app.route("/library/radar")
 def library_radar():
     user = _get_user()

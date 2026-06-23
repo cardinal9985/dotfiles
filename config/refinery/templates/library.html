@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Library{% endblock %}
 {% block content %}
-<div style="margin-bottom: 0.75rem;">
+<div style="margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
   <a class="btn" href="/library/radar">&gt;&gt; RELEASE RADAR</a>
-  <span style="color: var(--white); font-size: 0.7rem; margin-left: 0.5rem;">
-    Cross-artist feed of new + upcoming releases you don't own yet.
+  <form method="POST" action="/library/fix-missing-art" style="display:inline"
+        onsubmit="return confirm('Walk every approved album, regenerate spectrograms + extract embedded covers wherever they are missing. Runs in background.')">
+    <button type="submit" class="btn ghost">FIX MISSING ART (bg)</button>
+  </form>
+  <span style="color: var(--white); font-size: 0.7rem;">
+    Radar: cross-artist feed of new + upcoming releases.
+    Fix Art: regenerate spectrograms + covers where missing.
   </span>
 </div>
 

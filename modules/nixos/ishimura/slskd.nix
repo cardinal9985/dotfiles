@@ -5,11 +5,12 @@ let
 in
 {
   systemd.tmpfiles.rules = [
-    "z /persist/slskd                       0755 maxwell users -"
-    "d /persist/slskd/app                   0755 maxwell users -"
-    "d /mnt/storage/downloads               0755 maxwell users -"
-    "d /mnt/storage/downloads/complete      0755 maxwell users -"
-    "d /mnt/storage/downloads/incomplete    0755 maxwell users -"
+    "z /persist/slskd                          0755 maxwell users -"
+    "d /persist/slskd/app                      0755 maxwell users -"
+    "d /mnt/storage/downloads                  0755 maxwell users -"
+    "d /mnt/storage/downloads/slskd            0755 maxwell users -"
+    "d /mnt/storage/downloads/slskd/complete   0755 maxwell users -"
+    "d /mnt/storage/downloads/slskd/incomplete 0755 maxwell users -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -50,8 +51,8 @@ in
       SLSKD_SLSK_DESCRIPTION = "Ishimura";
       SLSKD_SLSK_LISTEN_PORT = "50300";
       SLSKD_SHARED_DIR = "/music";
-      SLSKD_DOWNLOADS_DIR = "/downloads/complete";
-      SLSKD_INCOMPLETE_DIR = "/downloads/incomplete";
+      SLSKD_DOWNLOADS_DIR = "/downloads/slskd/complete";
+      SLSKD_INCOMPLETE_DIR = "/downloads/slskd/incomplete";
     };
     volumes = [
       "/persist/slskd/app:/app"

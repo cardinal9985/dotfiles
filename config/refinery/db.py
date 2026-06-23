@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS tracks (
     disc_no       INTEGER DEFAULT 1,
     title         TEXT,
     duration_secs INTEGER,
+    lyrics_synced TEXT,
+    lyrics_plain  TEXT,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
 );
 
@@ -56,3 +58,9 @@ def get_db():
 def init_db():
     with get_db() as conn:
         conn.executescript(SCHEMA)
+        # Lightweight migrations for columns added after first deploy.
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(tracks)").fetchall()}
+        if "lyrics_synced" not in cols:
+            conn.execute("ALTER TABLE tracks ADD COLUMN lyrics_synced TEXT")
+        if "lyrics_plain" not in cols:
+            conn.execute("ALTER TABLE tracks ADD COLUMN lyrics_plain TEXT")

@@ -46,7 +46,7 @@
 <div class="box">
   <div class="title">&gt; TRACKS ({{ tracks|length }})</div>
   <table>
-    <thead><tr><th style="width:60px">DISC</th><th style="width:60px">#</th><th>TITLE</th><th style="width:80px">DUR</th></tr></thead>
+    <thead><tr><th style="width:60px">DISC</th><th style="width:60px">#</th><th>TITLE</th><th style="width:80px">DUR</th><th style="width:90px">LYRICS</th><th style="width:260px">PREVIEW</th></tr></thead>
     <tbody>
       {% for t in tracks %}
       <tr>
@@ -54,6 +54,16 @@
         <td><input type="number" name="track_no_{{ t.id }}" value="{{ t.track_no or '' }}"></td>
         <td><input type="text" name="track_title_{{ t.id }}" value="{{ t.title or '' }}"></td>
         <td>{% if t.duration_secs %}{{ '%d:%02d'|format(t.duration_secs // 60, t.duration_secs % 60) }}{% endif %}</td>
+        <td>
+          {% if t.lyrics_synced %}<span class="badge approved">SYNCED</span>
+          {% elif t.lyrics_plain %}<span class="badge ready">PLAIN</span>
+          {% else %}<span class="badge rejected">NONE</span>{% endif %}
+        </td>
+        <td>
+          <audio controls preload="none" style="width: 100%; height: 28px;">
+            <source src="/track/{{ t.id }}/audio" type="audio/{{ t.source_path.split('.')[-1] }}">
+          </audio>
+        </td>
       </tr>
       {% endfor %}
     </tbody>

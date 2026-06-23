@@ -36,6 +36,17 @@ in
   };
   users.groups.refinery = {};
 
+  sops.templates."refinery.env" = {
+    owner   = "refinery";
+    content = ''
+      REFINERY_DB_PATH=/persist/refinery/refinery.db
+      REFINERY_COVER_DIR=/persist/refinery/covers
+      REFINERY_DOWNLOADS=/mnt/storage/downloads/slskd/complete
+      REFINERY_MUSIC_TARGET=/mnt/storage/media/music
+      LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
+    '';
+  };
+
   systemd.services.ishimura-refinery = {
     description = "USG Refinery - media intake, tagging, approval, and library import";
     after       = [ "network-online.target" ];
@@ -45,12 +56,7 @@ in
       Type             = "simple";
       User             = "refinery";
       Group            = "refinery";
-      Environment      = [
-        "REFINERY_DB_PATH=/persist/refinery/refinery.db"
-        "REFINERY_COVER_DIR=/persist/refinery/covers"
-        "REFINERY_DOWNLOADS=/mnt/storage/downloads"
-        "REFINERY_MUSIC_TARGET=/mnt/storage/media/music"
-      ];
+      EnvironmentFile  = config.sops.templates."refinery.env".path;
       ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
       WorkingDirectory = app;
       Restart          = "on-failure";

@@ -22,9 +22,14 @@ MUSIC_EXTS = {".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wma", ".wav",
 
 COVER_DIR = os.environ.get("REFINERY_COVER_DIR", "/persist/refinery/covers")
 
-MB_BASE = "https://musicbrainz.org/ws/2"
+MB_BASE  = "https://musicbrainz.org/ws/2"
 CAA_BASE = "https://coverartarchive.org"
-BC_BASE = "https://bandcamp.com"
+BC_BASE  = "https://bandcamp.com"
+LB_BASE  = "https://api.listenbrainz.org/1"
+LFM_BASE = "https://ws.audioscrobbler.com/2.0/"
+LRC_BASE = "https://lrclib.net/api"
+
+LASTFM_API_KEY = os.environ.get("LASTFM_API_KEY", "")
 
 USER_AGENT = "ishimura-refinery/1.0 (https://refinery.ishimura.lol)"
 
@@ -112,9 +117,14 @@ def read_existing_metadata(folder):
         except Exception:
             tn = None
         try:
-            dn = int(re.sub(r"[^\d].*", "", disc_no)) if disc_no else 1
+            dn = int(re.sub(r"[^\d].*", "", disc_no)) if disc_no else None
         except Exception:
-            dn = 1
+            dn = None
+
+        # Fall back to "CD 1" / "Disc 02" style subfolders when the file
+        # itself has no disc tag.
+        if not dn:
+            dn = _disc_from_path(path, folder) or 1
 
         tracks.append({
             "source_path": str(path),
@@ -268,6 +278,106 @@ def _bc_duration_to_secs(iso):
     return int((int(h or 0) * 3600 + int(mi or 0) * 60 + float(s or 0)))
 
 
+# ── Last.fm cross-check ──────────────────────────────────────────────────────
+
+def lastfm_album_info(artist, album):
+    """Last.fm album.getInfo - useful for tags + release year + cover."""
+    if not (LASTFM_API_KEY and artist and album):
+        return None
+    r = _http_get(LFM_BASE, params={
+        "method":   "album.getinfo",
+        "artist":   artist,
+        "album":    album,
+        "api_key":  LASTFM_API_KEY,
+        "format":   "json",
+        "autocorrect": "1",
+    })
+    if not r:
+        return None
+    a = (r.json() or {}).get("album") or {}
+    tags = [t.get("name") for t in
+            ((a.get("tags") or {}).get("tag") or []) if t.get("name")]
+    # Last.fm images list - pick the largest
+    imgs = a.get("image") or []
+    cover = ""
+    for img in reversed(imgs):  # largest is last
+        if img.get("#text"):
+            cover = img["#text"]
+            break
+    return {
+        "artist":    a.get("artist"),
+        "title":     a.get("name"),
+        "url":       a.get("url"),
+        "mbid":      a.get("mbid"),
+        "tags":      tags,
+        "cover_url": cover or None,
+    }
+
+
+# ── ListenBrainz cross-check ─────────────────────────────────────────────────
+
+def listenbrainz_release_lookup(mb_release_id):
+    """ListenBrainz release group lookup by MB id. Provides tags via the
+    release-group entity. Anonymous - no token needed."""
+    if not mb_release_id:
+        return None
+    r = _http_get(f"{LB_BASE}/metadata/release/{mb_release_id}",
+                  params={"inc": "tags"})
+    if not r:
+        return None
+    data = r.json() or {}
+    tags = []
+    for t in (data.get("tag") or {}).get("release", []) or []:
+        if t.get("tag"):
+            tags.append(t["tag"])
+    return {"tags": tags}
+
+
+# ── Lyrics (LRCLib) ──────────────────────────────────────────────────────────
+
+def lrclib_get(artist, track, album=None, duration=None):
+    """Fetch synced + plain lyrics from LRCLib for one track. Returns
+    {synced, plain} dict or None."""
+    if not (artist and track):
+        return None
+    params = {"artist_name": artist, "track_name": track}
+    if album:
+        params["album_name"] = album
+    if duration:
+        params["duration"] = int(duration)
+    r = _http_get(f"{LRC_BASE}/get", params=params)
+    if not r:
+        return None
+    data = r.json() or {}
+    synced = data.get("syncedLyrics") or ""
+    plain  = data.get("plainLyrics")  or ""
+    if not (synced or plain):
+        return None
+    return {"synced": synced.strip(), "plain": plain.strip()}
+
+
+# ── Multi-disc folder detection ──────────────────────────────────────────────
+
+_DISC_FOLDER_RE = re.compile(
+    r"^\s*(?:cd|disc|disk)\s*0*(\d+)\b",
+    re.IGNORECASE,
+)
+
+
+def _disc_from_path(audio_path, album_root):
+    """If the file lives inside a 'CD 1' / 'Disc 02' / etc. subfolder of the
+    album root, return that disc number. Otherwise None."""
+    rel = Path(audio_path).relative_to(album_root)
+    for part in rel.parts[:-1]:
+        m = _DISC_FOLDER_RE.match(part)
+        if m:
+            try:
+                return int(m.group(1))
+            except ValueError:
+                pass
+    return None
+
+
 # ── Cover art download ───────────────────────────────────────────────────────
 
 def download_cover(url, dest_dir):
@@ -308,19 +418,26 @@ def process_album(folder):
     year   = existing.get("year")
 
     # Cross-source lookups
-    mb = lookup_musicbrainz(artist, album)
+    mb     = lookup_musicbrainz(artist, album)
     bc_url = existing.get("bandcamp_url") or bandcamp_search(artist, album)
-    bc = bandcamp_album(bc_url) if bc_url else None
+    bc     = bandcamp_album(bc_url) if bc_url else None
+    lfm    = lastfm_album_info(artist, album)
+    lb     = listenbrainz_release_lookup(mb["mb_release_id"]) if mb else None
 
     # Merge with preference rules
-    final_year   = (mb and mb.get("year")) or (bc and bc.get("year")) or year
-    cover_url    = (bc and bc.get("cover_url")) or (
-                    mb and cover_art_archive_url(mb["mb_release_id"]))
+    final_year = (mb and mb.get("year")) or (bc and bc.get("year")) or year
+    # Cover: Bandcamp (1500px) > Cover Art Archive > Last.fm (variable)
+    cover_url = (
+        (bc and bc.get("cover_url")) or
+        (mb and cover_art_archive_url(mb["mb_release_id"])) or
+        (lfm and lfm.get("cover_url"))
+    )
 
     # Aggregate genre tags from all sources, normalize to one bucket
     genre_pool = list(existing.get("genre_tags") or [])
-    if bc and bc.get("tags"):
-        genre_pool.extend(bc["tags"])
+    if bc  and bc.get("tags"):  genre_pool.extend(bc["tags"])
+    if lfm and lfm.get("tags"): genre_pool.extend(lfm["tags"])
+    if lb  and lb.get("tags"):  genre_pool.extend(lb["tags"])
     genre = genres.normalize(genre_pool)
 
     # Per-track titles: prefer MusicBrainz/Bandcamp ordered list if available,
@@ -337,11 +454,21 @@ def process_album(folder):
 
     cover_local = download_cover(cover_url, COVER_DIR) if cover_url else None
 
+    # Fetch lyrics per track (LRCLib is per-track, not per-album)
+    for t in tracks:
+        title = t.get("title_suggestion") or t.get("title")
+        lyr = lrclib_get(artist, title, album, t.get("duration_secs"))
+        if lyr:
+            t["lyrics_synced"] = lyr.get("synced") or ""
+            t["lyrics_plain"]  = lyr.get("plain")  or ""
+
     meta = {
         "embedded":     existing,
         "musicbrainz":  mb,
         "bandcamp":     bc,
         "bandcamp_url": bc_url,
+        "lastfm":       lfm,
+        "listenbrainz": lb,
     }
 
     with db.get_db() as conn:
@@ -360,12 +487,14 @@ def process_album(folder):
         for t in tracks:
             conn.execute(
                 """INSERT INTO tracks
-                     (item_id, source_path, track_no, disc_no, title, duration_secs)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                     (item_id, source_path, track_no, disc_no, title,
+                      duration_secs, lyrics_synced, lyrics_plain)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (item_id, t["source_path"], t.get("track_no"),
                  t.get("disc_no") or 1,
                  t.get("title_suggestion") or t.get("title"),
-                 t.get("duration_secs")),
+                 t.get("duration_secs"),
+                 t.get("lyrics_synced"), t.get("lyrics_plain")),
             )
 
     log.info("Staged music album id=%d: %s - %s", item_id, artist, album)
@@ -402,6 +531,11 @@ def write_and_move(item, tracks, target_root):
         except Exception as e:
             log.warning("copy cover failed: %s", e)
 
+    # Multi-disc detection: if any track has disc_no > 1, prefix track filename
+    # with the disc number (D-NN, e.g. "1-01 - Track.flac").
+    max_disc = max((int(t.get("disc_no") or 1) for t in tracks), default=1)
+    multi_disc = max_disc > 1
+
     for t in tracks:
         src = Path(t["source_path"])
         if not src.exists():
@@ -426,17 +560,31 @@ def write_and_move(item, tracks, target_root):
                     audio.tags["tracknumber"] = str(t["track_no"])
                 if t.get("disc_no"):
                     audio.tags["discnumber"] = str(t["disc_no"])
+                # Embed plain lyrics in standard tag (synced go in .lrc next door)
+                if t.get("lyrics_plain"):
+                    audio.tags["lyrics"] = t["lyrics_plain"]
                 audio.save()
         except Exception as e:
             log.warning("tag write failed %s: %s", src, e)
 
         # Build target filename
         tn = "{:02d}".format(t["track_no"]) if t.get("track_no") else "00"
+        if multi_disc:
+            tn = "{}-{}".format(t.get("disc_no") or 1, tn)
         title = _safe_path(t["title"] or src.stem)
         dest = dest_album / f"{tn} - {title}{src.suffix.lower()}"
         try:
             src.replace(dest)
         except Exception as e:
             log.error("move failed %s -> %s: %s", src, dest, e)
+            continue
+
+        # Write synced lyrics (.lrc) alongside the audio file
+        if t.get("lyrics_synced"):
+            lrc_dest = dest.with_suffix(".lrc")
+            try:
+                lrc_dest.write_text(t["lyrics_synced"], encoding="utf-8")
+            except Exception as e:
+                log.warning("lrc write failed %s: %s", lrc_dest, e)
 
     return str(dest_album)

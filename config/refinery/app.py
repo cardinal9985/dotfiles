@@ -4,7 +4,8 @@ import os
 from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import (Flask, render_template, request, redirect, url_for, abort)
+from flask import (Flask, render_template, request, redirect, url_for, abort,
+                   send_file)
 
 import db
 import genres
@@ -173,6 +174,21 @@ def reprocess(item_id):
     if item["media_type"] == "music":
         music.process_album(item["source_path"])
     return redirect(url_for("queue"))
+
+
+@app.route("/track/<int:track_id>/audio")
+def track_audio(track_id):
+    """Stream the source audio file for in-browser preview during approval.
+    The path comes from the DB so we can't be tricked into serving arbitrary
+    files. Range requests are handled by Flask's send_file."""
+    if not _get_user():
+        return "unauthorized", 401
+    with db.get_db() as conn:
+        row = conn.execute("SELECT source_path FROM tracks WHERE id=?",
+                           (track_id,)).fetchone()
+    if not row or not os.path.exists(row["source_path"]):
+        abort(404)
+    return send_file(row["source_path"], conditional=True)
 
 
 @app.route("/_scan", methods=["POST"])

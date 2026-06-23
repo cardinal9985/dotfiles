@@ -21,8 +21,9 @@ log = logging.getLogger("refinery.music")
 MUSIC_EXTS = {".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wma", ".wav",
               ".alac", ".aiff", ".aif"}
 
-COVER_DIR       = os.environ.get("REFINERY_COVER_DIR",       "/persist/refinery/covers")
-SPECTROGRAM_DIR = os.environ.get("REFINERY_SPECTROGRAM_DIR", "/persist/refinery/spectrograms")
+COVER_DIR        = os.environ.get("REFINERY_COVER_DIR",        "/persist/refinery/covers")
+SPECTROGRAM_DIR  = os.environ.get("REFINERY_SPECTROGRAM_DIR",  "/persist/refinery/spectrograms")
+ARTIST_PHOTO_DIR = os.environ.get("REFINERY_ARTIST_PHOTO_DIR", "/persist/refinery/artists")
 
 MB_BASE  = "https://musicbrainz.org/ws/2"
 CAA_BASE = "https://coverartarchive.org"
@@ -404,6 +405,43 @@ def download_cover(url, dest_dir):
         return None
 
 
+# ── Artist photo (Deezer) ────────────────────────────────────────────────────
+
+def fetch_artist_photo(artist):
+    """Download highest-resolution artist photo from Deezer (free, no auth).
+    Cached on disk so repeated albums by the same artist reuse the file."""
+    if not artist:
+        return None
+    slug = re.sub(r"[^\w]+", "_", artist.lower()).strip("_")[:80] or "unknown"
+    dest = os.path.join(ARTIST_PHOTO_DIR, f"{slug}.jpg")
+    if os.path.exists(dest) and os.path.getsize(dest) > 0:
+        return dest
+    try:
+        r = http.get("https://api.deezer.com/search/artist",
+                     params={"q": artist, "limit": 1},
+                     headers={"User-Agent": USER_AGENT}, timeout=10)
+        r.raise_for_status()
+        results = (r.json() or {}).get("data") or []
+        if not results:
+            return None
+        img_url = (results[0].get("picture_xl")
+                   or results[0].get("picture_big")
+                   or results[0].get("picture_medium"))
+        if not img_url:
+            return None
+        os.makedirs(ARTIST_PHOTO_DIR, exist_ok=True)
+        img = http.get(img_url, headers={"User-Agent": USER_AGENT},
+                       timeout=30, stream=True)
+        img.raise_for_status()
+        with open(dest, "wb") as f:
+            for chunk in img.iter_content(8192):
+                f.write(chunk)
+        return dest
+    except Exception as e:
+        log.warning("artist photo fetch failed for %s: %s", artist, e)
+        return None
+
+
 # ── Top-level processing ─────────────────────────────────────────────────────
 
 def process_album(folder):
@@ -455,6 +493,7 @@ def process_album(folder):
                     t["title_suggestion"] = bc_t["title"]
 
     cover_local = download_cover(cover_url, COVER_DIR) if cover_url else None
+    artist_photo_local = fetch_artist_photo(artist)
 
     # Generate spectrogram from the longest track (most likely to be a real
     # song rather than an intro/outro). One per album is enough for the
@@ -497,13 +536,14 @@ def process_album(folder):
         cur = conn.execute(
             """INSERT OR REPLACE INTO items
                  (media_type, status, source_path, title, artist, year, genre,
-                  cover_url, cover_local, spectrogram_local, meta_json,
-                  processed_at)
-               VALUES ('music', 'ready', ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                  cover_url, cover_local, spectrogram_local,
+                  artist_photo_local, meta_json, processed_at)
+               VALUES ('music', 'ready', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                        datetime('now'))""",
             (str(folder), album, artist,
              int(final_year) if str(final_year).isdigit() else None,
-             genre, cover_url, cover_local, spec_local, json.dumps(meta)),
+             genre, cover_url, cover_local, spec_local,
+             artist_photo_local, json.dumps(meta)),
         )
         item_id = cur.lastrowid
         # Clear any old tracks for this item (re-process case)
@@ -567,6 +607,20 @@ def write_and_move(item, tracks, target_root):
                 dst.write(src.read())
         except Exception as e:
             log.warning("copy spectrogram failed: %s", e)
+
+    # Drop artist.jpg in the ARTIST folder (parent of album), but only if
+    # we don't already have one (don't overwrite a manually-curated photo).
+    artist_jpg = Path(target_root) / artist_dir / "artist.jpg"
+    if (item.get("artist_photo_local")
+            and os.path.exists(item["artist_photo_local"])
+            and not artist_jpg.exists()):
+        try:
+            artist_jpg.parent.mkdir(parents=True, exist_ok=True)
+            with open(item["artist_photo_local"], "rb") as src, \
+                 open(artist_jpg, "wb") as dst:
+                dst.write(src.read())
+        except Exception as e:
+            log.warning("copy artist photo failed: %s", e)
 
     # Multi-disc detection: if any track has disc_no > 1, prefix track filename
     # with the disc number (D-NN, e.g. "1-01 - Track.flac").

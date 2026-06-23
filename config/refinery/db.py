@@ -80,3 +80,5 @@ def init_db():
         item_cols = {r["name"] for r in conn.execute("PRAGMA table_info(items)").fetchall()}
         if "spectrogram_local" not in item_cols:
             conn.execute("ALTER TABLE items ADD COLUMN spectrogram_local TEXT")
+        if "artist_photo_local" not in item_cols:
+            conn.execute("ALTER TABLE items ADD COLUMN artist_photo_local TEXT")

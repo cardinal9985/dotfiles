@@ -22,6 +22,7 @@ in
     "d /persist/refinery              0750 refinery refinery -"
     "d /persist/refinery/covers       0750 refinery refinery -"
     "d /persist/refinery/spectrograms 0750 refinery refinery -"
+    "d /persist/refinery/artists      0750 refinery refinery -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -44,6 +45,7 @@ in
       REFINERY_DB_PATH=/persist/refinery/refinery.db
       REFINERY_COVER_DIR=/persist/refinery/covers
       REFINERY_SPECTROGRAM_DIR=/persist/refinery/spectrograms
+      REFINERY_ARTIST_PHOTO_DIR=/persist/refinery/artists
       REFINERY_DOWNLOADS=/mnt/storage/downloads/slskd/complete
       REFINERY_MUSIC_TARGET=/mnt/storage/media/music
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}

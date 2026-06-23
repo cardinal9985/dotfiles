@@ -74,18 +74,25 @@ in
   # folders refinery creates. Re-applied on every activation so a backup
   # restore or stray chacl can't permanently break imports.
   systemd.services.refinery-media-acl = {
-    description = "Grant refinery user ACL write on /mnt/storage/media/music";
+    description = "Grant refinery user ACL write on music library + slskd inbox";
     wantedBy = [ "multi-user.target" ];
     after    = [ "mnt-storage.mount" ];
     serviceConfig = {
       Type            = "oneshot";
       RemainAfterExit = true;
     };
+    # refinery needs write on:
+    #  - /mnt/storage/media/music    (to create artist/album folders on approve)
+    #  - /mnt/storage/downloads/slskd (to retag source files, then move them out)
+    # The -d default ACL makes any new subfolder slskd creates inherit the
+    # grant, so newly-downloaded albums are writable without re-running this.
     script = ''
-      if [ -d /mnt/storage/media/music ]; then
-        ${pkgs.acl}/bin/setfacl -R -m u:refinery:rwx /mnt/storage/media/music || true
-        ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx /mnt/storage/media/music || true
-      fi
+      for dir in /mnt/storage/media/music /mnt/storage/downloads/slskd; do
+        if [ -d "$dir" ]; then
+          ${pkgs.acl}/bin/setfacl -R -m u:refinery:rwx "$dir" || true
+          ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx "$dir" || true
+        fi
+      done
     '';
   };
 

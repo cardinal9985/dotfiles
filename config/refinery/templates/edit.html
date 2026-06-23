@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Review {{ item.title or item.id }}{% endblock %}
+{% block content %}
+<form method="POST" action="/item/{{ item.id }}/approve">
+<div class="box">
+  <div class="title">&gt; {{ item.media_type|upper }} // {{ item.source_path }}</div>
+
+  <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem; align-items: start;">
+    <div>
+      {% if item.cover_url %}
+      <img src="{{ item.cover_url }}" alt="cover" style="width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--cyan);">
+      {% else %}
+      <div style="aspect-ratio: 1; border: 1px solid var(--cyan); display: flex; align-items: center; justify-content: center; color: var(--white);">[NO COVER]</div>
+      {% endif %}
+      {% if item.cover_local %}
+      <div style="font-size: 0.65rem; color: var(--white); margin-top: 0.3rem;">cached: {{ item.cover_local }}</div>
+      {% endif %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+      <div><label>TITLE (ALBUM)</label>
+        <input type="text" name="title" value="{{ item.title or '' }}"></div>
+      <div><label>ARTIST</label>
+        <input type="text" name="artist" value="{{ item.artist or '' }}"></div>
+      <div><label>YEAR</label>
+        <input type="number" name="year" value="{{ item.year or '' }}"></div>
+      <div><label>GENRE</label>
+        <select name="genre">
+          <option value="">-- (none) --</option>
+          {% for g in genres %}
+          <option value="{{ g }}" {% if g == item.genre %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="grid-column: span 2;">
+        <label>SOURCES</label>
+        <div style="font-size: 0.75rem; color: var(--white);">
+          {% if meta.musicbrainz %}MB id: {{ meta.musicbrainz.mb_release_id }}<br>{% endif %}
+          {% if meta.bandcamp_url %}Bandcamp: <a href="{{ meta.bandcamp_url }}" target="_blank">{{ meta.bandcamp_url }}</a>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="box">
+  <div class="title">&gt; TRACKS ({{ tracks|length }})</div>
+  <table>
+    <thead><tr><th style="width:60px">DISC</th><th style="width:60px">#</th><th>TITLE</th><th style="width:80px">DUR</th></tr></thead>
+    <tbody>
+      {% for t in tracks %}
+      <tr>
+        <td><input type="number" name="track_disc_{{ t.id }}" value="{{ t.disc_no or 1 }}"></td>
+        <td><input type="number" name="track_no_{{ t.id }}" value="{{ t.track_no or '' }}"></td>
+        <td><input type="text" name="track_title_{{ t.id }}" value="{{ t.title or '' }}"></td>
+        <td>{% if t.duration_secs %}{{ '%d:%02d'|format(t.duration_secs // 60, t.duration_secs % 60) }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="display: flex; gap: 0.5rem;">
+  <button type="submit" class="btn">APPROVE &amp; MOVE TO LIBRARY</button>
+  <a class="btn ghost" href="/">CANCEL</a>
+</div>
+</form>
+
+<form method="POST" action="/item/{{ item.id }}/reject" style="margin-top: 0.5rem;">
+  <button type="submit" class="btn danger" onclick="return confirm('Mark this as rejected? Files stay in inbox.')">REJECT</button>
+</form>
+{% endblock %}

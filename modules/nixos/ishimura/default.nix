@@ -15,6 +15,7 @@
     ./jellyfin.nix
     ./navidrome.nix
     ./pelican.nix
+    ./refinery.nix
     ./requests.nix
     ./romm.nix
     ./slskd.nix

@@ -160,6 +160,9 @@ let
         rewrite-stats-health:
           replacePath:
             path: "/health"
+        rewrite-refinery-health:
+          replacePath:
+            path: "/health"
         dicebear-strip-api:
           stripPrefix:
             prefixes:
@@ -574,6 +577,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-stats-health
+        homepage-health-refinery-router:
+          rule: "Host(`${domain}`) && Path(`/health/refinery`)"
+          service: refinery-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-refinery-health
         homepage-health-slskd-router:
           rule: "Host(`${domain}`) && Path(`/health/slskd`)"
           service: slskd-service
@@ -980,6 +998,21 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        refinery-router:
+          rule: "Host(`refinery.${domain}`)"
+          service: refinery-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         synctube-router:
           rule: "Host(`watch.${domain}`)"
           service: synctube-service
@@ -1148,6 +1181,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5005"
+        refinery-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:5006"
         slskd-service:
           loadBalancer:
             servers:

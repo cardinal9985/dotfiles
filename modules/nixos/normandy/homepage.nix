@@ -134,6 +134,14 @@ let
       healthUrl   = "http://${ishimuraTailnetIP}:8801/up";
     }
     {
+      name        = "Refinery";
+      description = "Media Intake";
+      url         = "https://refinery.ishimura.lol";
+      icon        = "⚒";
+      statusPath  = "/health/refinery";
+      healthUrl   = "http://${ishimuraTailnetIP}:5006/health";
+    }
+    {
       name        = "VoidAuth";
       description = "Auth Provider";
       url         = "https://auth.ishimura.lol";

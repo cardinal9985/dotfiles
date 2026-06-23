@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Queue{% endblock %}
+{% block content %}
+<div class="box">
+  <div class="title">&gt; PENDING APPROVAL ({{ ready|length }})</div>
+  {% if not ready %}
+  <div class="empty">Nothing waiting. Drop files in /mnt/storage/downloads/ and Refinery will pick them up within a minute (after they finish downloading).</div>
+  {% else %}
+  <table>
+    <thead><tr><th>TYPE</th><th>TITLE</th><th>ARTIST</th><th>YEAR</th><th>GENRE</th><th>STAGED</th><th></th></tr></thead>
+    <tbody>
+      {% for r in ready %}
+      <tr>
+        <td>{{ r.media_type|upper }}</td>
+        <td>{{ r.title or '?' }}</td>
+        <td>{{ r.artist or '?' }}</td>
+        <td>{{ r.year or '?' }}</td>
+        <td>{{ r.genre or '-' }}</td>
+        <td>{{ r.processed_at }}</td>
+        <td style="text-align:right">
+          <a class="btn" href="/item/{{ r.id }}">REVIEW</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  <form method="POST" action="/_scan" style="margin-top: 1rem;">
+    <button type="submit" class="btn ghost">SCAN NOW</button>
+  </form>
+</div>
+
+<div class="box">
+  <div class="title">&gt; RECENT DECISIONS</div>
+  {% if not recent %}
+  <div class="empty">No history yet.</div>
+  {% else %}
+  <table>
+    <thead><tr><th>STATUS</th><th>TYPE</th><th>TITLE</th><th>ARTIST</th><th>DECIDED</th><th></th></tr></thead>
+    <tbody>
+      {% for r in recent %}
+      <tr>
+        <td><span class="badge {{ r.status }}">{{ r.status|upper }}</span></td>
+        <td>{{ r.media_type|upper }}</td>
+        <td>{{ r.title or r.source_path }}</td>
+        <td>{{ r.artist or '-' }}</td>
+        <td>{{ r.decided_at or r.processed_at }}</td>
+        <td style="text-align:right">
+          {% if r.status in ('failed', 'rejected') %}
+          <form method="POST" action="/item/{{ r.id }}/reprocess" style="display:inline">
+            <button type="submit" class="btn ghost">RETRY</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

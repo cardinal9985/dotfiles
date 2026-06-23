@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Refinery{% endblock %} - USG REFINERY</title>
+<link rel="icon" type="image/png" href="/ishimura-favicon.png">
+<style>
+  :root {
+    --black: #080c14;
+    --white: #a0aec0;
+    --bright-white: #dce4f0;
+    --cyan: #3a9fbf;
+    --bright-cyan: #6ec8e6;
+    --magenta: #7b68c8;
+    --bright-magenta: #a78bfa;
+    --green: #3d9b8f;
+    --bright-green: #5eead4;
+    --yellow: #b89040;
+    --bright-yellow: #fbbf60;
+    --red: #8b3a50;
+    --bright-red: #f0708a;
+    --surface: #0e1320;
+    --surface-light: #141a2a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: "Courier New", "Lucida Console", monospace;
+    display: flex; justify-content: center; align-items: flex-start;
+    min-height: 100vh;
+  }
+  .container { width: 100%; max-width: 1200px; padding: 1.5rem; }
+
+  .top-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .top-nav a, .top-nav .user-tag {
+    color: var(--bright-cyan);
+    text-decoration: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 6px rgba(110, 200, 230, 0.2);
+  }
+  .top-nav a:hover { color: var(--bright-white); text-shadow: 0 0 10px rgba(110,200,230,0.5); }
+  .top-nav .user-tag { color: var(--bright-green); text-shadow: 0 0 6px rgba(94,234,212,0.2); }
+
+  .header { text-align: center; margin-bottom: 1.5rem; }
+  .header h1 {
+    color: var(--bright-cyan);
+    font-size: 1.4rem;
+    letter-spacing: 0.2em;
+  }
+  .header .subtitle {
+    color: var(--cyan); font-size: 0.8rem; margin-top: 0.5rem;
+  }
+
+  .box {
+    border: 1px solid var(--cyan);
+    background: var(--surface);
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .title {
+    color: var(--bright-cyan);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--surface-light);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th, td {
+    text-align: left; padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--surface-light);
+  }
+  th { color: var(--cyan); letter-spacing: 0.1em; font-size: 0.7rem; }
+
+  .badge {
+    display: inline-block; padding: 0.15rem 0.5rem;
+    font-size: 0.7rem; letter-spacing: 0.1em; border: 1px solid currentColor;
+  }
+  .badge.ready    { color: var(--bright-yellow); }
+  .badge.approved { color: var(--bright-green); }
+  .badge.rejected { color: var(--white); }
+  .badge.failed   { color: var(--bright-red); }
+
+  a { color: var(--bright-cyan); text-decoration: none; }
+  a:hover { color: var(--bright-white); }
+
+  .btn {
+    background: var(--magenta); color: var(--bright-white);
+    border: none; padding: 0.5rem 1rem; font-family: inherit;
+    font-size: 0.8rem; letter-spacing: 0.1em; cursor: pointer;
+    text-transform: uppercase;
+  }
+  .btn:hover { background: var(--bright-magenta); color: var(--black); }
+  .btn.danger { background: var(--red); }
+  .btn.danger:hover { background: var(--bright-red); color: var(--black); }
+  .btn.ghost { background: transparent; border: 1px solid var(--cyan); color: var(--bright-cyan); }
+
+  input[type="text"], input[type="number"], select, textarea {
+    background: var(--black); color: var(--bright-white);
+    border: 1px solid var(--surface-light); padding: 0.4rem;
+    font-family: inherit; font-size: 0.85rem; width: 100%;
+  }
+  label { display: block; color: var(--cyan); font-size: 0.7rem;
+          letter-spacing: 0.1em; margin-bottom: 0.25rem; }
+
+  .empty { color: var(--white); padding: 1.5rem; text-align: center; }
+  .footer { text-align: center; margin-top: 2rem; padding: 1rem; font-size: 0.7rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <nav class="top-nav">
+    <a href="https://ishimura.lol">[&lt; HOME]</a>
+    {% if user %}<span class="user-tag">[ {{ user|upper }} ]</span>{% endif %}
+  </nav>
+  <div class="header">
+    <h1>USG REFINERY</h1>
+    <div class="subtitle">// MEDIA INTAKE &amp; APPROVAL</div>
+  </div>
+  {% block content %}{% endblock %}
+  <div class="footer">
+    <a href="https://ishimura.lol">&lt; BACK TO ISHIMURA.LOL</a>
+  </div>
+</div>
+</body>
+</html>

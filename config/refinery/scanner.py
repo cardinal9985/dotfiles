@@ -146,19 +146,12 @@ def scan_once(force=False):
         if entry.startswith("_") or entry.startswith("."):
             continue
         full = os.path.join(DOWNLOADS_DIR, entry)
-        status = _existing_status(full)
-        if status:
-            # Already in DB. Forced manual scans should still refresh items
-            # that haven't been acted on yet - this is how a partially-downloaded
-            # album that finished later gets its full track list. We never
-            # re-touch approved items (would clobber the library copy).
-            if force and status in ("ready", "processing", "failed"):
-                with db.get_db() as conn:
-                    conn.execute("DELETE FROM items WHERE source_path = ?", (full,))
-                log.info("forced re-scan: dropped existing %s row for %s",
-                         status, full)
-            else:
-                continue
+        # Skip anything already tracked, regardless of status. SCAN NOW
+        # picks up NEW downloads only. For re-scanning an already-queued
+        # item (e.g. more tracks arrived), use the "FULL RE-PROCESS" button
+        # on the edit page - that explicitly deletes and re-runs one item.
+        if already_seen(full):
+            continue
         if not force and not is_stable(full):
             log.debug("not stable yet: %s", full)
             continue

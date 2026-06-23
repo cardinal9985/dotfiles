@@ -82,22 +82,30 @@ in
   systemd.services.refinery-media-acl = {
     description = "Grant refinery user ACL write on music library + slskd inbox";
     wantedBy = [ "multi-user.target" ];
-    after    = [ "mnt-storage.mount" ];
+    # Must run AFTER systemd-tmpfiles-setup. tmpfiles enforces mode 0755 on
+    # /mnt/storage/downloads/slskd/{,complete,incomplete} which calls chmod
+    # under the hood. chmod on a file with extended ACLs resets the ACL mask
+    # to match the group bits (r-x), which silently downgrades refinery's
+    # rwx grant to effective r-x. Setting m::rwx below is the explicit fix,
+    # and the ordering makes sure we win the race.
+    after    = [ "mnt-storage.mount" "systemd-tmpfiles-setup.service" ];
     serviceConfig = {
       Type            = "oneshot";
       RemainAfterExit = true;
     };
     # refinery needs write on:
     #  - /mnt/storage/media/music    (to create artist/album folders on approve)
-    #  - /mnt/storage/downloads/slskd (to retag source files, then move them out)
+    #  - /mnt/storage/downloads/slskd (to retag source files + accept uploads)
     # The -d default ACL makes any new subfolder slskd creates inherit the
     # grant, so newly-downloaded albums are writable without re-running this.
+    # m::rwx explicitly sets the ACL mask so a subsequent chmod (from
+    # tmpfiles, etc.) doesn't silently downgrade refinery's effective access.
     script = ''
       for dir in /mnt/storage/media/music /mnt/storage/media/books \
                  /mnt/storage/downloads/slskd; do
         if [ -d "$dir" ]; then
-          ${pkgs.acl}/bin/setfacl -R -m u:refinery:rwx "$dir" || true
-          ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx "$dir" || true
+          ${pkgs.acl}/bin/setfacl -R    -m u:refinery:rwx,m::rwx "$dir" || true
+          ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx,m::rwx "$dir" || true
         fi
       done
     '';

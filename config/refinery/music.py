@@ -2,6 +2,7 @@
 look up canonical info on MusicBrainz + Bandcamp, download highest-resolution
 cover art, normalize genre. Stages an item row in the DB for the approval UI."""
 
+import hashlib
 import json
 import logging
 import os
@@ -508,6 +509,61 @@ def download_cover(url, dest_dir):
         return None
 
 
+def extract_embedded_cover(audio_paths, dest_dir):
+    """Last-resort cover source for obscure releases that aren't on MB /
+    Bandcamp / Last.fm: pull the first embedded picture out of any track.
+    Handles FLAC pictures, MP3 APIC, and M4A covr."""
+    if not audio_paths:
+        return None
+    os.makedirs(dest_dir, exist_ok=True)
+    for ap in audio_paths:
+        try:
+            audio = mutagen.File(ap)
+        except Exception:
+            continue
+        if not audio:
+            continue
+
+        data = mime = None
+
+        # FLAC (and OGG via metadata_block_picture)
+        pics = getattr(audio, "pictures", None)
+        if pics:
+            data, mime = pics[0].data, (pics[0].mime or "image/jpeg")
+
+        # MP3 ID3 APIC
+        if not data and audio.tags is not None:
+            try:
+                apics = audio.tags.getall("APIC") if hasattr(audio.tags, "getall") else []
+                if apics:
+                    data, mime = apics[0].data, (apics[0].mime or "image/jpeg")
+            except Exception:
+                pass
+
+        # M4A 'covr' atom (mutagen.mp4.MP4Cover)
+        if not data and audio.tags is not None:
+            try:
+                covr = audio.tags.get("covr")
+                if covr:
+                    c = covr[0]
+                    # FORMAT_PNG = 14, FORMAT_JPEG = 13 (mutagen.mp4)
+                    fmt = getattr(c, "imageformat", 13)
+                    data, mime = bytes(c), ("image/png" if fmt == 14 else "image/jpeg")
+            except Exception:
+                pass
+
+        if data:
+            ext  = ".png" if "png" in (mime or "").lower() else ".jpg"
+            key  = hashlib.sha1(data[:8192]).hexdigest()[:20]
+            out  = os.path.join(dest_dir, f"embedded-{key}{ext}")
+            if not os.path.exists(out):
+                with open(out, "wb") as f:
+                    f.write(data)
+            log.info("extracted embedded cover from %s -> %s", ap, out)
+            return out
+    return None
+
+
 # ── Artist photo (Deezer) ────────────────────────────────────────────────────
 
 def fetch_artist_photo(artist):
@@ -560,6 +616,15 @@ def process_album(folder):
     album  = existing.get("album")
     year   = existing.get("year")
 
+    # Single-track URLs (Bandcamp /track/X, single-video yt-dlp) have no
+    # album tag - only title. Fall back to the track title so the queue UI
+    # shows something useful instead of '?'.
+    if not album and existing.get("tracks"):
+        album = existing["tracks"][0].get("title")
+    # Absolute last resort: the folder name.
+    if not album:
+        album = Path(str(folder)).name
+
     # Cross-source lookups. If the file already has a MusicBrainz album ID
     # (true for any properly tagged library), skip the search-by-name path
     # and go straight to /release/<id>. ~3x fewer MB calls per album.
@@ -601,6 +666,13 @@ def process_album(folder):
                     t["title_suggestion"] = bc_t["title"]
 
     cover_local = download_cover(cover_url, COVER_DIR) if cover_url else None
+    # Fall back to whatever is embedded in the audio files (yt-dlp's
+    # --embed-thumbnail, Bandcamp's zip with covers, etc.) for obscure
+    # releases not on MB/Bandcamp/Last.fm.
+    if not cover_local:
+        cover_local = extract_embedded_cover(
+            [t["source_path"] for t in tracks], COVER_DIR
+        )
     artist_photo_local = fetch_artist_photo(artist)
 
     # Generate spectrogram from the longest track (most likely to be a real
@@ -610,7 +682,6 @@ def process_album(folder):
     longest = max(tracks, key=lambda t: t.get("duration_secs") or 0,
                   default=None)
     if longest:
-        import hashlib
         key = hashlib.sha1(str(folder).encode()).hexdigest()[:16]
         spec_path = os.path.join(SPECTROGRAM_DIR, f"{key}.png")
         if quality.generate_spectrogram(longest["source_path"], spec_path):

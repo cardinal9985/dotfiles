@@ -11,6 +11,7 @@ from flask import (Flask, render_template, request, redirect, url_for, abort,
 
 import db
 import genres
+import library
 import music
 import scanner
 
@@ -308,6 +309,41 @@ def track_audio(track_id):
     if not row or not os.path.exists(row["source_path"]):
         abort(404)
     return send_file(row["source_path"], conditional=True)
+
+
+@app.route("/library")
+def library_index():
+    user = _get_user()
+    artists = library.list_artists()
+    return render_template("library.html", user=user, artists=artists)
+
+
+@app.route("/library/<path:artist>")
+def library_artist(artist):
+    user = _get_user()
+    owned = library.albums_for(artist)
+    missing = library.missing_albums(artist)
+    return render_template("library_artist.html", user=user,
+                           artist=artist, owned=owned, missing=missing)
+
+
+@app.route("/library/reprocess", methods=["POST"])
+def library_reprocess():
+    """Send an existing library album back through the music processor.
+    Re-runs tagging / cover / spectrogram / MB lookup and stages it in the
+    approval queue. Approve will write back to the same artist/year-album
+    location (may rename folder if normalized differently)."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+    folder = request.form.get("folder", "")
+    if not folder or not os.path.isdir(folder):
+        return "bad folder", 400
+    # Drop any prior queue row for this folder (re-process invalidates it)
+    with db.get_db() as conn:
+        conn.execute("DELETE FROM items WHERE source_path = ?", (folder,))
+    music.process_album(folder)
+    return redirect(url_for("queue"))
 
 
 @app.route("/_scan", methods=["POST"])

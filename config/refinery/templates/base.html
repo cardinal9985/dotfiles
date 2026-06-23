@@ -118,7 +118,11 @@
 <div class="container">
   <nav class="top-nav">
     <a href="https://ishimura.lol">[&lt; HOME]</a>
-    {% if user %}<span class="user-tag">[ {{ user|upper }} ]</span>{% endif %}
+    <span style="display: flex; gap: 1rem;">
+      <a href="/">[QUEUE]</a>
+      <a href="/library">[LIBRARY]</a>
+      {% if user %}<span class="user-tag">[ {{ user|upper }} ]</span>{% endif %}
+    </span>
   </nav>
   <div class="header">
     <h1>USG REFINERY</h1>

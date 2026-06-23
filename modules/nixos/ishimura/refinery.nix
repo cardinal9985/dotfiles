@@ -13,8 +13,9 @@ let
 
   app = pkgs.runCommand "ishimura-refinery" {} ''
     mkdir -p $out
-    cp -r ${src}/app.py ${src}/db.py ${src}/genres.py ${src}/music.py \
-          ${src}/quality.py ${src}/scanner.py ${src}/templates $out/
+    cp -r ${src}/app.py ${src}/db.py ${src}/genres.py ${src}/library.py \
+          ${src}/music.py ${src}/quality.py ${src}/scanner.py \
+          ${src}/templates $out/
   '';
 in
 {
@@ -23,6 +24,7 @@ in
     "d /persist/refinery/covers       0750 refinery refinery -"
     "d /persist/refinery/spectrograms 0750 refinery refinery -"
     "d /persist/refinery/artists      0750 refinery refinery -"
+    "d /persist/refinery/mb_artists   0750 refinery refinery -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -35,7 +37,10 @@ in
     home         = "/var/lib/refinery";
     # Need to write into both the downloads area (to extract zips / move
     # processed items aside) and the media library (final destination).
-    extraGroups  = [ "users" ];
+    # `navidrome` group gives read on /var/lib/navidrome/navidrome.db so the
+    # library view can list owned artists/albums (we already widened the WAL
+    # files to group-write for the stats SQLite reader).
+    extraGroups  = [ "users" "navidrome" ];
   };
   users.groups.refinery = {};
 
@@ -46,6 +51,8 @@ in
       REFINERY_COVER_DIR=/persist/refinery/covers
       REFINERY_SPECTROGRAM_DIR=/persist/refinery/spectrograms
       REFINERY_ARTIST_PHOTO_DIR=/persist/refinery/artists
+      REFINERY_MB_ARTIST_CACHE=/persist/refinery/mb_artists
+      NAVIDROME_DB=/var/lib/navidrome/navidrome.db
       REFINERY_DOWNLOADS=/mnt/storage/downloads/slskd/complete
       REFINERY_MUSIC_TARGET=/mnt/storage/media/music
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}

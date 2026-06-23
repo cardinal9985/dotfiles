@@ -19,8 +19,13 @@ let
           ${src}/music.py ${src}/quality.py ${src}/scanner.py \
           ${src}/templates $out/
   '';
+
+  reprocessLibrary = pkgs.writeShellScriptBin "refinery-reprocess-library"
+    (builtins.readFile ../../../config/refinery/reprocess-library.sh);
 in
 {
+  environment.systemPackages = [ reprocessLibrary ];
+
   systemd.tmpfiles.rules = [
     "d /persist/refinery              0750 refinery refinery -"
     "d /persist/refinery/covers       0750 refinery refinery -"

@@ -7,9 +7,8 @@
 # on file path; refinery rewrites names). Stats DB indexes by MBID so its
 # listen history survives.
 #
-# Run on ishimura:
-#   sudo /etc/nixos/dotfiles/config/refinery/reprocess-library.sh
-# or wherever your dotfiles checkout lives.
+# Installed as a system binary on ishimura. Run:
+#   ssh -p 36475 maxwell@ishimura sudo refinery-reprocess-library
 
 set -euo pipefail
 

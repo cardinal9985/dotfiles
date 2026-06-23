@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import shutil
+import threading
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -62,8 +63,12 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger("refinery")
 
 app = Flask(__name__)
-# Books can be ~100MB, comic archives larger; allow up to 1GB per upload
-app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024
+# Trusted single-user instance - allow large uploads (4K movies, multi-disc
+# ROMs, audiobook bundles). Werkzeug streams multipart uploads to disk via
+# tempfiles so this doesn't load the whole thing in memory. For uploads in
+# the multi-GB range, SCP/rsync over SSH is more reliable than browser
+# upload, but this option exists for one-off convenience.
+app.config["MAX_CONTENT_LENGTH"] = None
 db.init_db()
 
 MUSIC_TARGET = os.environ.get("REFINERY_MUSIC_TARGET",
@@ -605,19 +610,22 @@ def upload():
 
     notify("Refinery: manual upload",
            f"{saved} file(s) uploaded to {name}")
-    # Kick off an immediate scan so the user doesn't wait for the timer
-    scanner.scan_once(force=True)
+    # Background scan so the user gets the queue page immediately - the
+    # actual processing (OpenLibrary lookups, cover downloads, etc.) can
+    # take 10-30s per book and shouldn't block the upload response.
+    threading.Thread(target=scanner.scan_once, args=(True,), daemon=True).start()
     return redirect(url_for("queue"))
 
 
 @app.route("/_scan", methods=["POST"])
 def scan_now():
     """Manual scan from the SCAN NOW button - bypass the stability check so
-    the user can process a download immediately without waiting for the timer."""
+    the user can process a download immediately without waiting for the timer.
+    Runs in a background thread so the response is instant."""
     user = _get_user()
     if not user:
         return "unauthorized", 401
-    scanner.scan_once(force=True)
+    threading.Thread(target=scanner.scan_once, args=(True,), daemon=True).start()
     return redirect(url_for("queue"))
 
 

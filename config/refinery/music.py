@@ -6,6 +6,8 @@ import json
 import logging
 import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -24,6 +26,10 @@ MUSIC_EXTS = {".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wma", ".wav",
 COVER_DIR        = os.environ.get("REFINERY_COVER_DIR",        "/persist/refinery/covers")
 SPECTROGRAM_DIR  = os.environ.get("REFINERY_SPECTROGRAM_DIR",  "/persist/refinery/spectrograms")
 ARTIST_PHOTO_DIR = os.environ.get("REFINERY_ARTIST_PHOTO_DIR", "/persist/refinery/artists")
+
+# If set, copy files into the library instead of moving them out of the
+# source inbox. Useful for testing or if you want to keep the original.
+KEEP_SOURCE = os.environ.get("REFINERY_KEEP_SOURCE", "0") not in ("", "0", "false", "False")
 
 MB_BASE  = "https://musicbrainz.org/ws/2"
 CAA_BASE = "https://coverartarchive.org"
@@ -578,16 +584,108 @@ def _safe_path(s):
     return s or "_"
 
 
+def _is_compilation(tracks_per_artist):
+    """Heuristic: if >= 3 distinct track artists across the album, treat as
+    Various Artists compilation."""
+    return len({a for a in tracks_per_artist if a}) >= 3
+
+
+def library_path_for(target_root, artist, year, title):
+    """The folder we'll write into. Used by the route to warn on conflict."""
+    artist_dir = _safe_path(artist or "Unknown Artist")
+    album_dir  = "{} - {}".format(year or "0000", _safe_path(title or "Unknown Album"))
+    return Path(target_root) / artist_dir / album_dir
+
+
+def _embed_cover(audio, cover_local):
+    """Write cover art into the audio file's tags (FLAC pictures, ID3 APIC,
+    M4A covr, etc.). mutagen handles the format-specific differences when we
+    use its File() in non-easy mode."""
+    if not cover_local or not os.path.exists(cover_local):
+        return
+    try:
+        with open(cover_local, "rb") as f:
+            data = f.read()
+        mime = "image/png" if cover_local.lower().endswith(".png") else "image/jpeg"
+
+        # Re-open without easy mode so we can write the picture frame
+        path = audio.filename if hasattr(audio, "filename") else None
+        if not path:
+            return
+        full = mutagen.File(path)
+        if full is None:
+            return
+
+        if isinstance(full, mutagen.flac.FLAC):
+            full.clear_pictures()
+            pic = mutagen.flac.Picture()
+            pic.type = 3  # cover (front)
+            pic.mime = mime
+            pic.data = data
+            full.add_picture(pic)
+            full.save()
+        elif isinstance(full, mutagen.mp3.MP3):
+            from mutagen.id3 import APIC
+            full.tags.delall("APIC")
+            full.tags.add(APIC(encoding=3, mime=mime, type=3,
+                               desc="Cover", data=data))
+            full.save()
+        elif isinstance(full, mutagen.mp4.MP4):
+            fmt = (mutagen.mp4.MP4Cover.FORMAT_PNG if mime == "image/png"
+                   else mutagen.mp4.MP4Cover.FORMAT_JPEG)
+            full.tags["covr"] = [mutagen.mp4.MP4Cover(data, imageformat=fmt)]
+            full.save()
+        # Other formats: skip silently
+    except Exception as e:
+        log.warning("embed cover failed: %s", e)
+
+
+def _run_replaygain(folder):
+    """Compute and write ReplayGain tags for everything in folder. Uses
+    rsgain if present (handles MP3 + FLAC + Opus + M4A in one go)."""
+    if not shutil.which("rsgain"):
+        return
+    try:
+        subprocess.run(
+            ["rsgain", "easy", str(folder)],
+            check=False, capture_output=True, timeout=600,
+        )
+    except Exception as e:
+        log.warning("rsgain failed for %s: %s", folder, e)
+
+
 def write_and_move(item, tracks, target_root):
-    """Write final tags to the source files, then move them into the Navidrome
-    library under Artist/YYYY - Album/NN - Track.ext."""
-    artist_dir = _safe_path(item["artist"] or "Unknown Artist")
+    """Write final tags to the source files, then move (or copy when
+    REFINERY_KEEP_SOURCE is set) them into the Navidrome library under
+    Artist/YYYY - Album/NN - Track.ext. Embeds cover art, writes MusicBrainz
+    IDs, runs ReplayGain, and cleans up the empty source directory."""
+    # Compilation detection - if a bunch of track artists differ from the
+    # album-level "artist", file under "Various Artists" instead.
+    track_artists = []
+    for t in tracks:
+        # Re-read each track's artist (not album_artist) from the source
+        try:
+            a = mutagen.File(t["source_path"], easy=True)
+            if a and a.tags:
+                v = a.tags.get("artist")
+                if v:
+                    track_artists.append(v[0] if isinstance(v, list) else str(v))
+        except Exception:
+            pass
+
+    is_va = _is_compilation(track_artists)
+    album_artist = "Various Artists" if is_va else (item["artist"] or "Unknown Artist")
+
+    artist_dir = _safe_path(album_artist)
     album_dir  = "{} - {}".format(
         item["year"] or "0000",
         _safe_path(item["title"] or "Unknown Album"),
     )
     dest_album = Path(target_root) / artist_dir / album_dir
     dest_album.mkdir(parents=True, exist_ok=True)
+
+    meta = json.loads(item.get("meta_json") or "{}") if isinstance(item.get("meta_json"), str) else (item.get("meta_json") or {})
+    mb_release_id = (meta.get("musicbrainz") or {}).get("mb_release_id")
 
     # Stash cover.jpg next to tracks
     if item["cover_local"] and os.path.exists(item["cover_local"]):
@@ -639,10 +737,13 @@ def write_and_move(item, tracks, target_root):
             if audio is not None:
                 if audio.tags is None:
                     audio.add_tags()
-                audio.tags["artist"]      = item["artist"] or ""
-                audio.tags["albumartist"] = item["artist"] or ""
-                audio.tags["album"]       = item["title"]  or ""
-                audio.tags["title"]       = t["title"]     or src.stem
+                # For compilations: keep track artist intact, set albumartist
+                # to "Various Artists" so Navidrome groups under VA.
+                if not is_va:
+                    audio.tags["artist"] = item["artist"] or ""
+                audio.tags["albumartist"] = album_artist
+                audio.tags["album"]       = item["title"] or ""
+                audio.tags["title"]       = t["title"]    or src.stem
                 if item["year"]:
                     audio.tags["date"] = str(item["year"])
                 if item["genre"]:
@@ -651,10 +752,16 @@ def write_and_move(item, tracks, target_root):
                     audio.tags["tracknumber"] = str(t["track_no"])
                 if t.get("disc_no"):
                     audio.tags["discnumber"] = str(t["disc_no"])
+                if mb_release_id:
+                    audio.tags["musicbrainz_albumid"] = mb_release_id
+                if is_va:
+                    audio.tags["compilation"] = "1"
                 # Embed plain lyrics in standard tag (synced go in .lrc next door)
                 if t.get("lyrics_plain"):
                     audio.tags["lyrics"] = t["lyrics_plain"]
                 audio.save()
+                # Embed the cover art (sidecar cover.jpg is still written too)
+                _embed_cover(audio, item.get("cover_local"))
         except Exception as e:
             log.warning("tag write failed %s: %s", src, e)
 
@@ -665,9 +772,12 @@ def write_and_move(item, tracks, target_root):
         title = _safe_path(t["title"] or src.stem)
         dest = dest_album / f"{tn} - {title}{src.suffix.lower()}"
         try:
-            src.replace(dest)
+            if KEEP_SOURCE:
+                shutil.copy2(src, dest)
+            else:
+                src.replace(dest)
         except Exception as e:
-            log.error("move failed %s -> %s: %s", src, dest, e)
+            log.error("place failed %s -> %s: %s", src, dest, e)
             continue
 
         # Write synced lyrics (.lrc) alongside the audio file
@@ -677,5 +787,37 @@ def write_and_move(item, tracks, target_root):
                 lrc_dest.write_text(t["lyrics_synced"], encoding="utf-8")
             except Exception as e:
                 log.warning("lrc write failed %s: %s", lrc_dest, e)
+
+    # Cross-album ReplayGain - one-shot rsgain over the new folder.
+    _run_replaygain(dest_album)
+
+    # Clean up the (now-empty) source folder so the inbox stays tidy. Only
+    # when we actually moved (not copied), and only if there's nothing
+    # important left behind (skip if anything we don't recognize remains).
+    if not KEEP_SOURCE:
+        try:
+            src_root = Path(item["source_path"])
+            if src_root.is_dir():
+                # Remove any leftover sidecar junk (.nfo, .m3u, .cue, .sfv,
+                # .log, hidden files, empty subdirs)
+                JUNK_EXTS = {".nfo", ".m3u", ".m3u8", ".cue", ".sfv",
+                             ".log", ".txt", ".jpg", ".jpeg", ".png", ".pdf"}
+                for f in src_root.rglob("*"):
+                    if f.is_file() and (f.name.startswith(".")
+                                        or f.suffix.lower() in JUNK_EXTS):
+                        try: f.unlink()
+                        except Exception: pass
+                # Remove all empty subdirectories bottom-up
+                for d in sorted([p for p in src_root.rglob("*") if p.is_dir()],
+                                key=lambda p: -len(p.parts)):
+                    try: d.rmdir()
+                    except OSError: pass
+                # Finally drop the root if empty
+                try: src_root.rmdir()
+                except OSError as e:
+                    log.info("source not empty, leaving in place: %s (%s)",
+                             src_root, e)
+        except Exception as e:
+            log.warning("source cleanup failed: %s", e)
 
     return str(dest_album)

@@ -49,6 +49,9 @@ in
       REFINERY_DOWNLOADS=/mnt/storage/downloads/slskd/complete
       REFINERY_MUSIC_TARGET=/mnt/storage/media/music
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
+      NTFY_URL=http://normandy:8080
+      NTFY_TOPIC=ishimura-refinery
+      NTFY_TOKEN=
     '';
   };
 
@@ -62,10 +65,11 @@ in
       User             = "refinery";
       Group            = "refinery";
       EnvironmentFile  = config.sops.templates."refinery.env".path;
-      # flac + ffmpeg + sox are called as subprocesses by quality.py for
-      # integrity verification, spectral analysis, and spectrogram rendering.
+      # flac + ffmpeg + sox + rsgain are called as subprocesses by
+      # quality.py and music.py for integrity verification, spectral
+      # analysis, spectrogram rendering, and cross-album ReplayGain.
       Environment      = [
-        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin"
+        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin"
       ];
       ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
       WorkingDirectory = app;

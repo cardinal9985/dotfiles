@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import urllib.parse
+import urllib.request
 from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -12,6 +14,45 @@ import genres
 import music
 import scanner
 
+NTFY_URL   = os.environ.get("NTFY_URL", "")
+NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "")
+NTFY_TOKEN = os.environ.get("NTFY_TOKEN", "")
+
+
+def notify(title, message):
+    """Best-effort ntfy push. Silently swallows failures."""
+    if not (NTFY_URL and NTFY_TOPIC):
+        return
+    try:
+        req = urllib.request.Request(
+            f"{NTFY_URL.rstrip('/')}/{NTFY_TOPIC}",
+            data=message.encode(),
+            headers={
+                "Title": title,
+                "Tags":  "card_file_box",
+                **({"Authorization": "Bearer " + NTFY_TOKEN} if NTFY_TOKEN else {}),
+            },
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass
+
+
+# Patch music.process_album to notify when an item lands in the queue.
+_orig_process_album = music.process_album
+def _process_album_with_notify(folder):
+    item_id = _orig_process_album(folder)
+    if item_id:
+        with db.get_db() as conn:
+            row = conn.execute("SELECT title, artist FROM items WHERE id=?",
+                               (item_id,)).fetchone()
+        if row:
+            notify("Refinery: ready for review",
+                   f"{row['artist'] or '?'} - {row['title'] or '?'}")
+    return item_id
+music.process_album = _process_album_with_notify
+
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 log = logging.getLogger("refinery")
@@ -21,6 +62,15 @@ db.init_db()
 
 MUSIC_TARGET = os.environ.get("REFINERY_MUSIC_TARGET",
                               "/mnt/storage/media/music")
+
+
+# Reset any items left in 'processing' state from a previous crash so they
+# don't sit invisibly forever.
+with db.get_db() as _conn:
+    _conn.execute(
+        "UPDATE items SET status='failed', error='interrupted - service restart' "
+        "WHERE status='processing'"
+    )
 
 sched = BackgroundScheduler(job_defaults={"max_instances": 1, "coalesce": True})
 sched.add_job(scanner.scan_once, "interval", minutes=1, id="scan",
@@ -42,6 +92,7 @@ def health():
 @app.route("/")
 def queue():
     user = _get_user()
+    q = request.args.get("q", "").strip().lower()
     with db.get_db() as conn:
         ready = conn.execute(
             "SELECT * FROM items WHERE status = 'ready' "
@@ -51,7 +102,13 @@ def queue():
             "SELECT * FROM items WHERE status IN ('approved', 'rejected', 'failed') "
             "ORDER BY decided_at DESC, processed_at DESC LIMIT 20"
         ).fetchall()
-    return render_template("queue.html", user=user, ready=ready, recent=recent)
+    if q:
+        def _match(r):
+            return any(q in (r[c] or "").lower()
+                       for c in ("title", "artist", "source_path"))
+        ready  = [r for r in ready  if _match(r)]
+        recent = [r for r in recent if _match(r)]
+    return render_template("queue.html", user=user, ready=ready, recent=recent, q=q)
 
 
 @app.route("/item/<int:item_id>")
@@ -67,8 +124,15 @@ def edit(item_id):
             (item_id,)
         ).fetchall()
     meta = json.loads(item["meta_json"] or "{}")
+    # Conflict check: is there already a folder where we'd write this?
+    conflict = None
+    if item["media_type"] == "music":
+        target = music.library_path_for(MUSIC_TARGET, item["artist"],
+                                        item["year"], item["title"])
+        if target.exists():
+            conflict = str(target)
     return render_template("edit.html", user=user, item=item, tracks=tracks,
-                           meta=meta, genres=genres.ALL)
+                           meta=meta, genres=genres.ALL, conflict=conflict)
 
 
 @app.route("/item/<int:item_id>/approve", methods=["POST"])
@@ -143,6 +207,47 @@ def approve(item_id):
             "UPDATE items SET status='approved', decided_at=datetime('now') WHERE id=?",
             (item_id,),
         )
+    return redirect(url_for("queue"))
+
+
+@app.route("/_approve_verified", methods=["POST"])
+def approve_verified():
+    """Bulk-approve every ready item where ALL tracks are VERIFIED and no
+    track is CORRUPT. Skips anything with SUSPECT/BORDERLINE/UNKNOWN."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+
+    with db.get_db() as conn:
+        candidates = conn.execute(
+            "SELECT id FROM items WHERE status = 'ready'"
+        ).fetchall()
+
+    approved = 0
+    for c in candidates:
+        with db.get_db() as conn:
+            tr = conn.execute(
+                "SELECT quality_ok, quality_verdict FROM tracks WHERE item_id=?",
+                (c["id"],),
+            ).fetchall()
+        if not tr:
+            continue
+        if any((t["quality_ok"] == 0)
+               or (t["quality_verdict"] != "verified")
+               for t in tr):
+            continue
+        # Reuse single-item approve path
+        with app.test_request_context(f"/item/{c['id']}/approve",
+                                       method="POST",
+                                       headers={"Remote-User": user}):
+            try:
+                approve(c["id"])
+                approved += 1
+            except Exception as e:
+                log.exception("bulk approve failed for %d: %s", c["id"], e)
+
+    notify("Refinery: bulk approve",
+           f"Approved {approved} of {len(candidates)} verified albums")
     return redirect(url_for("queue"))
 
 

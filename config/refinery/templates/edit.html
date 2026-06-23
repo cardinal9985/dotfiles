@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Review {{ item.title or item.id }}{% endblock %}
 {% block content %}
+{% if conflict %}
+<div class="box" style="border-color: var(--yellow);">
+  <div class="title" style="color: var(--bright-yellow);">&gt; ALREADY IN LIBRARY</div>
+  <div style="padding: 0.5rem 0; color: var(--white); font-size: 0.85rem;">
+    A folder already exists at <code style="color: var(--bright-yellow);">{{ conflict }}</code>.
+    Approving will move/overwrite files there. If you're replacing a bad rip, this is fine. If not, REJECT and rename.
+  </div>
+</div>
+{% endif %}
 <form method="POST" action="/item/{{ item.id }}/approve">
 <div class="box">
   <div class="title">&gt; {{ item.media_type|upper }} // {{ item.source_path }}</div>

@@ -1,16 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Queue{% endblock %}
 {% block content %}
+<form method="GET" action="/" style="margin-bottom: 0.75rem; display: flex; gap: 0.5rem;">
+  <input type="text" name="q" value="{{ q or '' }}" placeholder="Filter: artist, title, source path..." style="flex: 1;">
+  {% if q %}<a class="btn ghost" href="/">CLEAR</a>{% endif %}
+  <button type="submit" class="btn">FILTER</button>
+</form>
+
 <div class="box">
   <div class="title">&gt; PENDING APPROVAL ({{ ready|length }})</div>
   {% if not ready %}
-  <div class="empty">Nothing waiting. Drop files in /mnt/storage/downloads/ and Refinery will pick them up within a minute (after they finish downloading).</div>
+  <div class="empty">Nothing waiting. Drop files in /mnt/storage/downloads/slskd/complete and Refinery will pick them up within a minute.</div>
   {% else %}
   <table>
     <thead><tr><th>TYPE</th><th>TITLE</th><th>ARTIST</th><th>YEAR</th><th>GENRE</th><th>STAGED</th><th></th></tr></thead>
     <tbody>
       {% for r in ready %}
-      <tr>
+      <tr data-review-href="/item/{{ r.id }}">
         <td>{{ r.media_type|upper }}</td>
         <td>{{ r.title or '?' }}</td>
         <td>{{ r.artist or '?' }}</td>
@@ -25,9 +31,18 @@
     </tbody>
   </table>
   {% endif %}
-  <form method="POST" action="/_scan" style="margin-top: 1rem;">
-    <button type="submit" class="btn ghost">SCAN NOW</button>
-  </form>
+  <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+    <form method="POST" action="/_scan"><button type="submit" class="btn ghost">SCAN NOW</button></form>
+    {% if ready %}
+    <form method="POST" action="/_approve_verified"
+          onsubmit="return confirm('Approve every album where ALL tracks are VERIFIED?')">
+      <button type="submit" class="btn">APPROVE ALL VERIFIED</button>
+    </form>
+    {% endif %}
+  </div>
+  <div style="margin-top: 0.5rem; font-size: 0.7rem; color: var(--white);">
+    keyboard: <b>j/k</b> next/prev, <b>enter</b> review, <b>/</b> focus filter
+  </div>
 </div>
 
 <div class="box">
@@ -42,7 +57,10 @@
       <tr>
         <td><span class="badge {{ r.status }}">{{ r.status|upper }}</span></td>
         <td>{{ r.media_type|upper }}</td>
-        <td>{{ r.title or r.source_path }}</td>
+        <td>
+          {{ r.title or r.source_path }}
+          {% if r.error %}<div style="font-size: 0.7rem; color: var(--bright-red); margin-top: 0.2rem;">{{ r.error }}</div>{% endif %}
+        </td>
         <td>{{ r.artist or '-' }}</td>
         <td>{{ r.decided_at or r.processed_at }}</td>
         <td style="text-align:right">
@@ -58,4 +76,26 @@
   </table>
   {% endif %}
 </div>
+
+<script>
+  // j/k row navigation, enter to open, / to focus filter
+  (function () {
+    var rows = Array.from(document.querySelectorAll('tr[data-review-href]'));
+    var idx = -1;
+    function highlight(i) {
+      rows.forEach(function(r, j) {
+        r.style.background = (j === i) ? 'var(--surface-light)' : '';
+      });
+      if (i >= 0) rows[i].scrollIntoView({block: 'nearest'});
+    }
+    var filterInput = document.querySelector('input[name="q"]');
+    document.addEventListener('keydown', function (e) {
+      if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+      if (e.key === 'j' && rows.length) { idx = Math.min(idx + 1, rows.length - 1); highlight(idx); e.preventDefault(); }
+      else if (e.key === 'k' && rows.length) { idx = Math.max(idx - 1, 0); highlight(idx); e.preventDefault(); }
+      else if (e.key === 'Enter' && idx >= 0) { window.location = rows[idx].dataset.reviewHref; }
+      else if (e.key === '/' && filterInput) { filterInput.focus(); e.preventDefault(); }
+    });
+  })();
+</script>
 {% endblock %}

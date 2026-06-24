@@ -79,10 +79,13 @@ BOOK_TARGET  = os.environ.get("REFINERY_BOOK_TARGET",
 
 
 # Reset any items left in 'processing' state from a previous crash so they
-# don't sit invisibly forever.
+# don't sit invisibly forever. decided_at is what RECENT DECISIONS sorts on,
+# so without it these rows fall past LIMIT 20 and look like they vanished.
 with db.get_db() as _conn:
     _conn.execute(
-        "UPDATE items SET status='failed', error='interrupted - service restart' "
+        "UPDATE items SET status='failed', "
+        "error='interrupted - service restart', "
+        "decided_at=datetime('now') "
         "WHERE status='processing'"
     )
 
@@ -131,7 +134,7 @@ def queue():
         ).fetchall()
         recent = conn.execute(
             "SELECT * FROM items WHERE status IN ('approved', 'rejected', 'failed') "
-            "ORDER BY decided_at DESC, processed_at DESC LIMIT 20"
+            "ORDER BY COALESCE(decided_at, processed_at) DESC LIMIT 20"
         ).fetchall()
     if q:
         def _match(r):

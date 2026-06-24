@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Library{% endblock %}
 {% block content %}
+<div class="rec-tabs" style="margin-bottom: 1rem;">
+  <a class="rec-tab active" href="/library">MUSIC ({{ artists|length }})</a>
+  <a class="rec-tab" href="/library/books">BOOKS ({{ author_count }})</a>
+</div>
+
 <div style="margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
   <a class="btn" href="/library/radar">&gt;&gt; RELEASE RADAR</a>
   <form method="POST" action="/library/fix-missing-art" style="display:inline"
@@ -14,7 +19,7 @@
 </div>
 
 <div class="box">
-  <div class="title">&gt; LIBRARY ({{ artists|length }} ARTISTS)</div>
+  <div class="title">&gt; MUSIC ({{ artists|length }} ARTISTS)</div>
   {% if not artists %}
   <div class="empty">No artists in the library yet. Either the Navidrome DB is empty or refinery can't read it (permissions).</div>
   {% else %}

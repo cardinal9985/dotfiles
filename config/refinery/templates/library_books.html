@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Books{% endblock %}
+{% block content %}
+<div class="rec-tabs" style="margin-bottom: 1rem;">
+  <a class="rec-tab" href="/library">MUSIC</a>
+  <a class="rec-tab active" href="/library/books">BOOKS ({{ authors|length }})</a>
+</div>
+
+<div style="margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+  <a class="btn" href="/library/books/radar">&gt;&gt; BOOK RADAR</a>
+  <span style="color: var(--white); font-size: 0.7rem;">
+    OpenLibrary works for your authors that aren't on disk yet, within the last 2 years.
+  </span>
+</div>
+
+<div class="box">
+  <div class="title">&gt; BOOKS ({{ authors|length }} AUTHORS)</div>
+  {% if not authors %}
+  <div class="empty">No books yet. Drop EPUB / PDF / MOBI into the inbox or use the upload form on the queue page.</div>
+  {% else %}
+  <table>
+    <thead><tr><th>AUTHOR</th><th style="width:90px">BOOKS</th></tr></thead>
+    <tbody>
+      {% for a in authors %}
+      <tr>
+        <td><a href="/library/books/{{ a.name }}">{{ a.name }}</a></td>
+        <td>{{ a.books }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

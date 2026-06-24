@@ -17,11 +17,21 @@ log = logging.getLogger("refinery.library")
 
 NAVIDROME_DB = os.environ.get("NAVIDROME_DB", "/var/lib/navidrome/navidrome.db")
 MUSIC_ROOT   = os.environ.get("REFINERY_MUSIC_TARGET", "/mnt/storage/media/music")
+BOOK_ROOT    = os.environ.get("REFINERY_BOOK_TARGET",  "/mnt/storage/media/books")
+BOOK_EXTS    = {".epub", ".pdf", ".mobi", ".azw", ".azw3", ".cbz", ".cbr"}
 MB_ARTIST_CACHE = os.environ.get("REFINERY_MB_ARTIST_CACHE",
                                  "/persist/refinery/mb_artists")
 MB_DISCO_CACHE  = os.environ.get("REFINERY_MB_DISCO_CACHE",
                                  "/persist/refinery/mb_discography")
 DISCO_TTL_SECS  = 7 * 86400   # 1 week - refresh weekly so new releases land
+
+OL_AUTHOR_CACHE = os.environ.get("REFINERY_OL_AUTHOR_CACHE",
+                                 "/persist/refinery/ol_authors")
+OL_WORKS_CACHE  = os.environ.get("REFINERY_OL_WORKS_CACHE",
+                                 "/persist/refinery/ol_works")
+OL_BASE         = "https://openlibrary.org"
+OL_UA           = "ishimura-refinery/1.0 (https://refinery.ishimura.lol)"
+WORKS_TTL_SECS  = 7 * 86400   # OL works list cached for a week
 
 
 def _norm(s):
@@ -64,6 +74,206 @@ def list_artists():
     except Exception as e:
         log.warning("list_artists failed: %s", e)
         return []
+
+
+def list_authors():
+    """Top-level dirs in /media/books = authors. No DB needed; refinery's
+    book processor already enforces the Author/Title (YYYY)/ layout."""
+    if not os.path.isdir(BOOK_ROOT):
+        return []
+    out = []
+    for entry in sorted(os.listdir(BOOK_ROOT), key=str.lower):
+        full = os.path.join(BOOK_ROOT, entry)
+        if not os.path.isdir(full):
+            continue
+        try:
+            book_count = sum(
+                1 for x in os.listdir(full)
+                if os.path.isdir(os.path.join(full, x))
+            )
+        except OSError:
+            book_count = 0
+        out.append({"name": entry, "books": book_count})
+    return out
+
+
+def books_for(author):
+    """Books under one author folder: parsed title/year, formats, cover."""
+    author_dir = os.path.join(BOOK_ROOT, author)
+    if not os.path.isdir(author_dir):
+        return []
+    out = []
+    for entry in sorted(os.listdir(author_dir), key=str.lower):
+        full = os.path.join(author_dir, entry)
+        if not os.path.isdir(full):
+            continue
+        formats   = set()
+        cover_rel = None
+        try:
+            files = os.listdir(full)
+        except OSError:
+            files = []
+        for f in files:
+            lower = f.lower()
+            ext   = os.path.splitext(lower)[1]
+            if ext in BOOK_EXTS:
+                formats.add(ext.lstrip("."))
+            elif lower in ("cover.jpg", "cover.jpeg", "cover.png"):
+                cover_rel = f
+        # "Title (YYYY)" parsing - refinery writes books with year suffix
+        m = re.match(r"^(.*?)\s*\((\d{4})\)\s*$", entry)
+        title, year = (m.group(1).strip(), m.group(2)) if m else (entry, None)
+        out.append({
+            "folder":  entry,
+            "title":   title,
+            "year":    year,
+            "formats": sorted(formats),
+            "cover":   cover_rel,
+        })
+    return out
+
+
+def _ol_author_id(name):
+    """Resolve author name to an OpenLibrary author key (OL...A). Cached
+    forever on disk - author identity doesn't drift."""
+    if not name:
+        return None
+    os.makedirs(OL_AUTHOR_CACHE, exist_ok=True)
+    slug = re.sub(r"[^\w]+", "_", name.lower()).strip("_")[:80] or "unknown"
+    cache = os.path.join(OL_AUTHOR_CACHE, f"{slug}.txt")
+    if os.path.exists(cache):
+        try:
+            return open(cache).read().strip() or None
+        except Exception:
+            pass
+    try:
+        r = music._http_get(f"{OL_BASE}/search/authors.json",
+                            params={"q": name, "limit": 1})
+    except Exception as e:
+        log.warning("OL author search failed for %s: %s", name, e)
+        return None
+    if not r:
+        return None
+    try:
+        docs = (r.json() or {}).get("docs") or []
+        olid = docs[0].get("key") if docs else ""
+    except Exception:
+        olid = ""
+    try:
+        with open(cache, "w") as f:
+            f.write(olid or "")
+    except Exception:
+        pass
+    return olid or None
+
+
+def book_works(author_name):
+    """All works by an author from OpenLibrary, disk-cached for one week.
+    Filters out a lot of OL noise (no title, no key, very short titles)."""
+    olid = _ol_author_id(author_name)
+    if not olid:
+        return []
+
+    os.makedirs(OL_WORKS_CACHE, exist_ok=True)
+    cache_path = os.path.join(OL_WORKS_CACHE, f"{olid}.json")
+    if os.path.exists(cache_path):
+        age = time.time() - os.path.getmtime(cache_path)
+        if age < WORKS_TTL_SECS:
+            try:
+                with open(cache_path) as f:
+                    return json.load(f)
+            except Exception:
+                pass
+
+    try:
+        r = music._http_get(f"{OL_BASE}/authors/{olid}/works.json",
+                            params={"limit": 200})
+    except Exception as e:
+        log.warning("OL works fetch failed for %s: %s", author_name, e)
+        return []
+    if not r:
+        return []
+    try:
+        entries = (r.json() or {}).get("entries") or []
+    except Exception:
+        return []
+
+    out = []
+    seen_titles = set()
+    for w in entries:
+        title = (w.get("title") or "").strip()
+        if not title or len(title) < 2:
+            continue
+        norm_t = _norm(title)
+        if norm_t in seen_titles:   # dedupe OL's many duplicate entries
+            continue
+        seen_titles.add(norm_t)
+        out.append({
+            "title":              title,
+            "first_publish_date": w.get("first_publish_date") or "",
+            "key":                w.get("key") or "",   # e.g. /works/OL...W
+        })
+
+    try:
+        with open(cache_path, "w") as f:
+            json.dump(out, f)
+    except Exception:
+        pass
+    return out
+
+
+def missing_books(author_name):
+    """OL works not present under /media/books/<author>/. Fuzzy match on
+    normalized titles."""
+    owned = {_norm(b["title"]) for b in books_for(author_name)}
+    out = []
+    for w in book_works(author_name):
+        if _norm(w["title"]) not in owned:
+            out.append(w)
+    # Sort by date descending - newest unowned at the top
+    return sorted(out, key=lambda x: x.get("first_publish_date") or "",
+                  reverse=True)
+
+
+def book_radar(days=730):
+    """Cross-author book radar. Default window 2 years (books cycle slower
+    than music releases). Returns OL works with first_publish_date within
+    the window that aren't on disk yet."""
+    today  = datetime.now().date()
+    cutoff = today - timedelta(days=days)
+    out    = []
+    authors = list_authors()
+    log.info("book_radar: scanning %d authors (cutoff=%s)",
+             len(authors), cutoff)
+    for a in authors:
+        name  = a["name"]
+        owned = {_norm(b["title"]) for b in books_for(name)}
+        try:
+            for w in book_works(name):
+                date = (w.get("first_publish_date") or "").strip()
+                if not date:
+                    continue
+                # OL dates are messy: "2023", "January 2023", "March 15, 2023"
+                year_m = re.search(r"\b(19|20)\d{2}\b", date)
+                if not year_m:
+                    continue
+                try:
+                    pub = datetime.strptime(year_m.group(0), "%Y").date()
+                except Exception:
+                    continue
+                if pub < cutoff:
+                    continue
+                if _norm(w["title"]) in owned:
+                    continue
+                out.append({
+                    "author":             name,
+                    "title":              w["title"],
+                    "first_publish_date": date,
+                    "key":                w.get("key") or "",
+                })
+        except Exception as e:
+            log.warning("book_radar: failed for %s: %s", name, e)
+    return sorted(out, key=lambda x: x["first_publish_date"], reverse=True)
 
 
 def albums_for(artist):

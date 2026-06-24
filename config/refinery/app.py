@@ -100,11 +100,23 @@ def _radar_prewarm():
         log.exception("radar prewarm failed")
 
 
+def _book_radar_prewarm():
+    """Same for the books library against OpenLibrary - keeps the book
+    radar instant once seeded."""
+    try:
+        for a in library.list_authors():
+            library.book_works(a["name"])
+    except Exception:
+        log.exception("book radar prewarm failed")
+
+
 sched = BackgroundScheduler(job_defaults={"max_instances": 1, "coalesce": True})
 sched.add_job(scanner.scan_once, "interval", minutes=1, id="scan",
               next_run_time=datetime.now() + timedelta(seconds=15))
 sched.add_job(_radar_prewarm, "interval", hours=24, id="radar_prewarm",
               next_run_time=datetime.now() + timedelta(minutes=5))
+sched.add_job(_book_radar_prewarm, "interval", hours=24, id="book_radar_prewarm",
+              next_run_time=datetime.now() + timedelta(minutes=10))
 sched.start()
 
 
@@ -518,9 +530,11 @@ def track_audio(track_id):
 
 @app.route("/library")
 def library_index():
-    user = _get_user()
-    artists = library.list_artists()
-    return render_template("library.html", user=user, artists=artists)
+    user        = _get_user()
+    artists     = library.list_artists()
+    author_count = len(library.list_authors())
+    return render_template("library.html", user=user, artists=artists,
+                           author_count=author_count)
 
 
 @app.route("/library/fix-missing-art", methods=["POST"])
@@ -587,6 +601,49 @@ def library_fix_missing_art():
     threading.Thread(target=_run, daemon=True,
                      name="refinery-fixart").start()
     return redirect(url_for("library_index"))
+
+
+@app.route("/library/books")
+def library_books():
+    user    = _get_user()
+    authors = library.list_authors()
+    return render_template("library_books.html", user=user, authors=authors)
+
+
+@app.route("/library/books/radar")
+def library_books_radar():
+    user = _get_user()
+    try:
+        days = max(1, min(int(request.args.get("days", 730)), 3650))
+    except (TypeError, ValueError):
+        days = 730
+    releases = library.book_radar(days=days)
+    return render_template("library_books_radar.html", user=user,
+                           releases=releases, days=days)
+
+
+@app.route("/library/books/<path:author>")
+def library_books_author(author):
+    user    = _get_user()
+    books   = library.books_for(author)
+    missing = library.missing_books(author)
+    return render_template("library_books_author.html", user=user,
+                           author=author, books=books, missing=missing)
+
+
+@app.route("/library/books/<path:author>/<path:title>/cover")
+def library_book_cover(author, title):
+    """Serve cover.jpg / cover.png from a book folder. Path-traversal guard
+    keeps requests inside BOOK_TARGET even with crafty %2F input."""
+    book_root = Path(BOOK_TARGET).resolve()
+    folder    = (book_root / author / title).resolve()
+    if not str(folder).startswith(str(book_root) + os.sep):
+        abort(403)
+    for name in ("cover.jpg", "cover.jpeg", "cover.png"):
+        p = folder / name
+        if p.exists():
+            return send_file(str(p))
+    abort(404)
 
 
 @app.route("/library/radar")

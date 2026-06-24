@@ -31,9 +31,11 @@ in
     "d /persist/refinery/covers       0750 refinery refinery -"
     "d /persist/refinery/spectrograms 0750 refinery refinery -"
     "d /persist/refinery/artists      0750 refinery refinery -"
-    "d /persist/refinery/mb_artists   0750 refinery refinery -"
+    "d /persist/refinery/mb_artists     0750 refinery refinery -"
     "d /persist/refinery/mb_discography 0750 refinery refinery -"
-    "d /persist/refinery/book_covers  0750 refinery refinery -"
+    "d /persist/refinery/ol_authors     0750 refinery refinery -"
+    "d /persist/refinery/ol_works       0750 refinery refinery -"
+    "d /persist/refinery/book_covers    0750 refinery refinery -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -65,6 +67,8 @@ in
       REFINERY_ARTIST_PHOTO_DIR=/persist/refinery/artists
       REFINERY_MB_ARTIST_CACHE=/persist/refinery/mb_artists
       REFINERY_MB_DISCO_CACHE=/persist/refinery/mb_discography
+      REFINERY_OL_AUTHOR_CACHE=/persist/refinery/ol_authors
+      REFINERY_OL_WORKS_CACHE=/persist/refinery/ol_works
       REFINERY_WORKERS=3
       NAVIDROME_DB=/var/lib/navidrome/navidrome.db
       REFINERY_DOWNLOADS=/mnt/storage/downloads/slskd/complete

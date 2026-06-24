@@ -15,9 +15,10 @@ let
   app = pkgs.runCommand "ishimura-refinery" {} ''
     mkdir -p $out
     cp -r ${src}/app.py ${src}/bandcamp.py ${src}/book.py ${src}/db.py \
-          ${src}/downloader.py ${src}/genres.py ${src}/library.py \
-          ${src}/music.py ${src}/quality.py ${src}/scanner.py \
-          ${src}/targets.py ${src}/templates $out/
+          ${src}/downloader.py ${src}/game_dat.py ${src}/game_platforms.py \
+          ${src}/genres.py ${src}/library.py ${src}/music.py \
+          ${src}/quality.py ${src}/scanner.py ${src}/targets.py \
+          ${src}/templates $out/
   '';
 
   reprocessLibrary = pkgs.writeShellScriptBin "refinery-reprocess-library"
@@ -36,6 +37,8 @@ in
     "d /persist/refinery/ol_authors     0750 refinery refinery -"
     "d /persist/refinery/ol_works       0750 refinery refinery -"
     "d /persist/refinery/book_covers    0750 refinery refinery -"
+    "d /persist/refinery/game_covers    0750 refinery refinery -"
+    "d /persist/refinery/dats           0750 refinery refinery -"
     "d /persist/refinery/backups        0750 refinery refinery -"
   ];
 
@@ -76,7 +79,18 @@ in
       REFINERY_MUSIC_TARGET=/mnt/storage/media/music
       REFINERY_BOOK_TARGET=/mnt/storage/media/books
       REFINERY_BOOK_COVER_DIR=/persist/refinery/book_covers
+      REFINERY_GAME_TARGET=/mnt/storage/media/roms
+      REFINERY_BIOS_TARGET=/mnt/storage/media/bios
+      REFINERY_GAME_COVER_DIR=/persist/refinery/game_covers
+      REFINERY_DAT_DIR=/persist/refinery/dats
+      REFINERY_DAT_DB=/persist/refinery/dats.db
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
+      IGDB_CLIENT_ID=${config.sops.placeholder."romm/igdb_client_id"}
+      IGDB_CLIENT_SECRET=${config.sops.placeholder."romm/igdb_client_secret"}
+      STEAMGRIDDB_API_KEY=${config.sops.placeholder."romm/steamgriddb_api_key"}
+      RETROACHIEVEMENTS_API_KEY=${config.sops.placeholder."romm/retroachievements_api_key"}
+      SCREENSCRAPER_USER=${config.sops.placeholder."romm/screenscraper_user"}
+      SCREENSCRAPER_PASSWORD=${config.sops.placeholder."romm/screenscraper_password"}
       NTFY_URL=http://normandy:8080
       NTFY_TOPIC=ishimura-refinery
       NTFY_TOKEN=
@@ -139,8 +153,10 @@ in
       #   calibre                - book format conversion (MOBI/AZW -> EPUB)
       #                            and cover/metadata embedding
       #   yt-dlp                 - URL downloader (bandcamp/youtube/etc) -> inbox
+      #   chdman (mame-tools)    - ROM disc image conversion (BIN/CUE/ISO -> CHD)
+      #   p7zip / unzip          - extract archived ROM downloads
       Environment      = [
-        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin:${pkgs.calibre}/bin:${pkgs.yt-dlp}/bin"
+        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin:${pkgs.calibre}/bin:${pkgs.yt-dlp}/bin:${pkgs.mame-tools}/bin:${pkgs.p7zip}/bin:${pkgs.unzip}/bin"
       ];
       ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
       WorkingDirectory = app;
@@ -178,6 +194,33 @@ in
       OnCalendar         = "daily";
       Persistent         = true;        # catch-up after downtime
       RandomizedDelaySec = "30min";
+    };
+  };
+
+  # Weekly DAT refresh - no-intro / redump release updates roughly weekly,
+  # and a stale DAT just means new dumps aren't recognised until refresh.
+  systemd.services.refinery-dat-refresh = {
+    description = "Refresh no-intro / redump DAT files for ROM integrity";
+    after       = [ "network-online.target" ];
+    wants       = [ "network-online.target" ];
+    serviceConfig = {
+      Type             = "oneshot";
+      User             = "refinery";
+      Group            = "refinery";
+      EnvironmentFile  = config.sops.templates."refinery.env".path;
+    };
+    script = ''
+      ${pythonEnv}/bin/python -c 'import sys; sys.path.insert(0, "${app}"); import game_dat; game_dat.refresh_all()'
+    '';
+  };
+
+  systemd.timers.refinery-dat-refresh = {
+    description = "Trigger weekly DAT refresh";
+    wantedBy    = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar         = "weekly";
+      Persistent         = true;
+      RandomizedDelaySec = "1h";
     };
   };
 }

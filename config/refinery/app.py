@@ -281,14 +281,15 @@ def approve(item_id):
     # Do the actual write + move outside the DB transaction
     try:
         if item_dict["media_type"] == "music":
-            dest = music.write_and_move(item_dict, tracks, MUSIC_TARGET)
+            result = music.write_and_move(item_dict, tracks, MUSIC_TARGET)
         elif item_dict["media_type"] == "book":
             convert_pdf = request.form.get("convert_pdf") == "1"
-            dest = book.write_and_move(item_dict, BOOK_TARGET,
-                                       convert_pdf=convert_pdf)
+            result = book.write_and_move(item_dict, BOOK_TARGET,
+                                         convert_pdf=convert_pdf)
         else:
             raise ValueError(f"unknown media_type {item_dict['media_type']}")
-        log.info("Approved %s %d → %s", item_dict["media_type"], item_id, dest)
+        log.info("Approved %s %d → %s",
+                 item_dict["media_type"], item_id, result["dest"])
     except Exception as e:
         log.exception("approve write failed")
         with db.get_db() as conn:
@@ -298,11 +299,20 @@ def approve(item_id):
             )
         return redirect(url_for("queue"))
 
+    # Update source_path on the item + each track so post-approve actions
+    # (reanalyze, fix-missing-art, reprocess) find the files where they now
+    # live, instead of chasing the deleted download folder.
     with db.get_db() as conn:
         conn.execute(
-            "UPDATE items SET status='approved', decided_at=datetime('now') WHERE id=?",
-            (item_id,),
+            "UPDATE items SET status='approved', decided_at=datetime('now'), "
+            "source_path=? WHERE id=?",
+            (result["dest"], item_id),
         )
+        for tid, new_path in (result.get("track_paths") or {}).items():
+            conn.execute(
+                "UPDATE tracks SET source_path=? WHERE id=?",
+                (new_path, tid),
+            )
     return redirect(url_for("queue"))
 
 

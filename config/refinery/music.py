@@ -910,6 +910,11 @@ def write_and_move(item, tracks, target_root):
     max_disc = max((int(t.get("disc_no") or 1) for t in tracks), default=1)
     multi_disc = max_disc > 1
 
+    # Track id → final library path. Returned so the caller can update
+    # tracks.source_path; otherwise bulk-fix / reanalyze still chase the
+    # long-deleted download folder.
+    track_paths = {}
+
     for t in tracks:
         src = Path(t["source_path"])
         if not src.exists():
@@ -964,6 +969,8 @@ def write_and_move(item, tracks, target_root):
         except Exception as e:
             log.error("place failed %s -> %s: %s", src, dest, e)
             continue
+        if t.get("id") is not None:
+            track_paths[t["id"]] = str(dest)
 
         # Write synced lyrics (.lrc) alongside the audio file
         if t.get("lyrics_synced"):
@@ -1019,4 +1026,4 @@ def write_and_move(item, tracks, target_root):
         except Exception as e:
             log.warning("source cleanup failed: %s", e)
 
-    return str(dest_album)
+    return {"dest": str(dest_album), "track_paths": track_paths}

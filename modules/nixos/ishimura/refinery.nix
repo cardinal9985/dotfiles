@@ -17,7 +17,7 @@ let
     cp -r ${src}/app.py ${src}/bandcamp.py ${src}/book.py ${src}/db.py \
           ${src}/downloader.py ${src}/genres.py ${src}/library.py \
           ${src}/music.py ${src}/quality.py ${src}/scanner.py \
-          ${src}/templates $out/
+          ${src}/targets.py ${src}/templates $out/
   '';
 
   reprocessLibrary = pkgs.writeShellScriptBin "refinery-reprocess-library"
@@ -36,6 +36,7 @@ in
     "d /persist/refinery/ol_authors     0750 refinery refinery -"
     "d /persist/refinery/ol_works       0750 refinery refinery -"
     "d /persist/refinery/book_covers    0750 refinery refinery -"
+    "d /persist/refinery/backups        0750 refinery refinery -"
   ];
 
   environment.persistence."/persist".directories = [
@@ -104,15 +105,17 @@ in
       RemainAfterExit = true;
     };
     # refinery needs write on:
-    #  - /mnt/storage/media/music    (to create artist/album folders on approve)
-    #  - /mnt/storage/downloads/slskd (to retag source files + accept uploads)
-    # The -d default ACL makes any new subfolder slskd creates inherit the
-    # grant, so newly-downloaded albums are writable without re-running this.
-    # m::rwx explicitly sets the ACL mask so a subsequent chmod (from
-    # tmpfiles, etc.) doesn't silently downgrade refinery's effective access.
+    #  - /mnt/storage/media/music    (artist/album folders on approve)
+    #  - /mnt/storage/media/books    (author folders on approve)
+    #  - /mnt/storage/media/roms     (per-platform game folders, RomM shares these)
+    #  - /mnt/storage/downloads/slskd (retag source files + accept uploads)
+    # Default ACL on each root makes new subfolders inherit the grant, so
+    # newly-created destinations are writable without re-running this. m::rwx
+    # explicitly sets the mask so a subsequent chmod doesn't silently
+    # downgrade refinery's effective access.
     script = ''
       for dir in /mnt/storage/media/music /mnt/storage/media/books \
-                 /mnt/storage/downloads/slskd; do
+                 /mnt/storage/media/roms  /mnt/storage/downloads/slskd; do
         if [ -d "$dir" ]; then
           ${pkgs.acl}/bin/setfacl -R    -m u:refinery:rwx,m::rwx "$dir" || true
           ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx,m::rwx "$dir" || true
@@ -143,6 +146,38 @@ in
       WorkingDirectory = app;
       Restart          = "on-failure";
       RestartSec       = "5s";
+    };
+  };
+
+  # Nightly SQLite snapshot. sqlite3 .backup is online-safe (doesn't lock
+  # against running refinery). Keeps 14 days so an "oops I forgot all 171
+  # albums I just approved" rollback is one cp away.
+  systemd.services.refinery-db-backup = {
+    description = "Nightly snapshot of refinery's SQLite DB";
+    serviceConfig = {
+      Type  = "oneshot";
+      User  = "refinery";
+      Group = "refinery";
+    };
+    script = ''
+      set -euo pipefail
+      DB=/persist/refinery/refinery.db
+      OUT=/persist/refinery/backups
+      [ -f "$DB" ] || exit 0
+      STAMP=$(date +%Y-%m-%d)
+      ${pkgs.sqlite}/bin/sqlite3 "$DB" ".backup '$OUT/$STAMP.db'"
+      # Keep last 14 daily snapshots
+      ls -1t "$OUT"/*.db 2>/dev/null | tail -n +15 | xargs -r rm -f
+    '';
+  };
+
+  systemd.timers.refinery-db-backup = {
+    description = "Trigger nightly refinery DB backup";
+    wantedBy    = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar         = "daily";
+      Persistent         = true;        # catch-up after downtime
+      RandomizedDelaySec = "30min";
     };
   };
 }

@@ -373,4 +373,6 @@ def write_and_move(item, target_root, convert_pdf=False):
     except Exception:
         pass
 
+    return {"dest": str(dest)}
+
     return str(dest_dir)

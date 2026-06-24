@@ -215,33 +215,40 @@ def lookup_musicbrainz(artist, album):
     if not rels:
         return None
     rel = rels[0]
+    rg  = rel.get("release-group") or {}
     return {
-        "mb_release_id": rel.get("id"),
-        "title":         rel.get("title"),
-        "year":          (rel.get("date") or "")[:4],
-        "country":       rel.get("country"),
+        "mb_release_id":       rel.get("id"),
+        "mb_release_group_id": rg.get("id"),
+        "title":               rel.get("title"),
+        "year":                (rel.get("date") or "")[:4],
+        "country":             rel.get("country"),
     }
 
 
 def lookup_musicbrainz_by_id(mb_release_id):
     """Direct MB release lookup by MBID. Skips the slow search-by-name path.
     Used during reimport when files already have musicbrainz_albumid tagged
-    (every file in a properly-tagged Navidrome library has this)."""
+    (every file in a properly-tagged Navidrome library has this).
+    inc=release-groups so we can hand the release-group MBID to ListenBrainz
+    later (LB tag queries are release-group-scoped, not release-scoped)."""
     if not mb_release_id:
         return None
     _rate_limited("musicbrainz")
-    r = _http_get(f"{MB_BASE}/release/{mb_release_id}", params={"fmt": "json"})
+    r = _http_get(f"{MB_BASE}/release/{mb_release_id}",
+                  params={"fmt": "json", "inc": "release-groups"})
     if not r:
         return None
     try:
         data = r.json()
     except Exception:
         return None
+    rg = data.get("release-group") or {}
     return {
-        "mb_release_id": data.get("id"),
-        "title":         data.get("title"),
-        "year":          (data.get("date") or "")[:4],
-        "country":       data.get("country"),
+        "mb_release_id":       data.get("id"),
+        "mb_release_group_id": rg.get("id"),
+        "title":               data.get("title"),
+        "year":                (data.get("date") or "")[:4],
+        "country":             data.get("country"),
     }
 
 
@@ -384,20 +391,25 @@ def lastfm_album_info(artist, album):
 
 # ── ListenBrainz cross-check ─────────────────────────────────────────────────
 
-def listenbrainz_release_lookup(mb_release_id):
-    """ListenBrainz release group lookup by MB id. Provides tags via the
-    release-group entity. Anonymous - no token needed."""
-    if not mb_release_id:
+def listenbrainz_release_lookup(mb_release_group_id):
+    """ListenBrainz tag lookup, keyed by the MusicBrainz release-GROUP MBID
+    (not release MBID - they're different). Endpoint is a bulk-style GET
+    that wraps results under the MBID key."""
+    if not mb_release_group_id:
         return None
-    r = _http_get(f"{LB_BASE}/metadata/release/{mb_release_id}",
-                  params={"inc": "tags"})
+    r = _http_get(f"{LB_BASE}/metadata/release_group/", params={
+        "release_group_mbids": mb_release_group_id,
+        "inc":                 "tag",
+    })
     if not r:
         return None
-    data = r.json() or {}
-    tags = []
-    for t in (data.get("tag") or {}).get("release", []) or []:
-        if t.get("tag"):
-            tags.append(t["tag"])
+    data    = (r.json() or {}).get(mb_release_group_id) or {}
+    tag_obj = data.get("tag") or {}
+    tags    = []
+    for level in ("release_group", "artist"):
+        for t in (tag_obj.get(level) or []):
+            if t.get("tag"):
+                tags.append(t["tag"])
     return {"tags": tags}
 
 
@@ -635,7 +647,7 @@ def process_album(folder):
     bc_url = existing.get("bandcamp_url") or bandcamp_search(artist, album)
     bc     = bandcamp_album(bc_url) if bc_url else None
     lfm    = lastfm_album_info(artist, album)
-    lb     = listenbrainz_release_lookup(mb["mb_release_id"]) if mb else None
+    lb     = listenbrainz_release_lookup(mb["mb_release_group_id"]) if mb else None
 
     # Merge with preference rules
     final_year = (mb and mb.get("year")) or (bc and bc.get("year")) or year

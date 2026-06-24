@@ -1,18 +1,20 @@
 """No-Intro + Redump DAT cache.
 
-DAT files (XML) list every known-good ROM/disc dump with size + CRC32 + MD5
-+ SHA1 + canonical name. Parsing them on every import would be silly - one
-SNES DAT alone is ~20k entries. So we parse once into a SQLite index keyed
-on each hash, and look up O(1) on import.
+DAT files list every known-good ROM/disc dump with size + CRC32 + MD5 +
+SHA1 + canonical name. Parsing on every import would be silly - one SNES
+DAT alone is ~20k entries. We parse once into a SQLite index keyed on each
+hash and look up O(1) on import.
 
-DATs auto-refresh weekly via the refinery-dat-refresh systemd timer."""
+Source: libretro-database mirrors the no-intro and redump DATs in
+ClrMamePro format under metadat/{no-intro,redump}/. Auto-refreshes weekly
+via the refinery-dat-refresh systemd timer."""
 
 import logging
 import os
 import re
 import sqlite3
-import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import quote
 
 import requests
 
@@ -24,43 +26,50 @@ DAT_DIR  = os.environ.get("REFINERY_DAT_DIR", "/persist/refinery/dats")
 DAT_DB   = os.environ.get("REFINERY_DAT_DB",  "/persist/refinery/dats.db")
 UA       = "ishimura-refinery/1.0 (https://refinery.ishimura.lol)"
 
-# The no-intro/redump "datomatic" portals require login + per-set downloads
-# (no rate-limit friendly bulk endpoint). The community-maintained mirrors
-# below repackage the same files for unauthenticated fetch. If they break,
-# switch to libretro's mirrors or upload your own DATs to /persist/dats/.
+LIBRETRO_RAW = "https://raw.githubusercontent.com/libretro/libretro-database/master"
+
+
+def _url(folder, filename):
+    return f"{LIBRETRO_RAW}/metadat/{folder}/{quote(filename)}"
+
+
+# platform_slug -> (url, kind). kind = "nointro" or "redump", informational
+# only (parser is shared).
 DAT_SOURCES = {
-    # platform_slug -> (url, kind)
-    # kind = "nointro" or "redump"; tells us how to interpret a few quirks
-    # in the XML (e.g. redump uses one <game> per disc, no-intro one per ROM).
-    "nes":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Nintendo%20Entertainment%20System.dat",      "nointro"),
-    "snes":   ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Super%20Nintendo%20Entertainment%20System.dat", "nointro"),
-    "n64":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Nintendo%2064.dat",                          "nointro"),
-    "gb":     ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Game%20Boy.dat",                             "nointro"),
-    "gbc":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Game%20Boy%20Color.dat",                     "nointro"),
-    "gba":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Game%20Boy%20Advance.dat",                   "nointro"),
-    "nds":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Nintendo%20DS.dat",                          "nointro"),
-    "vb":     ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Virtual%20Boy.dat",                          "nointro"),
-    "md":     ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sega%20-%20Mega%20Drive%20-%20Genesis.dat",                  "nointro"),
-    "sms":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sega%20-%20Master%20System%20-%20Mark%20III.dat",            "nointro"),
-    "gg":     ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sega%20-%20Game%20Gear.dat",                                "nointro"),
-    "32x":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sega%20-%2032X.dat",                                        "nointro"),
-    "pce":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/NEC%20-%20PC%20Engine%20-%20TurboGrafx%2016.dat",            "nointro"),
-    "2600":   ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Atari%20-%202600.dat",                                      "nointro"),
-    "5200":   ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Atari%20-%205200.dat",                                      "nointro"),
-    "7800":   ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Atari%20-%207800.dat",                                      "nointro"),
-    "lynx":   ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Atari%20-%20Lynx.dat",                                      "nointro"),
-    "jaguar": ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Atari%20-%20Jaguar.dat",                                    "nointro"),
-    "ngp":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/SNK%20-%20Neo%20Geo%20Pocket.dat",                          "nointro"),
-    "ws":     ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Bandai%20-%20WonderSwan.dat",                               "nointro"),
-    # Redump (disc-based) - libretro mirrors these too
-    "ps1":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sony%20-%20PlayStation.dat",                                "redump"),
-    "psp":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sony%20-%20PlayStation%20Portable.dat",                     "redump"),
-    "saturn": ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sega%20-%20Saturn.dat",                                     "redump"),
-    "dc":     ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sega%20-%20Dreamcast.dat",                                  "redump"),
-    "scd":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Sega%20-%20Mega%20CD%20-%20Sega%20CD.dat",                  "redump"),
-    "pcecd":  ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/NEC%20-%20PC%20Engine%20CD%20-%20TurboGrafx-CD.dat",        "redump"),
-    "3do":    ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/The%203DO%20Company%20-%203DO.dat",                         "redump"),
-    "gc":     ("https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20GameCube.dat",                               "redump"),
+    # No-Intro: cartridge / handheld
+    "nes":    (_url("no-intro", "Nintendo - Nintendo Entertainment System.dat"),      "nointro"),
+    "snes":   (_url("no-intro", "Nintendo - Super Nintendo Entertainment System.dat"), "nointro"),
+    "n64":    (_url("no-intro", "Nintendo - Nintendo 64.dat"),                        "nointro"),
+    "gb":     (_url("no-intro", "Nintendo - Game Boy.dat"),                           "nointro"),
+    "gbc":    (_url("no-intro", "Nintendo - Game Boy Color.dat"),                     "nointro"),
+    "gba":    (_url("no-intro", "Nintendo - Game Boy Advance.dat"),                   "nointro"),
+    "nds":    (_url("no-intro", "Nintendo - Nintendo DS.dat"),                        "nointro"),
+    "vb":     (_url("no-intro", "Nintendo - Virtual Boy.dat"),                        "nointro"),
+    "md":     (_url("no-intro", "Sega - Mega Drive - Genesis.dat"),                   "nointro"),
+    "sms":    (_url("no-intro", "Sega - Master System - Mark III.dat"),               "nointro"),
+    "gg":     (_url("no-intro", "Sega - Game Gear.dat"),                              "nointro"),
+    "32x":    (_url("no-intro", "Sega - 32X.dat"),                                    "nointro"),
+    "pce":    (_url("no-intro", "NEC - PC Engine - TurboGrafx 16.dat"),               "nointro"),
+    "2600":   (_url("no-intro", "Atari - 2600.dat"),                                  "nointro"),
+    "5200":   (_url("no-intro", "Atari - 5200.dat"),                                  "nointro"),
+    "7800":   (_url("no-intro", "Atari - 7800.dat"),                                  "nointro"),
+    "lynx":   (_url("no-intro", "Atari - Lynx.dat"),                                  "nointro"),
+    "jaguar": (_url("no-intro", "Atari - Jaguar.dat"),                                "nointro"),
+    "ngp":    (_url("no-intro", "SNK - Neo Geo Pocket.dat"),                          "nointro"),
+    "ws":     (_url("no-intro", "Bandai - WonderSwan.dat"),                           "nointro"),
+    # Redump: disc-based
+    "ps1":    (_url("redump",   "Sony - PlayStation.dat"),                            "redump"),
+    "ps2":    (_url("redump",   "Sony - PlayStation 2.dat"),                          "redump"),
+    "psp":    (_url("redump",   "Sony - PlayStation Portable.dat"),                   "redump"),
+    "saturn": (_url("redump",   "Sega - Saturn.dat"),                                 "redump"),
+    "dc":     (_url("redump",   "Sega - Dreamcast.dat"),                              "redump"),
+    "scd":    (_url("redump",   "Sega - Mega-CD - Sega CD.dat"),                      "redump"),
+    "pcecd":  (_url("redump",   "NEC - PC Engine CD - TurboGrafx-CD.dat"),            "redump"),
+    "3do":    (_url("redump",   "The 3DO Company - 3DO.dat"),                         "redump"),
+    "gc":     (_url("redump",   "Nintendo - GameCube.dat"),                           "redump"),
+    "wii":    (_url("redump",   "Nintendo - Wii.dat"),                                "redump"),
+    "xbox":   (_url("redump",   "Microsoft - Xbox.dat"),                              "redump"),
+    "x360":   (_url("redump",   "Microsoft - Xbox 360.dat"),                          "redump"),
 }
 
 
@@ -91,25 +100,59 @@ def init_db():
         c.execute("CREATE INDEX IF NOT EXISTS idx_sha1  ON entries(sha1)")
 
 
+_GAME_NAME_RE = re.compile(r'^\s*name\s+"([^"]+)"', re.MULTILINE)
+_ROM_LINE_RE  = re.compile(
+    r'\brom\s*\(\s*name\s+"([^"]+)"'
+    r'\s+size\s+(\d+)'
+    r'(?:\s+crc\s+(\S+))?'
+    r'(?:\s+md5\s+(\S+))?'
+    r'(?:\s+sha1\s+(\S+))?'
+    r'\s*\)',
+    re.IGNORECASE,
+)
+
+
+def _split_game_blocks(text):
+    """Yield the inner text of each top-level `game ( ... )` block.
+    ClrMamePro is paren-nested but only one level for our needs - rom (...)
+    lines are on a single line so we don't need full balanced-paren parsing.
+    We just split on `^game (` and stop each chunk at the next one (or EOF)."""
+    blocks = re.split(r'(?m)^\s*game\s*\(\s*$', text)
+    # blocks[0] is the header (clrmamepro block), skip it
+    for chunk in blocks[1:]:
+        # Trim at the closing ')' that terminates this game block - it's the
+        # first line that is just ')' with optional whitespace.
+        end = re.search(r'(?m)^\s*\)\s*$', chunk)
+        yield chunk[:end.start()] if end else chunk
+
+
 def _parse_dat(path, platform, kind):
-    """Yield (name, size, crc32, md5, sha1) tuples from a DAT XML."""
+    """Yield (name, size, crc32, md5, sha1) for every rom entry in a
+    ClrMamePro DAT. One game block may contain multiple rom entries
+    (e.g. Sega CD discs with audio tracks)."""
     try:
-        tree = ET.parse(path)
-    except ET.ParseError as e:
-        log.warning("DAT parse failed %s: %s", path, e)
+        with open(path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError as e:
+        log.warning("DAT read failed %s: %s", path, e)
         return
-    for game in tree.getroot().findall("game"):
-        name = game.attrib.get("name") or ""
-        for rom in game.findall("rom"):
-            size  = rom.attrib.get("size")
-            crc32 = (rom.attrib.get("crc")  or "").lower()
-            md5   = (rom.attrib.get("md5")  or "").lower()
-            sha1  = (rom.attrib.get("sha1") or "").lower()
+
+    for block in _split_game_blocks(text):
+        name_m = _GAME_NAME_RE.search(block)
+        if not name_m:
+            continue
+        name = name_m.group(1)
+        for rom_m in _ROM_LINE_RE.finditer(block):
+            _rom_name, size, crc32, md5, sha1 = rom_m.groups()
             try:
                 size = int(size) if size else None
             except (TypeError, ValueError):
                 size = None
-            yield name, size, crc32, md5, sha1
+            yield (name,
+                   size,
+                   (crc32 or "").lower(),
+                   (md5   or "").lower(),
+                   (sha1  or "").lower())
 
 
 def refresh_one(platform, url, kind):

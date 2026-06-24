@@ -11,3 +11,4 @@ tmp/
 
 # Claude
 .claude/
+config/refinery/__pycache__/

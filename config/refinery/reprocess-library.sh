@@ -25,12 +25,18 @@ count=${#albums[@]}
 
 echo "Found $count album folder(s) under $SRC."
 echo "Each will be moved to $DST as: '<Artist> - <Album>/'"
-echo "Services ishimura-refinery + slskd will be stopped during the move."
-read -r -p "Continue? [y/N] " ans
+echo "Services ishimura-refinery + podman-slskd will be stopped during the move."
+echo -n "Continue? [y/N]: "
+read -r ans
 [ "$ans" = "y" ] || { echo "aborted"; exit 0; }
 
-echo ">>> Stopping ishimura-refinery + slskd"
-systemctl stop ishimura-refinery slskd
+# Stop refinery (so it doesn't scan mid-move) and slskd (so it doesn't write
+# into the inbox while we're moving). Use || true so a missing unit doesn't
+# abort under `set -e` - slskd in particular runs as a podman unit on
+# ishimura, but might not exist on other hosts.
+echo ">>> Stopping ishimura-refinery + podman-slskd"
+systemctl stop ishimura-refinery.service || true
+systemctl stop podman-slskd.service      || true
 
 moved=0
 skipped=0
@@ -64,8 +70,8 @@ if command -v setfacl >/dev/null; then
     setfacl -d -R -m u:refinery:rwx,m::rwx "$DST"
 fi
 
-echo ">>> Starting ishimura-refinery (slskd stays off until you say so)"
-systemctl start ishimura-refinery
+echo ">>> Starting ishimura-refinery (podman-slskd stays off until you say so)"
+systemctl start ishimura-refinery.service
 
 cat <<EOF
 
@@ -80,7 +86,7 @@ Then in the refinery UI:
   - Review any non-VERIFIED ones manually
 
 When you're done re-importing, bring slskd back:
-  ssh ishimura sudo systemctl start slskd
+  ssh ishimura sudo systemctl start podman-slskd.service
 
 If anything goes wrong mid-move, the source folders are still present at
 $SRC for whatever didn't move, and the moved folders are intact at

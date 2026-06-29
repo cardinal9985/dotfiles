@@ -20,11 +20,13 @@
         36475 # real SSH
         80    # Pangolin / Traefik (HTTP, ACME challenges)
         443   # Pangolin / Traefik (HTTPS)
+        6969  # SPT.Server HTTP/WebSocket (Pangolin raw resource > nostromo tailnet:6969)
         50300 # slskd peer port (Pangolin raw resource > ishimura tailnet:50300)
       ];
       allowedUDPPorts = [
         51820 # Pangolin / Gerbil (WireGuard, primary)
         21820 # Pangolin / Gerbil (WireGuard, secondary)
+        6790  # Fika game traffic (Pangolin raw resource > nostromo tailnet:6790)
         42420 # Vintage Story (Pelican raw resource > nostromo tailnet:42420)
       ];
       interfaces.tailscale0.allowedTCPPorts = [

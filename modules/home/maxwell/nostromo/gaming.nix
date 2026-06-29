@@ -4,6 +4,9 @@
   home.packages = with pkgs; [
     mangohud
     heroic
+    lutris
+    winetricks
+    protontricks
     steamcmd
     vintagestory
     rimsort

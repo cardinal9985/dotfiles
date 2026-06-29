@@ -164,5 +164,19 @@ def for_extension(ext):
 
 
 def all_extensions():
-    """Flat set of every extension we recognise as game-related."""
+    """Flat set of every extension we recognise as game-related, INCLUDING
+    archive extensions (.zip for MAME, etc). Used by the games processor."""
     return {e for p in PLATFORMS.values() for e in p["exts"]}
+
+
+# Extensions that overlap with other media types (Bandcamp ships .zip with
+# audio inside, etc.). The scanner skips these when voting on media_type
+# so a music/book/video download in an archive isn't misrouted to games.
+CLASSIFIER_AMBIGUOUS = {".zip", ".rar", ".7z"}
+
+
+def classifier_extensions():
+    """Subset of all_extensions() that's safe for the scanner to vote on.
+    Archives are handled inside the games processor itself once a folder
+    is already known to be game-related (e.g. via filename hint)."""
+    return all_extensions() - CLASSIFIER_AMBIGUOUS

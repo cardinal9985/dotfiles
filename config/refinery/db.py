@@ -82,3 +82,8 @@ def init_db():
             conn.execute("ALTER TABLE items ADD COLUMN spectrogram_local TEXT")
         if "artist_photo_local" not in item_cols:
             conn.execute("ALTER TABLE items ADD COLUMN artist_photo_local TEXT")
+        # Subtype = sub-bucket within a media_type. For games, the platform
+        # slug (psx / snes / gba / ...); video later uses movie/show/anime/etc.
+        if "subtype" not in item_cols:
+            conn.execute("ALTER TABLE items ADD COLUMN subtype TEXT")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_items_subtype ON items(subtype)")

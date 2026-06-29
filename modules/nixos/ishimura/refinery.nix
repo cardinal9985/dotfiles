@@ -16,9 +16,9 @@ let
     mkdir -p $out
     cp -r ${src}/app.py ${src}/bandcamp.py ${src}/book.py ${src}/db.py \
           ${src}/downloader.py ${src}/game_dat.py ${src}/game_platforms.py \
-          ${src}/genres.py ${src}/library.py ${src}/music.py \
-          ${src}/quality.py ${src}/scanner.py ${src}/targets.py \
-          ${src}/templates $out/
+          ${src}/games.py ${src}/genres.py ${src}/library.py \
+          ${src}/music.py ${src}/quality.py ${src}/scanner.py \
+          ${src}/targets.py ${src}/templates $out/
   '';
 
   reprocessLibrary = pkgs.writeShellScriptBin "refinery-reprocess-library"

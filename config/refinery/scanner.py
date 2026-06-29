@@ -11,6 +11,7 @@ from pathlib import Path
 
 import db
 import book
+import games
 import music
 
 WORKERS = int(os.environ.get("REFINERY_WORKERS", "3"))
@@ -24,12 +25,16 @@ DOWNLOADS_DIR = os.environ.get("REFINERY_DOWNLOADS",
 # source writes directly without atomic moves (e.g. mergerfs cross-disk).
 STABILITY_SECS = int(os.environ.get("REFINERY_STABILITY_SECS", "0"))
 
+import game_platforms
+
 MUSIC_EXTS = {".mp3", ".flac", ".m4a", ".ogg", ".opus", ".wma", ".wav",
               ".alac", ".aiff", ".aif"}
 VIDEO_EXTS = {".mkv", ".mp4", ".avi", ".mov", ".webm", ".m4v"}
 BOOK_EXTS  = {".epub", ".pdf", ".mobi", ".azw", ".azw3", ".cbz", ".cbr"}
-GAME_EXTS  = {".nes", ".smc", ".sfc", ".gba", ".gb", ".gbc", ".n64", ".z64",
-              ".iso", ".bin", ".chd", ".cue", ".md", ".smd", ".a26"}
+# Pulled from game_platforms (excluding bare archive extensions like .zip,
+# which overlap with music/book/video downloads). New consoles = one edit,
+# not two. The games processor itself handles .zip / .7z / .rar.
+GAME_EXTS  = game_platforms.classifier_extensions()
 
 
 def classify_folder(path):
@@ -121,6 +126,8 @@ def _process_one(full):
             music.process_album(work)
         elif kind == "book":
             book.process_book(work)
+        elif kind == "game":
+            games.process_game(work)
         else:
             with db.get_db() as conn:
                 conn.execute(

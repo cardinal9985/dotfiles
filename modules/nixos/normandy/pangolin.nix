@@ -1250,6 +1250,10 @@ let
         address: ":42420/udp"
       tcp-50300:
         address: ":50300/tcp"
+      tcp-6969:
+        address: ":6969/tcp"
+      udp-6790:
+        address: ":6790/udp"
     certificatesResolvers:
       letsencrypt:
         acme:

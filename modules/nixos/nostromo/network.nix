@@ -9,7 +9,14 @@
     };
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 36475  ]; # 36475 = SSH
+      allowedTCPPorts = [
+        36475 # SSH
+        6969  # SPT.Server (Pelican container, exposed for direct game.ishimura.lol forward)
+      ];
+      allowedUDPPorts = [
+        6790  # Fika game traffic
+        42420 # Vintage Story
+      ];
     };
     hosts = {
       "100.108.98.70" = [ "ishimura.lol" "pangolin.ishimura.lol" "auth.ishimura.lol" ];

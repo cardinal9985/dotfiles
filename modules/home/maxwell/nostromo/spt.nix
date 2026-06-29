@@ -19,7 +19,7 @@ let
   # sptRoot above.
   protonEnv = ''
     unset LD_PRELOAD
-    export PROTONPATH=${pkgs.proton-ge-bin}
+    export PROTONPATH=${pkgs.proton-ge-bin.steamcompattool}
     export WINEPREFIX=${sptRoot}
     export GAMEID=umu-default
     export PROTON_VERB=waitforexitandrun

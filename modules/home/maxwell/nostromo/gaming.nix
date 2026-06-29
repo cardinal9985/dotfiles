@@ -7,6 +7,7 @@
     lutris
     winetricks
     protontricks
+    umu-launcher
     steamcmd
     vintagestory
     rimsort

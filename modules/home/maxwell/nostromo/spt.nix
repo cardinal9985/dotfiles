@@ -44,7 +44,10 @@ let
       echo "Greed.exe not found at $GREED" >&2
       exit 1
     fi
-    cd "$(dirname "$GREED")"
+    # Greed.exe expects cwd to be the SPT install root (next to
+    # EscapeFromTarkov.exe). It uses a relative path
+    # "SPT/user/mods/[SVM] Server Value Modifier/" to locate its DLL.
+    cd ${sptInner}
     exec ${pkgs.umu-launcher}/bin/umu-run "$GREED" "$@"
   '';
 

@@ -208,7 +208,7 @@ let
       howTo = [
         "Install a legitimate copy of Escape from Tarkov via the BSG launcher"
         ''Download the <a href="https://forge.sp-tarkov.com/installer" target="_blank">SPT 4.0.13 installer</a> and install it pointing at your EFT directory''
-        ''Download the <a href="/downloads/mods.zip" target="_blank">bundled mods (Fika + SAIN + visuals)</a> and extract everything into your SPT install root''
+        ''Download <a href="/downloads/mods.zip" target="_blank">mods.zip</a> and extract everything into your SPT install root''
         "Launch SPT.Launcher.exe (Wine/Proton on Linux, native on Windows)"
         "Set Server URL to 'https://games.ishimura.lol:6969' and accept the self-signed certificate warning"
         "Create a profile, pick an edition, click Play"

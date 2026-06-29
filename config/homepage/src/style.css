@@ -447,6 +447,14 @@ header {
 .game-howto li {
   margin-bottom: 0.25rem;
 }
+.game-howto a {
+  color: var(--bright-yellow);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.game-howto a:hover {
+  filter: brightness(1.15);
+}
 
 /* ── Admin page theme overrides ── */
 @keyframes shadow-pulse-red {

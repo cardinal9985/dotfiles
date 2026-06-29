@@ -207,8 +207,8 @@ let
       icon              = "✪";
       howTo = [
         "Install a legitimate copy of Escape from Tarkov via the BSG launcher"
-        "Download SPT 4.0.13 installer from https://forge.sp-tarkov.com/installer and install it pointing at your EFT directory"
-        "Download Fika.Core (client) from https://forge.sp-tarkov.com (Project Fika - latest 2.x release) and extract into your SPT install root"
+        ''Download the <a href="https://forge.sp-tarkov.com/installer" target="_blank">SPT 4.0.13 installer</a> and install it pointing at your EFT directory''
+        ''Download the <a href="/downloads/mods.zip" target="_blank">bundled mods (Fika + SAIN + visuals)</a> and extract everything into your SPT install root''
         "Launch SPT.Launcher.exe (Wine/Proton on Linux, native on Windows)"
         "Set Server URL to 'https://games.ishimura.lol:6969' and accept the self-signed certificate warning"
         "Create a profile, pick an edition, click Play"
@@ -310,9 +310,13 @@ in
   ];
 
   system.activationScripts.homepage = ''
-    mkdir -p /persist/pangolin/homepage/games-status
+    mkdir -p /persist/pangolin/homepage/games-status /persist/pangolin/homepage/downloads
+    # --exclude downloads preserves manually-uploaded files (e.g. mod bundles
+    # for game-server clients) across rebuilds. Drop files there with:
+    #   scp file.zip normandy:/persist/pangolin/homepage/downloads/
     ${pkgs.rsync}/bin/rsync -a --delete \
       --exclude games-status \
+      --exclude downloads \
       ${homepage}/ /persist/pangolin/homepage/
     chmod -R a+rX /persist/pangolin/homepage
   '';

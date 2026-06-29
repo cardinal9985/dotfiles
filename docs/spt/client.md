@@ -18,7 +18,6 @@ In your NixOS config, you need these home-manager packages:
 ```nix
 home.packages = with pkgs; [
   lutris winetricks protontricks umu-launcher
-  # plus whatever else
 ];
 ```
 
@@ -90,7 +89,9 @@ Re-run SPT installer. **Set install path to X: drive** (e.g. `X:\games\spt`). Ma
 
 ### 7. Install Fika.Core + the other client mods
 
-Get the mod archive bundle from me (I'll send a zip via [whatever channel]). Or download individually from <https://forge.sp-tarkov.com>:
+**Easiest**: download the pre-bundled mods zip from <https://ishimura.lol/downloads/mods.zip> - I keep this in sync with what runs on my server. Extract straight into your SPT install root.
+
+Or download individually from <https://forge.sp-tarkov.com>:
 
 | Mod | Required? |
 |---|---|

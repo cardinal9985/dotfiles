@@ -202,7 +202,10 @@ function renderGames(games) {
       var ol = document.createElement('ol');
       g.howTo.forEach(function (step) {
         var li = document.createElement('li');
-        li.textContent = step;
+        // innerHTML so howTo steps can include <a href> links (e.g. mod bundle
+        // downloads). Content is nix-defined in homepage.nix, not user input,
+        // so no XSS risk.
+        li.innerHTML = step;
         ol.appendChild(li);
       });
       howto.appendChild(ol);

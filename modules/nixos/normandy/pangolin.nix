@@ -234,6 +234,9 @@ let
             - error-pages
             - tailnet-only
         api-router:
+          # No tailnet-only: newt clients (e.g. ishimura) connect from public
+          # IP via WG hole-punching; the API auths them via secret tokens, so
+          # IP gating here would lock newt out. UI (next-router) stays tailnet-only.
           rule: "Host(`${dashboardHost}`) && PathPrefix(`/api/v1`)"
           service: api-service
           entryPoints:
@@ -243,7 +246,6 @@ let
           middlewares:
             - noindex-headers
             - error-pages
-            - tailnet-only
         auth-approval-router:
           rule: "Host(`auth.${domain}`) && Path(`/approval_required`)"
           service: errors-service

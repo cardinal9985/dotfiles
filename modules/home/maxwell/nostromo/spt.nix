@@ -5,9 +5,9 @@
 # that BepInEx needs (winhttp=n,b) so doorstop hooks into Unity correctly.
 #
 # Produces three commands + matching .desktop entries:
-#   spt-launcher    - main game launcher (Proton + Fika)
-#   spt-svm-config  - SVM Server Value Modifier GUI (Greed.exe)
-#   spt-server      - local SPT.Server.Linux for offline testing (no Pelican)
+#   tarkov         - main game launcher (Proton + Fika)
+#   tarkov-svm     - SVM Server Value Modifier GUI (Greed.exe)
+#   tarkov-server  - local SPT.Server.Linux for offline testing (no Pelican)
 
 let
   sptRoot   = "/home/maxwell/games/lutris/escape-from-tarkov";
@@ -25,7 +25,7 @@ let
     export PROTON_VERB=waitforexitandrun
   '';
 
-  spt-launcher = pkgs.writeShellScriptBin "spt-launcher" ''
+  tarkov = pkgs.writeShellScriptBin "tarkov" ''
     set -euo pipefail
     ${protonEnv}
     # winhttp=n,b: force wine to load the local winhttp.dll (BepInEx doorstop)
@@ -36,7 +36,7 @@ let
     exec ${pkgs.umu-launcher}/bin/umu-run ${sptSubdir}/SPT.Launcher.exe "$@"
   '';
 
-  spt-svm-config = pkgs.writeShellScriptBin "spt-svm-config" ''
+  tarkov-svm = pkgs.writeShellScriptBin "tarkov-svm" ''
     set -euo pipefail
     ${protonEnv}
     GREED='${sptSubdir}/user/mods/[SVM] Server Value Modifier/Greed.exe'
@@ -51,7 +51,7 @@ let
   # Local SPT.Server.Linux runner. Useful for offline play / testing without
   # touching the Pelican-hosted server. Conflicts with Pelican if both run at
   # the same time (port 6969 collision).
-  spt-server = pkgs.writeShellScriptBin "spt-server" ''
+  tarkov-server = pkgs.writeShellScriptBin "tarkov-server" ''
     set -euo pipefail
     unset LD_PRELOAD
     export DOTNET_ROOT=${pkgs.dotnet-aspnetcore_9}/share/dotnet
@@ -61,27 +61,27 @@ let
 in
 {
   home.packages = [
-    spt-launcher
-    spt-svm-config
-    spt-server
+    tarkov
+    tarkov-svm
+    tarkov-server
   ];
 
   xdg.desktopEntries = {
-    spt-launcher = {
+    tarkov = {
       name        = "SPT Tarkov";
       genericName = "Single Player Tarkov + Fika";
       comment     = "Patched EFT through Proton with all mods";
-      exec        = "${spt-launcher}/bin/spt-launcher";
+      exec        = "${tarkov}/bin/tarkov";
       icon        = "applications-games";
       type        = "Application";
       categories  = [ "Game" ];
       terminal    = false;
     };
 
-    spt-svm-config = {
+    tarkov-svm = {
       name       = "SPT - SVM Config (Greed)";
       comment    = "Server Value Modifier preset editor";
-      exec       = "${spt-svm-config}/bin/spt-svm-config";
+      exec       = "${tarkov-svm}/bin/tarkov-svm";
       icon       = "preferences-system";
       type       = "Application";
       categories = [ "Game" "Settings" ];

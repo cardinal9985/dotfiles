@@ -685,6 +685,25 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
+        # Public downloads at ishimura.lol/downloads/* - bypasses voidauth so
+        # game clients (friends without an account) can pull mod bundles.
+        # Higher priority than homepage-router so it matches before the
+        # catch-all auth-gated route.
+        homepage-downloads-router:
+          rule: "Host(`${domain}`) && PathPrefix(`/downloads`)"
+          service: homepage-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 20
+          middlewares:
+            - noindex-headers
+            - error-pages
         homepage-router:
           rule: "Host(`${domain}`)"
           service: homepage-service

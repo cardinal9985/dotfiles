@@ -1,4 +1,4 @@
-{ ... }:
+{ lib, ... }:
 
 {
   hardware.nvidia-container-toolkit.enable = true;
@@ -51,9 +51,10 @@
       IOWeight          = 50;       # half default IO bandwidth
       IOSchedulingClass = "idle";   # only get IO when nothing else wants it
       # Give ffmpeg jobs 5s to flush, then SIGKILL. Without this, `tdarr-off`
-      # hangs for ~90s waiting for in-flight transcodes. Jobs are checkpointed
-      # by tdarr-server and will resume on next start.
-      TimeoutStopSec    = "5s";
+      # hangs ~90-120s waiting for in-flight transcodes. Jobs are checkpointed
+      # by tdarr-server and will resume on next start. mkForce because
+      # oci-containers default is 120s.
+      TimeoutStopSec    = lib.mkForce "5s";
     };
   };
 }

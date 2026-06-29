@@ -20,6 +20,12 @@
     normandy  = "TERM=xterm-256color ssh -p 36475 maxwell@100.108.98.70";
     restart-jellyfin   = "ssh -t -p 36475 maxwell@192.168.254.186 sudo systemctl restart jellyfin";
     restart-tdarr      = "ssh -t -p 36475 maxwell@192.168.254.186 sudo systemctl restart podman-tdarr-server";
+    # Pause/resume the LOCAL tdarr-node before/after gaming. Even with
+    # throttling in place, fully stopping the transcoder eliminates any
+    # competition for CPU/IO. tdarr-off before launching a game, tdarr-on
+    # when done.
+    tdarr-off          = "sudo systemctl stop podman-tdarr-node";
+    tdarr-on           = "sudo systemctl start podman-tdarr-node";
     restart-scrutiny   = "ssh -t -p 36475 maxwell@192.168.254.186 sudo systemctl restart scrutiny";
     restart-traefik    = "ssh -t -p 36475 maxwell@100.108.98.70 sudo systemctl restart podman-traefik";
     restart-voidauth   = "ssh -t -p 36475 maxwell@100.108.98.70 sudo systemctl restart podman-voidauth";

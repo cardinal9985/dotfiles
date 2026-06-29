@@ -188,14 +188,31 @@ let
       name              = "Vintage Story";
       slug              = "vintage-story";
       description       = "Wilderness survival sandbox in a ruined fantasy world";
-      address           = "ishimura.lol:42420";
+      address           = "games.ishimura.lol:42420";
       version           = "1.22.3 (Stable)";
       icon              = "▣";
       howTo = [
         "Open Vintage Story and log in with your account"
         "Click 'Multiplayer'"
         "Click 'Server connect'"
-        "Paste 'ishimura.lol:42420' into the address field"
+        "Paste 'games.ishimura.lol:42420' into the address field"
+      ];
+    }
+    {
+      name              = "Escape from Tarkov: Fika";
+      slug              = "escape-from-tarkov-fika";
+      description       = "SPT (Single Player Tarkov) + Fika co-op";
+      address           = "https://games.ishimura.lol:6969";
+      version           = "SPT 4.0.13 / Fika 2.3.3";
+      icon              = "✪";
+      howTo = [
+        "Install a legitimate copy of Escape from Tarkov via the BSG launcher"
+        "Download SPT 4.0.13 installer from https://forge.sp-tarkov.com/installer and install it pointing at your EFT directory"
+        "Download Fika.Core (client) from https://forge.sp-tarkov.com (Project Fika - latest 2.x release) and extract into your SPT install root"
+        "Launch SPT.Launcher.exe (Wine/Proton on Linux, native on Windows)"
+        "Set Server URL to 'https://games.ishimura.lol:6969' and accept the self-signed certificate warning"
+        "Create a profile, pick an edition, click Play"
+        "In the EFT main menu, use the Fika panel to host or join a co-op session"
       ];
     }
   ];

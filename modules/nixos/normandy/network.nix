@@ -32,6 +32,11 @@
       interfaces.tailscale0.allowedTCPPorts = [
         3890 # voidauth LDAP (tailnet-only, jellyfin-plugin-ldap connects here)
       ];
+      # Pangolin's pangolin container (in 10.89.0.0/24 bridge `podman1`) needs
+      # to reach Gerbil's HTTP API at host:3004 via host.containers.internal.
+      # Without this, every newt/wg/register POST from Pangolin to Gerbil
+      # ETIMEDOUTs and no WG peer ever gets configured.
+      interfaces.podman1.allowedTCPPorts = [ 3004 ];
     };
   };
 }

@@ -28,25 +28,32 @@ let
   '';
 
   # Native Linux SPT launcher - runs without Wine so NVAPI never touches it.
-  # steam-run provides the FHS environment Avalonia needs on NixOS.
-  sptLauncherLinux = pkgs.stdenv.mkDerivation {
+  # Files live in the Nix store (read-only), but the launcher's LogManager tries
+  # to create user/ next to the binary. We sync to ~/.local/share at runtime so
+  # AppContext.BaseDirectory resolves to a writable path.
+  sptLauncherLinuxFiles = pkgs.stdenv.mkDerivation {
     pname = "spt-launcher-linux";
     version = "4.0.13";
     src = pkgs.fetchurl {
       url = "https://github.com/ThunderArtist/spt-launcher-linux/releases/download/4.0.13/SPT.Launcher.Linux-4.0.13.tar.gz";
       hash = "sha256-1nVB7vMJNkyUWnGL3LDhoL/1X6oqS4so9vzSz3cJNlo=";
     };
-    nativeBuildInputs = [ pkgs.makeWrapper ];
     dontBuild = true;
     installPhase = ''
-      mkdir -p $out/share/spt-launcher-linux $out/bin
-      cp -r SPT.Launcher.Linux/. $out/share/spt-launcher-linux/
-      chmod +x $out/share/spt-launcher-linux/SPT.Launcher.Linux
-      makeWrapper ${pkgs.steam-run}/bin/steam-run $out/bin/spt-launcher-linux \
-        --set DOTNET_ROOT ${pkgs.dotnet-aspnetcore_9}/share/dotnet \
-        --add-flags "$out/share/spt-launcher-linux/SPT.Launcher.Linux"
+      mkdir -p $out/share
+      cp -r SPT.Launcher.Linux/. $out/share/
+      chmod +x $out/share/SPT.Launcher.Linux
     '';
   };
+
+  sptLauncherLinux = pkgs.writeShellScriptBin "spt-launcher-linux" ''
+    RUNTIME_DIR="$HOME/.local/share/spt-launcher-linux"
+    mkdir -p "$RUNTIME_DIR"
+    ${pkgs.rsync}/bin/rsync -a --delete --exclude='user' \
+      "${sptLauncherLinuxFiles}/share/" "$RUNTIME_DIR/"
+    export DOTNET_ROOT="${pkgs.dotnet-aspnetcore_9}/share/dotnet"
+    exec ${pkgs.steam-run}/bin/steam-run "$RUNTIME_DIR/SPT.Launcher.Linux" "$@"
+  '';
 
   tarkov = pkgs.writeShellScriptBin "tarkov" ''
     set -euo pipefail

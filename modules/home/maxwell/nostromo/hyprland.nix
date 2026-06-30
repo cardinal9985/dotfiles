@@ -191,7 +191,7 @@ in
         ", XF86AudioStop, exec, playerctl stop"
 
         # Volume
-        ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        ", XF86AudioMute, exec, vol-mute"
 
         # Notification center
         "$mod, N, exec, swaync-client -t"
@@ -202,8 +202,8 @@ in
 
       # Repeatable binds
       binde = [
-        ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
-        ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+        ", XF86AudioRaiseVolume, exec, vol-up"
+        ", XF86AudioLowerVolume, exec, vol-down"
       ];
 
       # Mouse binds

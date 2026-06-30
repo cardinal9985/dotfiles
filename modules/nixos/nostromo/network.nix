@@ -6,20 +6,13 @@
     networkmanager = {
       enable = true;
       insertNameservers = [ "192.168.254.186" "100.92.76.121" ];
-      ensureProfiles.profiles."nostromo-static" = {
-        connection = {
-          id = "nostromo-static";
-          type = "ethernet";
-          interface-name = "enp8s0";
-        };
-        ipv4 = {
-          method = "manual";
-          addresses = "192.168.254.96/24";
-          gateway = "192.168.254.254";
-        };
-        ipv6.method = "disabled";
-      };
+      unmanaged = [ "enp8s0" ];
     };
+    interfaces.enp8s0.ipv4.addresses = [{
+      address = "192.168.254.96";
+      prefixLength = 24;
+    }];
+    defaultGateway = "192.168.254.254";
     firewall = {
       enable = true;
       allowedTCPPorts = [

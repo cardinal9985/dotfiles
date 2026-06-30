@@ -43,6 +43,7 @@ let
       cp -r SPT.Launcher.Linux/. $out/share/spt-launcher-linux/
       chmod +x $out/share/spt-launcher-linux/SPT.Launcher.Linux
       makeWrapper ${pkgs.steam-run}/bin/steam-run $out/bin/spt-launcher-linux \
+        --set DOTNET_ROOT ${pkgs.dotnet-aspnetcore_9}/share/dotnet \
         --add-flags "$out/share/spt-launcher-linux/SPT.Launcher.Linux"
     '';
   };

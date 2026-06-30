@@ -208,7 +208,7 @@ let
       howTo = [
         "Install a legitimate copy of Escape from Tarkov via the BSG launcher"
         ''Download the <a href="https://forge.sp-tarkov.com/installer" target="_blank">SPT 4.0.13 installer</a> and install it pointing at your EFT directory''
-        ''Download <a href="/downloads/mods.zip" target="_blank">mods.zip</a> and extract everything into your SPT install root''
+        ''Download <a href="/mods/tarkov/mods.zip" target="_blank">mods.zip</a> and extract everything into your SPT install root''
         "Launch SPT.Launcher.exe (Wine/Proton on Linux, native on Windows)"
         "Set Server URL to 'https://games.ishimura.lol:6969' and accept the self-signed certificate warning"
         "Create a profile, pick an edition, click Play"
@@ -310,13 +310,9 @@ in
   ];
 
   system.activationScripts.homepage = ''
-    mkdir -p /persist/pangolin/homepage/games-status /persist/pangolin/homepage/downloads
-    # --exclude downloads preserves manually-uploaded files (e.g. mod bundles
-    # for game-server clients) across rebuilds. Drop files there with:
-    #   scp file.zip normandy:/persist/pangolin/homepage/downloads/
+    mkdir -p /persist/pangolin/homepage/games-status
     ${pkgs.rsync}/bin/rsync -a --delete \
       --exclude games-status \
-      --exclude downloads \
       ${homepage}/ /persist/pangolin/homepage/
     chmod -R a+rX /persist/pangolin/homepage
   '';

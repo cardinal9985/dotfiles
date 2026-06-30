@@ -685,13 +685,15 @@ let
             - noindex-headers
             - error-pages
             - tailnet-only
-        # Public downloads at ishimura.lol/downloads/* - bypasses voidauth so
-        # game clients (friends without an account) can pull mod bundles.
+        # Public mod bundles at ishimura.lol/mods/* - bypasses voidauth so
+        # friends without an account can pull mod zips. Served from ishimura
+        # (mods-server busybox container reading /mnt/storage/mods/), not
+        # normandy, so the files live next to the rest of the storage.
         # Higher priority than homepage-router so it matches before the
         # catch-all auth-gated route.
-        homepage-downloads-router:
-          rule: "Host(`${domain}`) && PathPrefix(`/downloads`)"
-          service: homepage-service
+        homepage-mods-router:
+          rule: "Host(`${domain}`) && PathPrefix(`/mods`)"
+          service: ishimura-mods-service
           entryPoints:
             - websecure
           tls:
@@ -874,6 +876,22 @@ let
           priority: 10
           middlewares:
             - noindex-headers
+        # FileBrowser Quantum admin UI on ishimura. Double-gated: tailnet-only
+        # at the proxy + FileBrowser's own admin user. Only used to manage
+        # files in /mnt/storage from the browser instead of scp.
+        filebrowser-router:
+          rule: "Host(`files.${domain}`)"
+          service: ishimura-filebrowser-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: letsencrypt
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - error-pages
+            - tailnet-only
+            - voidauth-forwardauth
         # Subsonic API (/rest/*) needs to bypass voidauth so phone apps like
         # DSub, Substreamer, Symfonium can authenticate with their own
         # Subsonic password (set per-user in the Navidrome UI).
@@ -1130,6 +1148,14 @@ let
           loadBalancer:
             servers:
               - url: "http://127.0.0.1:8086"
+        ishimura-mods-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8087"
+        ishimura-filebrowser-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.92.76.121:8088"
         ishimura-jellyfin-health-service:
           loadBalancer:
             servers:

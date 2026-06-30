@@ -59,16 +59,17 @@ let
     set -euo pipefail
 
     ARGS_FILE=$(mktemp /tmp/eft-launch-args.XXXXX)
+    LAUNCHER_LOG=$(mktemp /tmp/spt-launcher.XXXXX.log)
     LAUNCHER_PID=""
 
     cleanup() {
       [ -n "$LAUNCHER_PID" ] && kill "$LAUNCHER_PID" 2>/dev/null || true
-      rm -f "$ARGS_FILE"
+      rm -f "$ARGS_FILE" "$LAUNCHER_LOG"
     }
     trap cleanup EXIT
 
-    # Open native launcher in background
-    ${sptLauncherLinux}/bin/spt-launcher-linux &
+    # Open native launcher in background; capture output so crashes are visible
+    ${sptLauncherLinux}/bin/spt-launcher-linux >"$LAUNCHER_LOG" 2>&1 &
     LAUNCHER_PID=$!
 
     echo "SPT Launcher open - log in and click 'Copy Launch Arguments' to start the game"
@@ -84,6 +85,10 @@ let
     done
 
     if [ ! -s "$ARGS_FILE" ]; then
+      if [ -s "$LAUNCHER_LOG" ]; then
+        echo "=== Launcher output ===" >&2
+        cat "$LAUNCHER_LOG" >&2
+      fi
       echo "No launch arguments captured. Click 'Copy Launch Arguments' before closing the launcher." >&2
       exit 1
     fi

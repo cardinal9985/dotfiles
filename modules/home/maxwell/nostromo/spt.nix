@@ -18,6 +18,9 @@ let
     export WINEPREFIX=${sptRoot}
     export GAMEID=umu-default
     export PROTON_VERB=waitforexitandrun
+    export PROTON_ENABLE_NVAPI=1
+    export PROTON_HIDE_NVIDIA_GPU=0
+    export __GL_MaxFramesAllowed=1
   '';
 
   tarkov = pkgs.writeShellScriptBin "tarkov" ''

@@ -35,7 +35,6 @@ in
       shuffle
       history
       betterGenres
-      adblock
     ];
   };
 }

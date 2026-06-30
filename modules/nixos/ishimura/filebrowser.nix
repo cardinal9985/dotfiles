@@ -12,48 +12,16 @@
 # downloadable at ishimura.lol/mods/<game>/file.zip.
 
 let
+  # Minimal config - Quantum's schema is strict and version-dependent.
+  # Start with just port + source, customize the rest via admin UI after
+  # first login. Default branding/auth applies until then.
   configYaml = pkgs.writeText "filebrowser-config.yml" ''
     server:
       port: 8088
-      baseURL: "/"
       database: "/config/filebrowser.db"
-      logging:
-        - levels: "info|warning|error"
-          apiLevels: "warning|error"
-
-    # Single source root - the full ishimura storage. Quantum can index
-    # multiple sources, but one is enough for now.
-    sources:
-      - path: "/data"
-        name: "ishimura-storage"
-        config:
-          createUserDir: false
-          defaultUserScope: "/"
-          defaultEnabled: true
-
-    auth:
-      tokenExpirationHours: 168
-      methods:
-        password:
-          enabled: true
-          signup: false
-          minLength: 12
-        noauth: false
-
-    frontend:
-      name: "ISHIMURA STORAGE"
-      disableUsedPercentage: false
-      # Inject custom CSS to push toward the Dead Space terminal aesthetic.
-      # Quantum supports an externalUrl for additional stylesheet; the
-      # busybox-served /mods static doesn't reach this container, so we
-      # bake the CSS into a volume below.
-      externalLinks:
-        - text: "Back to ishimura.lol"
-          url: "https://ishimura.lol"
-
-    integrations:
-      media:
-        ffmpegPath: "/usr/local/bin"
+      sources:
+        - path: "/data"
+          name: "ishimura-storage"
   '';
 
   brandingCss = pkgs.writeText "filebrowser-branding.css" ''

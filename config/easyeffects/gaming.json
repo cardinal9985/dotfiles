@@ -176,7 +176,7 @@
             "sidechain-preamp": 0.0,
             "sidechain-to-input": false,
             "sidechain-to-link": false,
-            "sidechain-type": "Feed-forward",
+            "sidechain-type": "Internal",
             "stereo-link": 100.0,
             "threshold": -3.0
         },

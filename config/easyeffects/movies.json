@@ -173,7 +173,7 @@
             "input-gain": 0.0,
             "middle-level": 0.0,
             "middle-panorama": 0.0,
-            "mode": "LR > LR (Stereo)",
+            "mode": "LR > LR (Stereo Default)",
             "mutel": false,
             "muter": false,
             "output-gain": 0.0,
@@ -210,7 +210,7 @@
             "sidechain-preamp": 0.0,
             "sidechain-to-input": false,
             "sidechain-to-link": false,
-            "sidechain-type": "Feed-forward",
+            "sidechain-type": "Internal",
             "stereo-link": 100.0,
             "threshold": -3.0
         },

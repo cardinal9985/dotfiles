@@ -27,6 +27,7 @@ let
     # winhttp=n,b: forces Wine to load the local winhttp.dll (BepInEx doorstop)
     # so mods including Fika hook into Unity correctly.
     export WINEDLLOVERRIDES="winhttp=n,b"
+    cd ${sptSubdir}
     exec ${pkgs.umu-launcher}/bin/umu-run 'X:\games\escape-from-tarkov\spt\SPT\SPT.Launcher.exe'
   '';
 

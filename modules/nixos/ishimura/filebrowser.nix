@@ -14,7 +14,7 @@
 let
   configYaml = pkgs.writeText "filebrowser-config.yml" ''
     server:
-      port: 80
+      port: 8088
       baseURL: "/"
       database: "/config/filebrowser.db"
       logging:
@@ -103,7 +103,9 @@ in
       "/persist/filebrowser/branding:/branding:ro"
     ];
 
-    ports = [ "100.92.76.121:8088:80" ];
+    # See mods-server for why --network=host: AdGuard already owns udp/53
+    # on the default bridge gateway, so aardvark-dns can't start.
+    extraOptions = [ "--network=host" ];
   };
 
   systemd.services.podman-filebrowser = {

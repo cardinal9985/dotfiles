@@ -16,9 +16,12 @@
 
   virtualisation.oci-containers.containers.mods-server = {
     image = "docker.io/library/busybox@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8";
-    cmd = [ "httpd" "-f" "-p" "80" "-h" "/www" ];
+    # Host network avoids the default-bridge aardvark-dns collision with
+    # AdGuard (AdGuard binds udp/53 on all interfaces incl. 10.88.0.1).
+    # Firewall blocks 8087 from public; tailnet sees it via trusted iface.
+    cmd = [ "httpd" "-f" "-p" "8087" "-h" "/www" ];
     volumes = [ "/mnt/storage/mods:/www:ro" ];
-    ports = [ "100.92.76.121:8087:80" ];
+    extraOptions = [ "--network=host" ];
   };
 
   systemd.services.podman-mods-server = {

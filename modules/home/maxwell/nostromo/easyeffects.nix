@@ -8,11 +8,11 @@ let
   hwSinkId = ''$(${pkgs.pipewire}/bin/pw-dump | ${pkgs.jq}/bin/jq -r '[.[] | select(.info.props["node.name"] == "${hwSink}")][0].id')'';
 
   volUp = pkgs.writeShellScriptBin "vol-up" ''
-    ${pkgs.wireplumber}/bin/wpctl set-volume -l 1.5 ${hwSinkId} 5%+
+    ${pkgs.wireplumber}/bin/wpctl set-volume -l 1.5 ${hwSinkId} 0.05+
   '';
 
   volDown = pkgs.writeShellScriptBin "vol-down" ''
-    ${pkgs.wireplumber}/bin/wpctl set-volume ${hwSinkId} 5%-
+    ${pkgs.wireplumber}/bin/wpctl set-volume ${hwSinkId} 0.05-
   '';
 
   volMute = pkgs.writeShellScriptBin "vol-mute" ''

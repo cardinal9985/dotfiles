@@ -40,7 +40,7 @@ let
     dontBuild = true;
     installPhase = ''
       mkdir -p $out/share/spt-launcher-linux $out/bin
-      cp -r SPT.Launcher.Linux-4.0.13/SPT.Launcher.Linux/. $out/share/spt-launcher-linux/
+      cp -r SPT.Launcher.Linux/. $out/share/spt-launcher-linux/
       chmod +x $out/share/spt-launcher-linux/SPT.Launcher.Linux
       makeWrapper ${pkgs.steam-run}/bin/steam-run $out/bin/spt-launcher-linux \
         --add-flags "$out/share/spt-launcher-linux/SPT.Launcher.Linux"

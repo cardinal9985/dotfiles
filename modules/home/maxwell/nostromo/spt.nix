@@ -1,16 +1,9 @@
 { pkgs, ... }:
 
 # SPT (Single Player Tarkov) + Fika launcher wrappers.
-# Uses the native Linux SPT launcher (no Wine for the launcher itself), which
-# lets PROTON_ENABLE_NVAPI be scoped only to EscapeFromTarkov.exe.
-#
-# Workflow for `tarkov`:
-#   1. Native launcher opens - log in (auto-login should work)
-#   2. Click "Copy Launch Arguments"
-#   3. Game launches automatically with NVAPI + Smooth Motion
 #
 # Produces three commands + matching .desktop entries:
-#   tarkov         - main game launcher (native launcher -> EFT via Proton)
+#   tarkov         - SPT.Launcher.exe via Proton (no NVAPI - avoids WPF dropdown crash)
 #   tarkov-svm     - SVM Server Value Modifier GUI (Greed.exe)
 #   tarkov-server  - local SPT.Server.Linux for offline testing (no Pelican)
 
@@ -27,89 +20,15 @@ let
     export PROTON_VERB=waitforexitandrun
   '';
 
-  # Native Linux SPT launcher - runs without Wine so NVAPI never touches it.
-  # Files live in the Nix store (read-only), but the launcher's LogManager tries
-  # to create user/ next to the binary. We sync to ~/.local/share at runtime so
-  # AppContext.BaseDirectory resolves to a writable path.
-  sptLauncherLinuxFiles = pkgs.stdenv.mkDerivation {
-    pname = "spt-launcher-linux";
-    version = "4.0.13";
-    src = pkgs.fetchurl {
-      url = "https://github.com/ThunderArtist/spt-launcher-linux/releases/download/4.0.13/SPT.Launcher.Linux-4.0.13.tar.gz";
-      hash = "sha256-1nVB7vMJNkyUWnGL3LDhoL/1X6oqS4so9vzSz3cJNlo=";
-    };
-    dontBuild = true;
-    installPhase = ''
-      mkdir -p $out/share
-      cp -r SPT.Launcher.Linux/. $out/share/
-      chmod +x $out/share/SPT.Launcher.Linux
-    '';
-  };
-
-  sptLauncherLinux = pkgs.writeShellScriptBin "spt-launcher-linux" ''
-    RUNTIME_DIR="$HOME/.local/share/spt-launcher-linux"
-    mkdir -p "$RUNTIME_DIR"
-    ${pkgs.rsync}/bin/rsync -a --delete --exclude='user' --chmod=Du+rwx,Fu+rw \
-      "${sptLauncherLinuxFiles}/share/" "$RUNTIME_DIR/"
-    export DOTNET_ROOT="${pkgs.dotnet-aspnetcore_9}/share/dotnet"
-    exec ${pkgs.steam-run}/bin/steam-run "$RUNTIME_DIR/SPT.Launcher.Linux" "$@"
-  '';
-
   tarkov = pkgs.writeShellScriptBin "tarkov" ''
     set -euo pipefail
-
-    ARGS_FILE=$(mktemp /tmp/eft-launch-args.XXXXX)
-    LAUNCHER_LOG=$(mktemp /tmp/spt-launcher.XXXXX.log)
-    LAUNCHER_PID=""
-
-    cleanup() {
-      [ -n "$LAUNCHER_PID" ] && kill "$LAUNCHER_PID" 2>/dev/null || true
-      rm -f "$ARGS_FILE" "$LAUNCHER_LOG"
-    }
-    trap cleanup EXIT
-
-    # Open native launcher in background; capture output so crashes are visible
-    ${sptLauncherLinux}/bin/spt-launcher-linux >"$LAUNCHER_LOG" 2>&1 &
-    LAUNCHER_PID=$!
-
-    echo "SPT Launcher open - log in and click 'Copy Launch Arguments' to start the game"
-
-    # Poll clipboard until EFT token appears or launcher exits
-    while kill -0 "$LAUNCHER_PID" 2>/dev/null; do
-      CLIP=$(${pkgs.wl-clipboard}/bin/wl-paste 2>/dev/null || true)
-      if printf '%s' "$CLIP" | ${pkgs.gnugrep}/bin/grep -q -- '-token='; then
-        printf '%s' "$CLIP" > "$ARGS_FILE"
-        break
-      fi
-      sleep 0.5
-    done
-
-    if [ ! -s "$ARGS_FILE" ]; then
-      if [ -s "$LAUNCHER_LOG" ]; then
-        echo "=== Launcher output ===" >&2
-        cat "$LAUNCHER_LOG" >&2
-      fi
-      echo "No launch arguments captured. Click 'Copy Launch Arguments' before closing the launcher." >&2
-      exit 1
-    fi
-
-    kill "$LAUNCHER_PID" 2>/dev/null || true
-    LAUNCHER_PID=""
-
-    LAUNCH_ARGS=$(cat "$ARGS_FILE")
-    # Strip leading exe name if launcher copies "EscapeFromTarkov.exe -token=..."
-    LAUNCH_ARGS=$(printf '%s' "$LAUNCH_ARGS" | ${pkgs.gnused}/bin/sed 's|[^ ]*EscapeFromTarkov\.exe ||')
-
     ${protonEnv}
-    export PROTON_ENABLE_NVAPI=1
-    export NVPRESENT_ENABLE_SMOOTH_MOTION=1
     export DXVK_ASYNC=1
     # winhttp=n,b: forces Wine to load the local winhttp.dll (BepInEx doorstop)
     # so mods including Fika hook into Unity correctly.
     export WINEDLLOVERRIDES="winhttp=n,b"
-
     cd ${sptInner}
-    eval "exec ${pkgs.gamemode}/bin/gamemoderun ${pkgs.umu-launcher}/bin/umu-run EscapeFromTarkov.exe $LAUNCH_ARGS"
+    exec ${pkgs.gamemode}/bin/gamemoderun ${pkgs.umu-launcher}/bin/umu-run SPT.Launcher.exe
   '';
 
   tarkov-svm = pkgs.writeShellScriptBin "tarkov-svm" ''
@@ -143,7 +62,6 @@ in
     tarkov
     tarkov-svm
     tarkov-server
-    sptLauncherLinux
   ];
 
   xdg.desktopEntries = {

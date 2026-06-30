@@ -49,7 +49,7 @@ let
   sptLauncherLinux = pkgs.writeShellScriptBin "spt-launcher-linux" ''
     RUNTIME_DIR="$HOME/.local/share/spt-launcher-linux"
     mkdir -p "$RUNTIME_DIR"
-    ${pkgs.rsync}/bin/rsync -a --delete --exclude='user' \
+    ${pkgs.rsync}/bin/rsync -a --delete --exclude='user' --chmod=Du+rwx,Fu+rw \
       "${sptLauncherLinuxFiles}/share/" "$RUNTIME_DIR/"
     export DOTNET_ROOT="${pkgs.dotnet-aspnetcore_9}/share/dotnet"
     exec ${pkgs.steam-run}/bin/steam-run "$RUNTIME_DIR/SPT.Launcher.Linux" "$@"

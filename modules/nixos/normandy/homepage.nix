@@ -181,6 +181,12 @@ let
       statusPath  = "/health/slskd";
       healthUrl   = "http://${ishimuraTailnetIP}:5030/api/v0/application";
     }
+    {
+      name        = "FileBrowser";
+      description = "File Manager";
+      url         = "https://files.ishimura.lol";
+      icon        = "▤";
+    }
   ];
 
   games = [

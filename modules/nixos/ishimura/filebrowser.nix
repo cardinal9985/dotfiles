@@ -107,7 +107,7 @@ in
   };
 
   systemd.services.podman-filebrowser = {
-    after = [ "mnt-storage.automount" ];
-    requires = [ "mnt-storage.automount" ];
+    after = [ "mnt-storage.mount" ];
+    requires = [ "mnt-storage.mount" ];
   };
 }

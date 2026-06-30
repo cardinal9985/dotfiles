@@ -22,7 +22,7 @@
   };
 
   systemd.services.podman-mods-server = {
-    after = [ "mnt-storage.automount" ];
-    requires = [ "mnt-storage.automount" ];
+    after = [ "mnt-storage.mount" ];
+    requires = [ "mnt-storage.mount" ];
   };
 }

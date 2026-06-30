@@ -17,7 +17,7 @@
             "output-gain": 0.0,
             "ratio": 6.0,
             "release": 200.0,
-            "release-threshold": -120.0,
+            "release-threshold": -80.0,
             "sidechain": {
                 "lookahead": 0.0,
                 "mode": "RMS",

@@ -23,9 +23,6 @@ let
     export WINEPREFIX=${sptRoot}
     export GAMEID=umu-default
     export PROTON_VERB=waitforexitandrun
-    export NVPRESENT_ENABLE_SMOOTH_MOTION=1
-    export PROTON_ENABLE_NVAPI=1
-    export DXVK_ASYNC=1
   '';
 
   tarkov = pkgs.writeShellScriptBin "tarkov" ''

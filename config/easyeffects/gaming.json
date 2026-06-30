@@ -153,9 +153,37 @@
             },
             "split-channels": false
         },
+        "limiter#0": {
+            "alr": false,
+            "alr-attack": 5.0,
+            "alr-knee": 0.0,
+            "alr-knee-smooth": false,
+            "alr-release": 50.0,
+            "attack": 5.0,
+            "bypass": false,
+            "dithering": "None",
+            "gain-boost": false,
+            "input-gain": 0.0,
+            "input-to-link": false,
+            "input-to-sidechain": false,
+            "link-to-input": false,
+            "link-to-sidechain": false,
+            "lookahead": 5.0,
+            "mode": "Herm Thin",
+            "output-gain": 0.0,
+            "oversampling": "None",
+            "release": 10.0,
+            "sidechain-preamp": 0.0,
+            "sidechain-to-input": false,
+            "sidechain-to-link": false,
+            "sidechain-type": "Feed-forward",
+            "stereo-link": 100.0,
+            "threshold": -3.0
+        },
         "plugins_order": [
             "compressor#0",
-            "equalizer#0"
+            "equalizer#0",
+            "limiter#0"
         ]
     }
 }

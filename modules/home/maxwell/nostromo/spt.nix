@@ -28,7 +28,10 @@ let
     # so mods including Fika hook into Unity correctly.
     export WINEDLLOVERRIDES="winhttp=n,b"
     cd ${sptSubdir}
-    exec ${pkgs.umu-launcher}/bin/umu-run 'X:\games\escape-from-tarkov\spt\SPT\SPT.Launcher.exe'
+    # gamemoderun wraps umu-run from outside the pressure-vessel so the D-Bus
+    # call to gamemoded happens on the host; doing it inside the container
+    # hits a "pending != NULL" assertion and aborts.
+    exec ${pkgs.gamemode}/bin/gamemoderun ${pkgs.umu-launcher}/bin/umu-run 'X:\games\escape-from-tarkov\spt\SPT\SPT.Launcher.exe'
   '';
 
   tarkov-svm = pkgs.writeShellScriptBin "tarkov-svm" ''

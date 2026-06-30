@@ -23,6 +23,9 @@ let
     export WINEPREFIX=${sptRoot}
     export GAMEID=umu-default
     export PROTON_VERB=waitforexitandrun
+    export NVPRESENT_ENABLE_SMOOTH_MOTION=1
+    export PROTON_ENABLE_NVAPI=1
+    export DXVK_ASYNC=1
   '';
 
   tarkov = pkgs.writeShellScriptBin "tarkov" ''
@@ -33,7 +36,7 @@ let
     # and SPT mods (incl. Fika) don't load.
     export WINEDLLOVERRIDES="winhttp=n,b"
     cd ${sptSubdir}
-    exec ${pkgs.umu-launcher}/bin/umu-run ${sptSubdir}/SPT.Launcher.exe "$@"
+    exec ${pkgs.gamemode}/bin/gamemoderun ${pkgs.umu-launcher}/bin/umu-run ${sptSubdir}/SPT.Launcher.exe "$@"
   '';
 
   tarkov-svm = pkgs.writeShellScriptBin "tarkov-svm" ''

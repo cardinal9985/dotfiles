@@ -6,6 +6,10 @@
     networkmanager = {
       enable = true;
       insertNameservers = [ "192.168.254.186" "100.92.76.121" ];
+      # Stop NM from auto-creating a DHCP "Wired connection 1" profile that
+      # races our static profile to the device and pins the wrong IP. With
+      # no-auto-default=*, only ensureProfiles entries get applied.
+      settings.main.no-auto-default = "*";
       # Static IP profile so NM manages enp8s0 and reports connected (global),
       # which is required for apps that check NM D-Bus state (e.g. Spotify AP).
       ensureProfiles.profiles."enp8s0-static" = {

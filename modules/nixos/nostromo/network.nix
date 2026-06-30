@@ -11,10 +11,7 @@
       # connectivity check and reports "limited". Disable the check so NM
       # reports full connectivity and apps like Spotify don't disable their
       # network stack via D-Bus.
-      extraConfig = ''
-        [connectivity]
-        enabled=false
-      '';
+      settings.connectivity.enabled = false;
     };
     interfaces.enp8s0.ipv4.addresses = [{
       address = "192.168.254.97";

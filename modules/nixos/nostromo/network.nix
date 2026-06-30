@@ -19,7 +19,7 @@
       ];
     };
     hosts = {
-      "100.108.98.70" = [ "ishimura.lol" "pangolin.ishimura.lol" "auth.ishimura.lol" ];
+      "100.108.98.70" = [ "ishimura.lol" "pangolin.ishimura.lol" "auth.ishimura.lol" "files.ishimura.lol" ];
       # Local override: games.ishimura.lol bypasses router NAT loopback when
       # we're on the LAN. Friend's DNS still gets the public IP from Porkbun.
       "192.168.254.95" = [ "games.ishimura.lol" ];

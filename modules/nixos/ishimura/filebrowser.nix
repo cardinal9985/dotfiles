@@ -78,7 +78,10 @@ in
   ];
 
   # Render config + branding CSS at activation time.
+  # mkdir -p here because activationScripts run before systemd-tmpfiles
+  # processes the rules above on the first deploy.
   system.activationScripts.filebrowser-config = ''
+    mkdir -p /persist/filebrowser/config /persist/filebrowser/branding
     install -m 0644 ${configYaml}    /persist/filebrowser/config/settings.yaml
     install -m 0644 ${brandingCss}   /persist/filebrowser/branding/custom.css
     chown -R 1000:100                 /persist/filebrowser/config

@@ -167,6 +167,10 @@ let
           stripPrefix:
             prefixes:
               - "/api"
+        strip-mods-prefix:
+          stripPrefix:
+            prefixes:
+              - "/mods"
         rewrite-pelican-health:
           replacePath:
             path: "/up"
@@ -706,6 +710,7 @@ let
           middlewares:
             - noindex-headers
             - error-pages
+            - strip-mods-prefix
         homepage-router:
           rule: "Host(`${domain}`)"
           service: homepage-service

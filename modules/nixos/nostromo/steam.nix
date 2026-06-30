@@ -58,6 +58,11 @@
     "vm.swappiness" = 10;
     "vm.dirty_ratio" = 10;
     "vm.dirty_background_ratio" = 5;
+    "fs.inotify.max_user_watches" = 1048576;
+    "fs.inotify.max_user_instances" = 8192;
+    "fs.inotify.max_queued_events" = 32768;
+    "net.core.rmem_max" = 134217728;
+    "net.core.wmem_max" = 134217728;
   };
 
   environment.sessionVariables = {
@@ -65,7 +70,6 @@
     __GL_SHADER_DISK_CACHE = "1";
     __GL_SHADER_DISK_CACHE_SKIP_CLEANUP = "1";
     __GL_MaxFramesAllowed = "1";
-    WINE_FULLSCREEN_FSR = "1";
     PROTON_ENABLE_NVAPI = "1";
     PROTON_HIDE_NVIDIA_GPU = "0";
   };

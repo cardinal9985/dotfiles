@@ -5,6 +5,7 @@
     kernelParams = [
       "iommu=pt"
       "amd_iommu=on" # AMD Page Fault Fix
+      "amd_pstate=active"
       "quiet"
       "splash"
       "rd.plymouth=1"

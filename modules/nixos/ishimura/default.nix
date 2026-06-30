@@ -11,8 +11,10 @@
     ./impermanence.nix
     ./booklore.nix
     ./dicebear.nix
+    ./filebrowser.nix
     ./it-tools.nix
     ./jellyfin.nix
+    ./mods-server.nix
     ./navidrome.nix
     ./pelican.nix
     ./refinery.nix

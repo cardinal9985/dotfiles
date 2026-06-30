@@ -8,7 +8,7 @@
 #   tarkov-server  - local SPT.Server.Linux for offline testing (no Pelican)
 
 let
-  sptRoot   = "/home/maxwell/games/lutris/escape-from-tarkov";
+  sptRoot   = "/home/maxwell/games/escape-from-tarkov";
   sptInner  = "${sptRoot}/spt";
   sptSubdir = "${sptInner}/SPT";
 

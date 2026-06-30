@@ -143,6 +143,7 @@ in
     tarkov
     tarkov-svm
     tarkov-server
+    sptLauncherLinux
   ];
 
   xdg.desktopEntries = {

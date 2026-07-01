@@ -32,9 +32,10 @@
       allowedTCPPorts = [
         36475 # SSH
         6969  # SPT.Server (Pelican container, exposed for direct game.ishimura.lol forward)
+        25565 # Fika P2P (raid signaling)
       ];
       allowedUDPPorts = [
-        6790  # Fika game traffic
+        25565 # Fika P2P (raid game traffic)
         42420 # Vintage Story
       ];
     };

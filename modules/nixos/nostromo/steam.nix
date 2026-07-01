@@ -45,8 +45,8 @@
           pin_cores = "yes";
         };
         custom = {
-          start = "${pkgs.libnotify}/bin/notify-send 'GameMode' 'Gaming mode enabled'";
-          end = "${pkgs.libnotify}/bin/notify-send 'GameMode' 'Gaming mode disabled'";
+          start = "${pkgs.libnotify}/bin/notify-send 'GameMode' 'Gaming mode enabled' && systemctl stop podman-tdarr-node";
+          end   = "${pkgs.libnotify}/bin/notify-send 'GameMode' 'Gaming mode disabled' && systemctl start podman-tdarr-node";
         };
       };
     };

@@ -32,10 +32,17 @@ in
     preset = "music";
   };
 
-  xdg.dataFile."easyeffects/output/music.json".source  = ../../../../config/easyeffects/music.json;
-  xdg.dataFile."easyeffects/output/gaming.json".source = ../../../../config/easyeffects/gaming.json;
-  xdg.dataFile."easyeffects/output/movies.json".source = ../../../../config/easyeffects/movies.json;
-  xdg.dataFile."easyeffects/output/flat.json".source   = ../../../../config/easyeffects/flat.json;
-  xdg.dataFile."easyeffects/output/night.json".source  = ../../../../config/easyeffects/night.json;
-  xdg.dataFile."easyeffects/output/voice.json".source  = ../../../../config/easyeffects/voice.json;
+  xdg.dataFile."easyeffects/output/music.json".source           = ../../../../config/easyeffects/music.json;
+  xdg.dataFile."easyeffects/output/gaming.json".source          = ../../../../config/easyeffects/gaming.json;
+  xdg.dataFile."easyeffects/output/surround-gaming.json".source = ../../../../config/easyeffects/surround-gaming.json;
+  xdg.dataFile."easyeffects/output/movies.json".source          = ../../../../config/easyeffects/movies.json;
+  xdg.dataFile."easyeffects/output/flat.json".source            = ../../../../config/easyeffects/flat.json;
+  xdg.dataFile."easyeffects/output/night.json".source           = ../../../../config/easyeffects/night.json;
+  xdg.dataFile."easyeffects/output/voice.json".source           = ../../../../config/easyeffects/voice.json;
+
+  # HRIR impulse responses for the convolver (used by surround-gaming preset).
+  # Sourced from HeSuVi via github.com/eadwu/HeSuVi-HRIRs.
+  xdg.dataFile."easyeffects/irs/atmos.wav".source      = ../../../../config/easyeffects/irs/atmos.wav;
+  xdg.dataFile."easyeffects/irs/dh.wav".source         = ../../../../config/easyeffects/irs/dh.wav;
+  xdg.dataFile."easyeffects/irs/cmss_game.wav".source  = ../../../../config/easyeffects/irs/cmss_game.wav;
 }

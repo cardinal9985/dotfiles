@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 
 {
   hardware.nvidia-container-toolkit.enable = true;
@@ -57,4 +57,14 @@
       TimeoutStopSec    = lib.mkForce "5s";
     };
   };
+
+  # Let maxwell pause/resume tdarr without a password prompt. Used by the
+  # tarkov launcher's auto-toggle (spt.nix) and the tdarr-off/tdarr-on aliases.
+  security.sudo.extraRules = [{
+    users = [ "maxwell" ];
+    commands = [
+      { command = "${pkgs.systemd}/bin/systemctl start podman-tdarr-node";  options = [ "NOPASSWD" ]; }
+      { command = "${pkgs.systemd}/bin/systemctl stop podman-tdarr-node";   options = [ "NOPASSWD" ]; }
+    ];
+  }];
 }

@@ -27,8 +27,13 @@ let
     # winhttp=n,b: forces Wine to load the local winhttp.dll (BepInEx doorstop)
     # so mods including Fika hook into Unity correctly.
     export WINEDLLOVERRIDES="winhttp=n,b"
+    # Pause tdarr while playing (Tarkov skips GameMode so the tdarr hook in
+    # steam.nix custom.start/end never fires). Restart on any exit including
+    # SIGINT/crash.
+    sudo systemctl stop podman-tdarr-node
+    trap 'sudo systemctl start podman-tdarr-node' EXIT
     cd ${sptSubdir}
-    exec ${pkgs.umu-launcher}/bin/umu-run 'X:\games\escape-from-tarkov\spt\SPT\SPT.Launcher.exe'
+    ${pkgs.umu-launcher}/bin/umu-run 'X:\games\escape-from-tarkov\spt\SPT\SPT.Launcher.exe'
   '';
 
   tarkov-svm = pkgs.writeShellScriptBin "tarkov-svm" ''

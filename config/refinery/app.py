@@ -15,6 +15,7 @@ from flask import (Flask, render_template, request, redirect, url_for, abort,
 import book
 import db
 import downloader
+import games
 import genres
 import library
 import music
@@ -59,6 +60,33 @@ def _process_album_with_notify(folder):
     return item_id
 music.process_album = _process_album_with_notify
 
+
+# Same for games. process_game returns the LAST staged item id when a
+# folder holds multiple ROMs; we send one notification per folder to
+# keep ntfy from spamming a 20-ROM pack.
+_orig_process_game = games.process_game
+def _process_game_with_notify(folder):
+    last_id = _orig_process_game(folder)
+    if last_id:
+        with db.get_db() as conn:
+            row = conn.execute(
+                "SELECT title, subtype FROM items WHERE id=?",
+                (last_id,),
+            ).fetchone()
+            count = conn.execute(
+                "SELECT COUNT(*) AS n FROM items "
+                "WHERE media_type='game' AND status='ready' "
+                "AND source_path LIKE ?",
+                (str(folder) + "%",),
+            ).fetchone()
+        if row:
+            n = (count["n"] if count else 1) or 1
+            plural = "" if n == 1 else f" (+{n-1} more)"
+            notify("Refinery: game ready for review",
+                   f"{row['title'] or '?'} [{row['subtype']}]{plural}")
+    return last_id
+games.process_game = _process_game_with_notify
+
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 log = logging.getLogger("refinery")
@@ -76,6 +104,8 @@ MUSIC_TARGET = os.environ.get("REFINERY_MUSIC_TARGET",
                               "/mnt/storage/media/music")
 BOOK_TARGET  = os.environ.get("REFINERY_BOOK_TARGET",
                               "/mnt/storage/media/books")
+GAME_TARGET  = os.environ.get("REFINERY_GAME_TARGET",
+                              "/mnt/storage/media/roms")
 
 
 # Reset any items left in 'processing' state from a previous crash so they
@@ -187,6 +217,24 @@ def edit(item_id):
             conflict = str(target)
         return render_template("edit_book.html", user=user, item=item,
                                meta=meta, genres=genres.BOOKS, conflict=conflict)
+    if item["media_type"] == "game":
+        platform = item["subtype"] or meta.get("platform")
+        ext      = Path(item["source_path"]).suffix.lower()
+        # If the user opts to convert, the extension will change to .chd;
+        # match that here so the conflict check reflects the likely destination.
+        if platform in (games.CHDMAN_CD_PLATFORMS | games.CHDMAN_DVD_PLATFORMS):
+            ext_check = ".chd"
+        else:
+            ext_check = ext
+        target = games.library_path_for(GAME_TARGET, platform,
+                                        item["title"] or "Unknown", ext_check)
+        if target.exists():
+            conflict = str(target)
+        return render_template("edit_game.html", user=user, item=item,
+                               meta=meta, genres=genres.GAMES,
+                               conflict=conflict,
+                               cd_platforms=games.CHDMAN_CD_PLATFORMS,
+                               dvd_platforms=games.CHDMAN_DVD_PLATFORMS)
     return render_template("edit.html", user=user, item=item, tracks=tracks,
                            meta=meta, genres=genres.ALL, conflict=conflict)
 
@@ -228,8 +276,8 @@ def approve(item_id):
             conn.execute("UPDATE items SET cover_local=? WHERE id=?",
                          (cover_path, item_id))
 
-        # Books are single-file items; no tracks table to update
-        if item_dict["media_type"] == "book":
+        # Books and games are single-file items; no tracks table to update
+        if item_dict["media_type"] in ("book", "game"):
             tracks_rows = []
         else:
             tracks_rows = conn.execute(
@@ -286,6 +334,10 @@ def approve(item_id):
             convert_pdf = request.form.get("convert_pdf") == "1"
             result = book.write_and_move(item_dict, BOOK_TARGET,
                                          convert_pdf=convert_pdf)
+        elif item_dict["media_type"] == "game":
+            convert_chd = request.form.get("convert_chd") == "1"
+            result = games.write_and_move(item_dict, GAME_TARGET,
+                                          convert_chd=convert_chd)
         else:
             raise ValueError(f"unknown media_type {item_dict['media_type']}")
         log.info("Approved %s %d → %s",
@@ -328,6 +380,13 @@ def _bg_process(media_type, source_path):
                 book.process_book_file(source_path)
             elif os.path.isdir(source_path):
                 book.process_book(source_path)
+        elif media_type == "game":
+            # Games: same shape as books - the scanner writes one row per
+            # ROM keyed on the file path, so retry sees the individual ROM.
+            if os.path.isfile(source_path):
+                games.process_game_file(source_path)
+            elif os.path.isdir(source_path):
+                games.process_game(source_path)
     except Exception:
         log.exception("bg processing failed for %s", source_path)
 

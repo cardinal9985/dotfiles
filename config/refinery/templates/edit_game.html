@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Review {{ item.title or item.id }}{% endblock %}
+{% block content %}
+{% if conflict %}
+<div class="box" style="border-color: var(--yellow);">
+  <div class="title" style="color: var(--bright-yellow);">&gt; ALREADY IN LIBRARY</div>
+  <div style="padding: 0.5rem 0; color: var(--white); font-size: 0.85rem;">
+    A file already exists at <code style="color: var(--bright-yellow);">{{ conflict }}</code>.
+    Approving will overwrite it.
+  </div>
+</div>
+{% endif %}
+<form method="POST" action="/item/{{ item.id }}/approve" enctype="multipart/form-data">
+<div class="box">
+  <div class="title">&gt; GAME // {{ item.source_path }}</div>
+
+  <div style="display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem; align-items: start;">
+    <div>
+      {% if item.cover_local %}
+      <img src="/item/{{ item.id }}/cover.jpg" alt="cover"
+           style="width: 100%; aspect-ratio: 3/4; object-fit: cover; border: 1px solid var(--cyan);">
+      {% else %}
+      <div style="aspect-ratio: 3/4; border: 1px solid var(--cyan); display: flex; align-items: center; justify-content: center; color: var(--white);">[NO COVER]</div>
+      {% endif %}
+      <div style="margin-top: 0.5rem;">
+        <label style="font-size: 0.65rem;">REPLACE COVER</label>
+        <input type="file" name="cover_upload" accept="image/*" style="font-size: 0.7rem;">
+      </div>
+
+      <div style="margin-top: 0.75rem; font-size: 0.7rem; color: var(--white);">
+        <div>PLATFORM: <span style="color: var(--bright-cyan);">{{ meta.platform_name or meta.platform }}</span></div>
+        {% if meta.dat_match and meta.dat_match.region %}
+        <div>REGION: <span style="color: var(--bright-cyan);">{{ meta.dat_match.region }}</span></div>
+        {% endif %}
+        {% if meta.verified %}
+        <div style="margin-top: 0.3rem;"><span class="badge ready">DAT-VERIFIED ({{ meta.dat_match.kind|upper if meta.dat_match else '' }})</span></div>
+        {% else %}
+        <div style="margin-top: 0.3rem;"><span class="badge" style="background: var(--surface-light); color: var(--bright-yellow);">UNVERIFIED</span></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+      <div style="grid-column: span 2;">
+        <label>TITLE</label>
+        <input type="text" name="title" value="{{ item.title or '' }}">
+      </div>
+      <div>
+        <label>DEVELOPER / PUBLISHER</label>
+        <input type="text" name="artist" value="{{ item.artist or '' }}">
+      </div>
+      <div>
+        <label>YEAR</label>
+        <input type="number" name="year" value="{{ item.year or '' }}">
+      </div>
+      <div style="grid-column: span 2;">
+        <label>GENRE</label>
+        <input type="text" name="genre" value="{{ item.genre or '' }}"
+               list="genres-list"
+               placeholder="Start typing - pick from list or type your own">
+        <datalist id="genres-list">
+          {% for g in genres %}<option value="{{ g }}">{% endfor %}
+        </datalist>
+      </div>
+
+      {% if meta.igdb %}
+      <div style="grid-column: span 2;">
+        <label>IGDB</label>
+        <div style="font-size: 0.75rem; color: var(--white);">
+          Match: <span style="color: var(--bright-cyan);">{{ meta.igdb.name }}</span>
+          {% if meta.igdb.developer %} - Dev: {{ meta.igdb.developer }}{% endif %}
+          {% if meta.igdb.publisher and meta.igdb.publisher != meta.igdb.developer %} - Pub: {{ meta.igdb.publisher }}{% endif %}
+          {% if meta.igdb.genres %}<br>Genres: {{ meta.igdb.genres|join(', ') }}{% endif %}
+          {% if meta.igdb.summary %}
+          <div style="margin-top: 0.4rem; max-height: 6rem; overflow-y: auto; border: 1px solid var(--surface-light); padding: 0.4rem;">
+            {{ meta.igdb.summary }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if meta.dat_match %}
+      <div style="grid-column: span 2;">
+        <label>DAT ENTRY</label>
+        <div style="font-size: 0.75rem; color: var(--white);">
+          <code style="color: var(--bright-cyan);">{{ meta.dat_match.name }}</code>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if meta.hashes %}
+      <div style="grid-column: span 2;">
+        <label>HASHES</label>
+        <div style="font-size: 0.7rem; color: var(--white); font-family: monospace;">
+          CRC32 {{ meta.hashes.crc32 }} - MD5 {{ meta.hashes.md5 }}<br>
+          SHA1 {{ meta.hashes.sha1 }}<br>
+          SIZE {{ meta.hashes.size }} bytes{% if meta.hashes.inner_name %} - inner: {{ meta.hashes.inner_name }}{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if meta.platform in cd_platforms or meta.platform in dvd_platforms %}
+      <div style="grid-column: span 2;">
+        <label style="display: inline; font-size: 0.7rem;">
+          <input type="checkbox" name="convert_chd" value="1" checked>
+          CONVERT TO CHD ON APPROVE (chdman - big space savings, all serious emulators support CHD)
+        </label>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div style="display: flex; gap: 0.5rem;">
+  <button type="submit" class="btn">APPROVE &amp; MOVE TO LIBRARY</button>
+  <a class="btn ghost" href="/">CANCEL</a>
+</div>
+</form>
+
+<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+  <form method="POST" action="/item/{{ item.id }}/reprocess"
+        onsubmit="return confirm('Full re-process: re-hash, re-query DAT and IGDB, re-fetch cover.')">
+    <button type="submit" class="btn ghost">FULL RE-PROCESS</button>
+  </form>
+  <form method="POST" action="/item/{{ item.id }}/reject">
+    <button type="submit" class="btn danger" onclick="return confirm('Mark as rejected? File stays in inbox.')">REJECT</button>
+  </form>
+</div>
+{% endblock %}

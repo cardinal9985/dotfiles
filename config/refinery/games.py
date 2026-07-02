@@ -1,17 +1,25 @@
 """Game ROM processor.
 
-Phase 2 scope: classify a folder of downloaded files to a platform slug,
-extract any disc-image archives so chdman can later convert their
-contents, and stage one item per ROM file in the approval queue.
+Pipeline per download folder:
+  1. Classify to a platform slug (extension voting + filename hints).
+  2. Extract archived disc images so chdman can later see the BIN/CUE/ISO.
+  3. For each ROM file: hash it, look up in the DAT hash cache, look up in
+     IGDB for cover / summary / genre, stage one queue row per ROM.
 
-Hashing + DAT lookup + metadata enrichment + CHD conversion arrive in
-later phases."""
+On approve (see write_and_move):
+  - Disc-based platforms: chdman convert BIN/CUE / ISO -> CHD when the user
+    checks the box. Space savings are large and every serious emulator
+    supports CHD.
+  - Rename ROM to canonical (or user-edited) title, move under
+    <roms>/<platform>/<title>.<ext>.
+  - Drop cover.jpg sidecar next to the ROM."""
 
 import hashlib
 import json
 import logging
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import zipfile
@@ -21,11 +29,15 @@ from pathlib import Path
 
 import db
 import game_dat
+import game_igdb
 import game_platforms as plats
 
 log = logging.getLogger("refinery.games")
 
 ARCHIVE_EXTS = {".zip", ".7z", ".rar"}
+
+GAME_COVER_DIR = os.environ.get("REFINERY_GAME_COVER_DIR",
+                                "/persist/refinery/game_covers")
 
 # Filename / folder-name hints used to disambiguate when multiple platforms
 # share an extension (.iso, .bin, .cue, .zip). First match wins, so put
@@ -168,6 +180,31 @@ def classify(folder):
     top  = votes.most_common()
     best = top[0][1]
     return sorted(slug for slug, n in top if n == best)[0]
+
+
+def _classify_single_file(path):
+    """Platform for a single ROM file (retry / reprocess path). Uses the
+    file's extension, peeking into archives, plus filename + parent-folder
+    hints to disambiguate."""
+    p = Path(path)
+    ext = p.suffix.lower()
+    cands = set()
+    if ext in ARCHIVE_EXTS:
+        for inner in _peek_archive(p):
+            cands.update(plats.for_extension(Path(inner).suffix.lower()))
+        cands.update(plats.for_extension(ext))
+    else:
+        cands.update(plats.for_extension(ext))
+
+    if not cands:
+        return None
+    if len(cands) == 1:
+        return next(iter(cands))
+
+    h = _hint_platform(p.name) or _hint_platform(p.parent.name)
+    if h and h in cands:
+        return h
+    return sorted(cands)[0]
 
 
 def list_rom_files(folder, platform):
@@ -330,9 +367,91 @@ def _strip_region_year(name):
     return clean, year, region
 
 
+def _stage_rom(rom_path, platform):
+    """Hash + DAT lookup + IGDB enrichment for one ROM, then insert/replace
+    the queue row. Returns the item id."""
+    filename_stem = Path(rom_path).stem
+    plat_name     = plats.PLATFORMS[platform]["name"]
+    igdb_plat     = plats.PLATFORMS[platform].get("igdb_id")
+    meta = {"platform": platform, "platform_name": plat_name}
+
+    hashes   = hash_rom(rom_path)
+    title    = filename_stem
+    year     = None
+    verified = False
+    if hashes:
+        meta["hashes"] = hashes
+        match = game_dat.lookup_by_hash(
+            crc32=hashes["crc32"],
+            md5=hashes["md5"],
+            sha1=hashes["sha1"],
+            platform=platform,
+        )
+        if match:
+            verified   = True
+            canonical  = match["name"]
+            clean, ctitle_year, region = _strip_region_year(canonical)
+            if clean:
+                title = clean
+            if ctitle_year:
+                year = ctitle_year
+            meta["dat_match"] = {
+                "name":   canonical,
+                "region": region,
+                "kind":   match.get("kind"),
+            }
+            log.info("game DAT match %s -> %s [%s]",
+                     filename_stem, canonical, region)
+        else:
+            log.info("game UNVERIFIED (no DAT match): %s [%s]",
+                     filename_stem, platform)
+    meta["verified"] = verified
+
+    # IGDB enrichment - use the cleanest title we have so far.
+    developer = None
+    genre     = None
+    cover_local = None
+    if game_igdb.enabled():
+        igdb = game_igdb.search_game(title, igdb_platform_id=igdb_plat)
+        if igdb:
+            meta["igdb"] = {
+                "id":        igdb.get("igdb_id"),
+                "name":      igdb.get("name"),
+                "summary":   igdb.get("summary"),
+                "developer": igdb.get("developer"),
+                "publisher": igdb.get("publisher"),
+                "genres":    igdb.get("genres"),
+                "cover_id":  igdb.get("cover_id"),
+            }
+            # Only trust IGDB fields where we don't already have DAT truth.
+            if not year and igdb.get("year"):
+                year = igdb["year"]
+            developer = igdb.get("developer") or igdb.get("publisher")
+            genre     = igdb.get("genre")
+            if igdb.get("cover_id"):
+                cover_local = game_igdb.download_cover(
+                    igdb["cover_id"], GAME_COVER_DIR)
+
+    with db.get_db() as conn:
+        cur = conn.execute(
+            """INSERT OR REPLACE INTO items
+                 (media_type, status, source_path, subtype,
+                  title, artist, year, genre, cover_local,
+                  meta_json, processed_at)
+               VALUES ('game', 'ready', ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
+            (str(rom_path), platform, title, developer, year, genre,
+             cover_local, json.dumps(meta)),
+        )
+        item_id = cur.lastrowid
+    log.info("staged game id=%d: %s [%s] verified=%s",
+             item_id, title, platform, verified)
+    return item_id
+
+
 def process_game(folder):
-    """Scanner entry point. Phase 2 only - classify + extract + stage one
-    item per ROM file with status='ready'. Phase 3 hashes + matches DATs."""
+    """Scanner entry point. Classify + extract archives + stage one item
+    per ROM file. Each ROM row is keyed on the file path so the folder
+    placeholder set by the scanner can be safely swept afterward."""
     platform = classify(folder)
     if not platform:
         with db.get_db() as conn:
@@ -363,56 +482,198 @@ def process_game(folder):
             )
         return None
 
-    plat_name = plats.PLATFORMS[platform]["name"]
-    last_id   = None
+    last_id = None
     for rom_path in rom_files:
-        filename_stem = Path(rom_path).stem
-        meta = {"platform": platform, "platform_name": plat_name}
-
-        # Hash + DAT lookup. Use canonical name as title when verified;
-        # fall back to the filename otherwise.
-        hashes = hash_rom(rom_path)
-        title  = filename_stem
-        year   = None
-        match  = None
-        verified = False
-        if hashes:
-            meta["hashes"] = hashes
-            match = game_dat.lookup_by_hash(
-                crc32=hashes["crc32"],
-                md5=hashes["md5"],
-                sha1=hashes["sha1"],
-                platform=platform,
-            )
-            if match:
-                verified = True
-                canonical = match["name"]
-                clean_title, ctitle_year, region = _strip_region_year(canonical)
-                if clean_title:
-                    title = clean_title
-                if ctitle_year:
-                    year = ctitle_year
-                meta["dat_match"] = {
-                    "name":   canonical,
-                    "region": region,
-                    "kind":   match.get("kind"),
-                }
-                log.info("game DAT match %s -> %s [%s]",
-                         filename_stem, canonical, region)
-            else:
-                log.info("game UNVERIFIED (no DAT match): %s [%s]",
-                         filename_stem, platform)
-        meta["verified"] = verified
-
-        with db.get_db() as conn:
-            cur = conn.execute(
-                """INSERT OR REPLACE INTO items
-                     (media_type, status, source_path, subtype,
-                      title, year, meta_json, processed_at)
-                   VALUES ('game', 'ready', ?, ?, ?, ?, ?, datetime('now'))""",
-                (rom_path, platform, title, year, json.dumps(meta)),
-            )
-            last_id = cur.lastrowid
-        log.info("staged game id=%d: %s [%s] verified=%s",
-                 last_id, title, platform, verified)
+        last_id = _stage_rom(rom_path, platform)
     return last_id
+
+
+def process_game_file(path):
+    """Single-file entry point used by RETRY / REPROCESS on an already-
+    staged row whose source_path is the ROM file itself. Same shape as
+    book.process_book_file."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    platform = _classify_single_file(p)
+    if not platform:
+        with db.get_db() as conn:
+            conn.execute(
+                """INSERT OR REPLACE INTO items
+                     (media_type, status, source_path, error, processed_at)
+                   VALUES ('game', 'failed', ?, ?, datetime('now'))""",
+                (str(p),
+                 "could not determine platform for single ROM - rename "
+                 "the file with a platform hint like (PSX), [NES], etc."),
+            )
+        return None
+    return _stage_rom(str(p), platform)
+
+
+# ── Approval / write-out ─────────────────────────────────────────────────────
+
+def _safe_path(s):
+    if not s:
+        return "_"
+    s = re.sub(r'[<>:"|?*\\\\/]', "", s).strip()
+    return s or "_"
+
+
+def library_path_for(target_root, platform, title, ext):
+    """Where will this ROM land after approve? Used by the conflict warning
+    and the writer itself."""
+    plat = _safe_path(platform)
+    name = _safe_path(title)
+    return Path(target_root) / plat / f"{name}{ext}"
+
+
+# chdman targets:
+#   createcd -> for BIN/CUE-based CD platforms
+#   createdvd -> for single-track ISO DVD platforms (PS2, GC, Wii, Xbox)
+# Everything not listed here we move as-is. In particular PSP UMD (.iso /
+# .cso) is skipped: chdman doesn't handle UMD and emulators consume iso/cso
+# directly, so conversion would just be lossy destruction.
+CHDMAN_CD_PLATFORMS  = {"ps1", "scd", "saturn", "pcecd", "3do", "dc"}
+CHDMAN_DVD_PLATFORMS = {"ps2", "gc", "wii", "xbox"}
+
+
+def _chdman_convert(src_path, platform):
+    """Convert a disc image to CHD via chdman. Handles BIN/CUE (createcd)
+    and ISO (createdvd) depending on the platform. Returns Path of the
+    resulting .chd, or None on failure.
+
+    Callers should pass the .cue for CD or the .iso for DVD - not the .bin
+    or track file."""
+    src = Path(src_path)
+    if not shutil.which("chdman"):
+        log.warning("chdman not in PATH")
+        return None
+    out = src.with_suffix(".chd")
+
+    if platform in CHDMAN_CD_PLATFORMS and src.suffix.lower() == ".cue":
+        sub = "createcd"
+    elif platform in CHDMAN_DVD_PLATFORMS and src.suffix.lower() == ".iso":
+        sub = "createdvd"
+    else:
+        return None
+
+    cmd = ["chdman", sub, "-i", str(src), "-o", str(out), "-f"]
+    try:
+        r = subprocess.run(cmd, capture_output=True, timeout=3600)
+        if r.returncode == 0 and out.exists() and out.stat().st_size > 0:
+            log.info("chdman: %s -> %s", src.name, out.name)
+            return out
+        log.warning("chdman failed (rc=%d): %s",
+                    r.returncode, r.stderr.decode("utf-8", "ignore")[:400])
+    except subprocess.TimeoutExpired:
+        log.warning("chdman timeout: %s", src)
+    except Exception as e:
+        log.warning("chdman error: %s", e)
+    return None
+
+
+def _companion_tracks(cue_path):
+    """Find BIN/WAV/OGG/FLAC tracks referenced by a .cue file. Best-effort
+    parse - we just walk the sibling files that share the cue's stem or
+    are listed in the FILE directives."""
+    cue = Path(cue_path)
+    tracks = set()
+    try:
+        for line in cue.read_text(errors="replace").splitlines():
+            m = re.match(r'\s*FILE\s+"?([^"]+)"?\s+\w+', line, re.IGNORECASE)
+            if m:
+                p = (cue.parent / m.group(1)).resolve()
+                if p.exists():
+                    tracks.add(p)
+    except Exception:
+        pass
+    # Also sweep sibling BINs sharing the stem (fallback for cues that use
+    # relative paths chdman rewrites)
+    stem = cue.stem
+    for p in cue.parent.iterdir():
+        if p.suffix.lower() == ".bin" and p.stem.startswith(stem):
+            tracks.add(p)
+    return sorted(tracks)
+
+
+def write_and_move(item, target_root, convert_chd=False):
+    """Move one game item into the RomM library. For disc images with
+    convert_chd, run chdman first and use the .chd as the source.
+
+    - target_root: /mnt/storage/media/roms
+    - Landing path: <target_root>/<platform>/<title>.<ext>
+    - Drops cover.jpg next to the ROM if we have one."""
+    src = Path(item["source_path"])
+    if not src.exists():
+        raise FileNotFoundError(src)
+
+    platform = item.get("subtype")
+    if not platform or platform not in plats.PLATFORMS:
+        raise ValueError(f"missing/unknown platform {platform!r} on item")
+
+    disc_based = plats.PLATFORMS[platform].get("disc_based")
+    src_ext    = src.suffix.lower()
+    companions = []
+    chd_source = None
+
+    # Pick the right source to hand chdman when appropriate. For BIN/CUE the
+    # user's source_path might be the .bin (that's what the scanner staged);
+    # prefer a sibling .cue if one exists.
+    if convert_chd and disc_based:
+        cue_candidate = None
+        if src_ext == ".cue":
+            cue_candidate = src
+        elif src_ext == ".bin":
+            for p in src.parent.iterdir():
+                if p.suffix.lower() == ".cue" and p.stem == src.stem:
+                    cue_candidate = p
+                    break
+        iso_candidate = src if src_ext == ".iso" else None
+        chd_source = cue_candidate or iso_candidate
+
+    if chd_source is not None:
+        converted = _chdman_convert(chd_source, platform)
+        if converted and converted.exists():
+            if chd_source.suffix.lower() == ".cue":
+                companions = _companion_tracks(chd_source)
+            src = converted
+            src_ext = ".chd"
+
+    title = _safe_path(item.get("title") or src.stem)
+    dest  = library_path_for(target_root, platform, title, src_ext)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # Sidecar cover.jpg (RomM picks these up).
+    if item.get("cover_local") and os.path.exists(item["cover_local"]):
+        try:
+            with open(item["cover_local"], "rb") as s, \
+                 open(dest.parent / f"{title}.jpg", "wb") as d:
+                d.write(s.read())
+        except Exception as e:
+            log.warning("copy game cover failed: %s", e)
+
+    try:
+        src.replace(dest)
+    except Exception as e:
+        log.error("move failed %s -> %s: %s", src, dest, e)
+        raise
+
+    # Clean up companion track files (bin/wav/flac) that were folded into
+    # the CHD. Only removes files we know were referenced by the .cue.
+    for c in companions:
+        try:
+            if c.exists() and c.resolve() != dest.resolve():
+                c.unlink()
+        except Exception as e:
+            log.warning("companion cleanup failed %s: %s", c, e)
+
+    # Clean up the (now empty) source folder if it was a one-ROM bundle
+    try:
+        parent = Path(item["source_path"]).parent
+        if (parent.exists() and parent != Path(target_root)
+                and not any(parent.iterdir())):
+            parent.rmdir()
+    except Exception:
+        pass
+
+    return {"dest": str(dest)}

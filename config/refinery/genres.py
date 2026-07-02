@@ -138,6 +138,40 @@ BOOKS = sorted([
     "Young Adult",
 ])
 
+# Game genres. Roughly IGDB's top-level genre taxonomy, kept short so it
+# fits a datalist without scrolling. Free-text input, this list is only
+# autocomplete.
+GAMES = sorted([
+    "Action",
+    "Adventure",
+    "Arcade",
+    "Card & Board",
+    "Casual",
+    "Fighting",
+    "Hack and Slash",
+    "Indie",
+    "MMO",
+    "Music",
+    "Party",
+    "Pinball",
+    "Platform",
+    "Point-and-Click",
+    "Puzzle",
+    "Quiz/Trivia",
+    "Racing",
+    "Real Time Strategy",
+    "Role-Playing",
+    "Shooter",
+    "Simulator",
+    "Sport",
+    "Stealth",
+    "Strategy",
+    "Survival",
+    "Tactical",
+    "Turn-Based Strategy",
+    "Visual Novel",
+])
+
 
 def _norm(s):
     return (s or "").lower().replace("-", " ").replace("_", " ").strip()

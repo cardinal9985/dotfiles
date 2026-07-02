@@ -59,7 +59,7 @@
   };
 
   # Let maxwell pause/resume tdarr without a password prompt. Used by the
-  # tarkov launcher's auto-toggle (spt.nix) and the tdarr-off/tdarr-on aliases.
+  # tdarr-off / tdarr-on aliases for manual toggle before/after gaming.
   security.sudo.extraRules = [{
     users = [ "maxwell" ];
     commands = [

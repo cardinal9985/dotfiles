@@ -27,21 +27,6 @@ let
     # winhttp=n,b: forces Wine to load the local winhttp.dll (BepInEx doorstop)
     # so mods including Fika hook into Unity correctly.
     export WINEDLLOVERRIDES="winhttp=n,b"
-    # Pause tdarr while playing. Tarkov skips GameMode (LD_PRELOAD is
-    # unset above), so steam.nix's GameMode custom.start hook never fires
-    # for this wrapper - we toggle tdarr ourselves. Use the exact absolute
-    # systemctl path so it matches the NOPASSWD sudoers rule in
-    # tdarr-node.nix; sudo -n keeps us from hanging on a password prompt
-    # when Steam launches us without a TTY; the trap restores tdarr on
-    # every exit including SIGINT/crash. Failures are logged, not fatal -
-    # a broken toggle shouldn't kill the launch.
-    tdarr_toggle() {
-      if ! sudo -n ${pkgs.systemd}/bin/systemctl "$1" podman-tdarr-node; then
-        echo "warn: could not $1 podman-tdarr-node (sudo denied)" >&2
-      fi
-    }
-    tdarr_toggle stop
-    trap 'tdarr_toggle start' EXIT
     cd ${sptSubdir}
     ${pkgs.umu-launcher}/bin/umu-run 'X:\games\escape-from-tarkov\spt\SPT\SPT.Launcher.exe'
   '';

@@ -86,12 +86,25 @@ PLATFORM_HINTS = [
 
 _HINT_RES = [(re.compile(p, re.IGNORECASE), slug) for p, slug in PLATFORM_HINTS]
 
+# When multiple platforms share extensions (BIN/CUE = ps1|ps2|saturn|scd|
+# pcecd|3do|dc, ISO = many, .bin = md too) and there's no filename hint,
+# fall back to this preference order. Prefer the most-common platforms
+# so an unlabeled disc rip lands on PS1 (the sane default) instead of 3DO.
+PLATFORM_TIEBREAK = [
+    "ps1", "ps2", "psp", "gc", "wii", "saturn", "dc", "scd", "pcecd",
+    "xbox", "x360", "3do", "gba", "snes", "nes", "n64",
+]
+_TIEBREAK_INDEX = {slug: i for i, slug in enumerate(PLATFORM_TIEBREAK)}
+
 
 def _hint_platform(text):
     if not text:
         return None
+    # Normalise underscores/dots to spaces so word boundaries in the hint
+    # regexes fire on names like "sonic_saturn" or "trap.gunner.psx".
+    norm = re.sub(r"[_.]+", " ", text)
     for rx, slug in _HINT_RES:
-        if rx.search(text):
+        if rx.search(norm):
             return slug
     return None
 
@@ -176,10 +189,14 @@ def classify(folder):
         if h and h in votes:
             return h
 
-    # No hint - take the most-voted, alphabetical tiebreak for determinism.
+    # No hint - take the most-voted, then use PLATFORM_TIEBREAK preference
+    # (so an unlabeled BIN/CUE folder lands on PS1, not 3DO). Slugs not in
+    # the tiebreak fall to alphabetical for determinism.
     top  = votes.most_common()
     best = top[0][1]
-    return sorted(slug for slug, n in top if n == best)[0]
+    winners = [slug for slug, n in top if n == best]
+    return sorted(winners,
+                  key=lambda s: (_TIEBREAK_INDEX.get(s, 999), s))[0]
 
 
 def _classify_single_file(path):
@@ -204,21 +221,36 @@ def _classify_single_file(path):
     h = _hint_platform(p.name) or _hint_platform(p.parent.name)
     if h and h in cands:
         return h
-    return sorted(cands)[0]
+    return sorted(cands,
+                  key=lambda s: (_TIEBREAK_INDEX.get(s, 999), s))[0]
+
+
+# For disc-based platforms only these extensions count as "one game". The
+# .bin / .wav / .flac / etc. are companion tracks the .cue wraps up. Order
+# is preference-descending so a multi-disc pack with a .m3u prefers the m3u.
+DISC_PRIMARY_EXTS = (".m3u", ".chd", ".cue", ".gdi", ".iso", ".pbp", ".cdi")
 
 
 def list_rom_files(folder, platform):
-    """Files that look like ROMs for `platform`. Bare files with a matching
-    extension, plus archives whose contents include a matching extension."""
+    """Files that look like ROMs for `platform`. For cartridge platforms:
+    every matching file is one ROM. For disc platforms: only the primary
+    disc-image file per game (cue/m3u/chd/iso/gdi/pbp/cdi) - the .bin and
+    .wav companions are wrapped by the .cue and would otherwise stage one
+    row per data/audio track."""
     p = Path(folder)
     if not p.is_dir():
         return []
     exts = set(plats.PLATFORMS[platform]["exts"])
+    disc_based = plats.PLATFORMS[platform].get("disc_based")
     out  = []
     for f in p.rglob("*"):
         if not f.is_file():
             continue
         ext = f.suffix.lower()
+        if disc_based:
+            if ext in DISC_PRIMARY_EXTS and ext in exts:
+                out.append(str(f))
+            continue
         if ext in exts:
             out.append(str(f))
             continue
@@ -289,13 +321,52 @@ def _platform_rom_exts():
     return plats.all_extensions() - plats.CLASSIFIER_AMBIGUOUS
 
 
+def _cue_files(cue_path):
+    """Parse the FILE directives out of a .cue. Returns list of Paths in
+    the order the cue lists them. Best-effort - unreadable lines or
+    missing files are skipped, and if the cue has no FILE lines we fall
+    back to sibling .bin files that share the cue's stem."""
+    cue = Path(cue_path)
+    tracks = []
+    try:
+        for line in cue.read_text(errors="replace").splitlines():
+            m = re.match(r'\s*FILE\s+"?([^"]+)"?\s+\w+', line, re.IGNORECASE)
+            if m:
+                p = (cue.parent / m.group(1))
+                if p.exists():
+                    tracks.append(p)
+    except Exception:
+        pass
+    if not tracks:
+        stem = cue.stem
+        for p in sorted(cue.parent.iterdir()):
+            if p.suffix.lower() == ".bin" and p.stem.startswith(stem):
+                tracks.append(p)
+    return tracks
+
+
 def hash_rom(path):
     """Compute hashes of the actual ROM bytes. For zipped/7z cartridges,
     we hash the INNER file - no-intro/redump record hashes of the raw
-    ROM, never the archive. Returns dict {crc32, md5, sha1, size,
-    inner_name} or None on failure."""
+    ROM, never the archive. For .cue we hash the first .bin the cue
+    references (that's the data track, which Redump records the hash
+    of). Returns dict {crc32, md5, sha1, size, inner_name} or None on
+    failure."""
     p   = Path(path)
     ext = p.suffix.lower()
+
+    if ext == ".cue":
+        tracks = _cue_files(p)
+        if not tracks:
+            return None
+        try:
+            with open(tracks[0], "rb") as f:
+                h = _hash_stream(f)
+            h["inner_name"] = tracks[0].name
+            return h
+        except Exception as e:
+            log.warning("cue-referenced hash failed %s: %s", tracks[0], e)
+            return None
 
     if ext == ".zip":
         try:
@@ -573,25 +644,14 @@ def _chdman_convert(src_path, platform):
 
 
 def _companion_tracks(cue_path):
-    """Find BIN/WAV/OGG/FLAC tracks referenced by a .cue file. Best-effort
-    parse - we just walk the sibling files that share the cue's stem or
-    are listed in the FILE directives."""
+    """Files referenced by a .cue that should be cleaned up once chdman
+    has folded them into a .chd. Wraps _cue_files and also includes any
+    sibling .bin sharing the cue's stem (redundant with _cue_files' own
+    fallback but harmless)."""
+    tracks = set(_cue_files(cue_path))
     cue = Path(cue_path)
-    tracks = set()
-    try:
-        for line in cue.read_text(errors="replace").splitlines():
-            m = re.match(r'\s*FILE\s+"?([^"]+)"?\s+\w+', line, re.IGNORECASE)
-            if m:
-                p = (cue.parent / m.group(1)).resolve()
-                if p.exists():
-                    tracks.add(p)
-    except Exception:
-        pass
-    # Also sweep sibling BINs sharing the stem (fallback for cues that use
-    # relative paths chdman rewrites)
-    stem = cue.stem
     for p in cue.parent.iterdir():
-        if p.suffix.lower() == ".bin" and p.stem.startswith(stem):
+        if p.suffix.lower() == ".bin" and p.stem.startswith(cue.stem):
             tracks.add(p)
     return sorted(tracks)
 

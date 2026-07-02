@@ -16,6 +16,7 @@ import book
 import db
 import downloader
 import games
+import game_platforms as game_plats
 import genres
 import library
 import music
@@ -99,6 +100,12 @@ app = Flask(__name__)
 # upload, but this option exists for one-off convenience.
 app.config["MAX_CONTENT_LENGTH"] = None
 db.init_db()
+# DAT hash cache is a separate SQLite DB the games processor uses. Create
+# the empty table shape at startup so lookups against a not-yet-refreshed
+# DB just return no-match instead of raising OperationalError. The weekly
+# refinery-dat-refresh timer populates it.
+import game_dat as _game_dat
+_game_dat.init_db()
 
 MUSIC_TARGET = os.environ.get("REFINERY_MUSIC_TARGET",
                               "/mnt/storage/media/music")
@@ -230,9 +237,17 @@ def edit(item_id):
                                         item["title"] or "Unknown", ext_check)
         if target.exists():
             conflict = str(target)
+        # Sorted by human name for the dropdown - user thinks in
+        # "PlayStation" / "Super Nintendo", not slugs.
+        platforms = sorted(
+            ((slug, meta_p["name"])
+             for slug, meta_p in game_plats.PLATFORMS.items()),
+            key=lambda x: x[1].lower(),
+        )
         return render_template("edit_game.html", user=user, item=item,
                                meta=meta, genres=genres.GAMES,
                                conflict=conflict,
+                               platforms=platforms,
                                cd_platforms=games.CHDMAN_CD_PLATFORMS,
                                dvd_platforms=games.CHDMAN_DVD_PLATFORMS)
     return render_template("edit.html", user=user, item=item, tracks=tracks,
@@ -252,16 +267,22 @@ def approve(item_id):
             abort(404)
 
         # Pull edited fields from form
-        title  = request.form.get("title", "").strip()
-        artist = request.form.get("artist", "").strip()
-        year   = request.form.get("year", "").strip()
-        genre  = request.form.get("genre", "").strip()
+        title    = request.form.get("title", "").strip()
+        artist   = request.form.get("artist", "").strip()
+        year     = request.form.get("year", "").strip()
+        genre    = request.form.get("genre", "").strip()
+        platform = request.form.get("platform", "").strip()
 
         item_dict = dict(item)
         item_dict["title"]  = title  or item_dict["title"]
         item_dict["artist"] = artist or item_dict["artist"]
         item_dict["year"]   = int(year) if year.isdigit() else item_dict["year"]
         item_dict["genre"]  = genre  or item_dict["genre"]
+        # Games only: platform edit overrides the classifier's guess so
+        # write_and_move lands the file at the right <roms>/<slug>/ dir.
+        if (item_dict["media_type"] == "game"
+                and platform in game_plats.PLATFORMS):
+            item_dict["subtype"] = platform
 
         # Manual cover upload override
         cover_file = request.files.get("cover_upload")
@@ -298,9 +319,10 @@ def approve(item_id):
 
         # Persist edits
         conn.execute(
-            """UPDATE items SET title=?, artist=?, year=?, genre=? WHERE id=?""",
+            """UPDATE items SET title=?, artist=?, year=?, genre=?, subtype=?
+                 WHERE id=?""",
             (item_dict["title"], item_dict["artist"], item_dict["year"],
-             item_dict["genre"], item_id),
+             item_dict["genre"], item_dict.get("subtype"), item_id),
         )
         for td in tracks:
             # Manual lyrics overrides per track. If the user uploaded a .lrc
@@ -518,6 +540,42 @@ def reanalyze(item_id):
                   lyr.get("synced") or "", lyr.get("plain") or "",
                   t["id"]))
     return redirect(url_for("edit", item_id=item_id))
+
+
+@app.route("/item/<int:item_id>/reanalyze-game", methods=["POST"])
+def reanalyze_game(item_id):
+    """Re-run hash + DAT lookup + IGDB against the given (or current)
+    platform for a game item. Used when the classifier guessed the wrong
+    platform - user picks the right slug from the dropdown, hits this,
+    and gets a proper DAT / IGDB match without redoing the full pipeline."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+    new_platform = (request.form.get("platform") or "").strip()
+
+    with db.get_db() as conn:
+        item = conn.execute("SELECT * FROM items WHERE id=?",
+                            (item_id,)).fetchone()
+        if not item or item["media_type"] != "game":
+            abort(404)
+
+    platform = (new_platform
+                if new_platform in game_plats.PLATFORMS
+                else item["subtype"])
+    if not platform or platform not in game_plats.PLATFORMS:
+        return "no valid platform", 400
+
+    # Restage in place. _stage_rom does the whole hash + DAT + IGDB pipeline
+    # against the given platform and INSERT OR REPLACEs the same row (keyed
+    # by source_path). SQLite implements REPLACE as delete+insert so the row
+    # id changes; look up the new id by source_path for the redirect.
+    src = item["source_path"]
+    try:
+        new_id = games._stage_rom(src, platform)
+    except Exception as e:
+        log.exception("reanalyze-game failed for %d", item_id)
+        return f"reanalyze failed: {e}", 500
+    return redirect(url_for("edit", item_id=new_id or item_id))
 
 
 @app.route("/item/<int:item_id>/forget", methods=["POST"])

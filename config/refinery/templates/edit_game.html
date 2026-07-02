@@ -28,9 +28,17 @@
       </div>
 
       <div style="margin-top: 0.75rem; font-size: 0.7rem; color: var(--white);">
-        <div>PLATFORM: <span style="color: var(--bright-cyan);">{{ meta.platform_name or meta.platform }}</span></div>
+        <label style="font-size: 0.65rem;">PLATFORM</label>
+        <select name="platform" style="width: 100%; font-size: 0.75rem;">
+          {% for slug, name in platforms %}
+          <option value="{{ slug }}" {% if slug == item.subtype %}selected{% endif %}>{{ name }} ({{ slug }})</option>
+          {% endfor %}
+        </select>
+        <div style="font-size: 0.65rem; margin-top: 0.2rem; color: var(--white);">
+          Wrong guess? Pick the right one, then REANALYZE (below) to re-run DAT + IGDB.
+        </div>
         {% if meta.dat_match and meta.dat_match.region %}
-        <div>REGION: <span style="color: var(--bright-cyan);">{{ meta.dat_match.region }}</span></div>
+        <div style="margin-top: 0.3rem;">REGION: <span style="color: var(--bright-cyan);">{{ meta.dat_match.region }}</span></div>
         {% endif %}
         {% if meta.verified %}
         <div style="margin-top: 0.3rem;"><span class="badge ready">DAT-VERIFIED ({{ meta.dat_match.kind|upper if meta.dat_match else '' }})</span></div>
@@ -119,12 +127,26 @@
 </form>
 
 <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+  <form method="POST" action="/item/{{ item.id }}/reanalyze-game">
+    <input type="hidden" name="platform" id="reanalyze-platform" value="{{ item.subtype }}">
+    <button type="submit" class="btn ghost">REANALYZE (RE-DAT + RE-IGDB AT CURRENT PLATFORM)</button>
+  </form>
   <form method="POST" action="/item/{{ item.id }}/reprocess"
-        onsubmit="return confirm('Full re-process: re-hash, re-query DAT and IGDB, re-fetch cover.')">
+        onsubmit="return confirm('Full re-process: re-classify from scratch, re-hash, re-query DAT and IGDB, re-fetch cover.')">
     <button type="submit" class="btn ghost">FULL RE-PROCESS</button>
   </form>
   <form method="POST" action="/item/{{ item.id }}/reject">
     <button type="submit" class="btn danger" onclick="return confirm('Mark as rejected? File stays in inbox.')">REJECT</button>
   </form>
 </div>
+<script>
+  // Keep the reanalyze form's hidden platform in sync with the dropdown so
+  // you can pick a new platform and re-run lookups without submitting the
+  // main approve form first.
+  (function () {
+    var sel = document.querySelector('select[name="platform"]');
+    var hid = document.getElementById('reanalyze-platform');
+    if (sel && hid) sel.addEventListener('change', function () { hid.value = sel.value; });
+  })();
+</script>
 {% endblock %}

@@ -45,8 +45,12 @@
           pin_cores = "yes";
         };
         custom = {
-          start = "${pkgs.libnotify}/bin/notify-send 'GameMode' 'Gaming mode enabled' && systemctl stop podman-tdarr-node";
-          end   = "${pkgs.libnotify}/bin/notify-send 'GameMode' 'Gaming mode disabled' && systemctl start podman-tdarr-node";
+          # gamemoded runs as the user, so touching a system unit needs
+          # sudo. The passwordless rule in tdarr-node.nix matches the
+          # exact absolute systemctl path, so use it here too. -n keeps
+          # sudo from prompting if the rule ever gets removed.
+          start = "${pkgs.libnotify}/bin/notify-send 'GameMode' 'Gaming mode enabled' && sudo -n ${pkgs.systemd}/bin/systemctl stop podman-tdarr-node";
+          end   = "${pkgs.libnotify}/bin/notify-send 'GameMode' 'Gaming mode disabled' && sudo -n ${pkgs.systemd}/bin/systemctl start podman-tdarr-node";
         };
       };
     };

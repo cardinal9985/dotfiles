@@ -21,6 +21,8 @@ import genres
 import library
 import music
 import scanner
+import targets
+import video
 
 NTFY_URL   = os.environ.get("NTFY_URL", "")
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "")
@@ -87,6 +89,32 @@ def _process_game_with_notify(folder):
                    f"{row['title'] or '?'} [{row['subtype']}]{plural}")
     return last_id
 games.process_game = _process_game_with_notify
+
+
+# Video: one folder can produce multiple items (one movie + one show season
+# each with N episodes). Notify once per folder with the last-staged title.
+_orig_process_video = video.process_video
+def _process_video_with_notify(folder):
+    last_id = _orig_process_video(folder)
+    if last_id:
+        with db.get_db() as conn:
+            row = conn.execute(
+                "SELECT title, subtype FROM items WHERE id=?",
+                (last_id,),
+            ).fetchone()
+            count = conn.execute(
+                "SELECT COUNT(*) AS n FROM items "
+                "WHERE media_type='video' AND status='ready' "
+                "AND source_path LIKE ?",
+                (str(folder) + "%",),
+            ).fetchone()
+        if row:
+            n = (count["n"] if count else 1) or 1
+            plural = "" if n == 1 else f" (+{n-1} more)"
+            notify("Refinery: video ready for review",
+                   f"{row['title'] or '?'} [{row['subtype']}]{plural}")
+    return last_id
+video.process_video = _process_video_with_notify
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -224,6 +252,27 @@ def edit(item_id):
             conflict = str(target)
         return render_template("edit_book.html", user=user, item=item,
                                meta=meta, genres=genres.BOOKS, conflict=conflict)
+    if item["media_type"] == "video":
+        try:
+            target_path = video.library_path_for(dict(item))
+            conflict = str(target_path) if target_path.exists() else None
+        except Exception:
+            conflict = None
+        # Subtype dropdown: label + slug for each video subtype.
+        video_subtypes = [
+            ("movie",         "Movie"),
+            ("anime_movie",   "Anime Movie"),
+            ("documentary",   "Documentary"),
+            ("short_film",    "Short Film"),
+            ("fan_edit_film", "Fan Edit / Cut"),
+            ("show",          "TV Show"),
+            ("anime_show",    "Anime Show"),
+            ("docuseries",    "Documentary Series"),
+        ]
+        return render_template("edit_video.html", user=user, item=item,
+                               tracks=tracks, meta=meta,
+                               genres=genres.VIDEO, conflict=conflict,
+                               subtypes=video_subtypes)
     if item["media_type"] == "game":
         platform = item["subtype"] or meta.get("platform")
         ext      = Path(item["source_path"]).suffix.lower()
@@ -283,6 +332,12 @@ def approve(item_id):
         if (item_dict["media_type"] == "game"
                 and platform in game_plats.PLATFORMS):
             item_dict["subtype"] = platform
+        # Video: subtype dropdown (movie / show / anime_* / documentary / ...)
+        # dictates the destination target root.
+        if item_dict["media_type"] == "video":
+            new_sub = request.form.get("subtype", "").strip()
+            if new_sub in targets.TARGETS:
+                item_dict["subtype"] = new_sub
 
         # Manual cover upload override
         cover_file = request.files.get("cover_upload")
@@ -297,7 +352,9 @@ def approve(item_id):
             conn.execute("UPDATE items SET cover_local=? WHERE id=?",
                          (cover_path, item_id))
 
-        # Books and games are single-file items; no tracks table to update
+        # Books and games are single-file items; no tracks table to update.
+        # Music always has tracks. Video shows have tracks (episodes);
+        # video movies don't - the SELECT returns [] naturally in that case.
         if item_dict["media_type"] in ("book", "game"):
             tracks_rows = []
         else:
@@ -360,6 +417,8 @@ def approve(item_id):
             convert_chd = request.form.get("convert_chd") == "1"
             result = games.write_and_move(item_dict, GAME_TARGET,
                                           convert_chd=convert_chd)
+        elif item_dict["media_type"] == "video":
+            result = video.write_and_move(item_dict, tracks)
         else:
             raise ValueError(f"unknown media_type {item_dict['media_type']}")
         log.info("Approved %s %d → %s",
@@ -390,6 +449,24 @@ def approve(item_id):
     return redirect(url_for("queue"))
 
 
+def _resolve_process_source(item):
+    """Return the on-disk path we should feed the processor for this item.
+    Video shows key on a synthetic `<folder>#s<n>#<slug>` source_path, so
+    the actual folder we should re-scan lives in meta_json['folder']."""
+    src = item["source_path"] or ""
+    if os.path.isdir(src) or os.path.isfile(src):
+        return src
+    if item["media_type"] == "video":
+        try:
+            meta = json.loads(item["meta_json"] or "{}")
+        except Exception:
+            meta = {}
+        folder = meta.get("folder") or ""
+        if os.path.isdir(folder) or os.path.isfile(folder):
+            return folder
+    return None
+
+
 def _bg_process(media_type, source_path):
     """Process one item in a background thread so the HTTP response is
     instant. The user watches progress via the IN PROGRESS section."""
@@ -409,6 +486,14 @@ def _bg_process(media_type, source_path):
                 games.process_game_file(source_path)
             elif os.path.isdir(source_path):
                 games.process_game(source_path)
+        elif media_type == "video":
+            # Movies key on the file; shows key on a synthetic
+            # `<folder>#s<n>#<slug>`. The reprocess/retry route rewrites the
+            # synthetic key to the folder from meta before calling us.
+            if os.path.isfile(source_path):
+                video.process_video_file(source_path)
+            elif os.path.isdir(source_path):
+                video.process_video(source_path)
     except Exception:
         log.exception("bg processing failed for %s", source_path)
 
@@ -424,15 +509,15 @@ def retry_failed():
 
     with db.get_db() as conn:
         rows = conn.execute(
-            "SELECT id, source_path, media_type FROM items "
+            "SELECT id, source_path, media_type, meta_json FROM items "
             "WHERE status IN ('failed', 'rejected')"
         ).fetchall()
 
     requeued = 0
     skipped  = 0
     for r in rows:
-        src = r["source_path"]
-        if not src or not (os.path.isdir(src) or os.path.isfile(src)):
+        src = _resolve_process_source(r)
+        if not src:
             skipped += 1
             continue
         with db.get_db() as conn:
@@ -601,14 +686,17 @@ def reprocess(item_id):
     if not user:
         return "unauthorized", 401
     with db.get_db() as conn:
-        item = conn.execute("SELECT source_path, media_type FROM items WHERE id=?",
-                            (item_id,)).fetchone()
+        item = conn.execute(
+            "SELECT source_path, media_type, meta_json FROM items WHERE id=?",
+            (item_id,),
+        ).fetchone()
         if not item:
             abort(404)
         conn.execute("DELETE FROM items WHERE id=?", (item_id,))
+    src = _resolve_process_source(item) or item["source_path"]
     threading.Thread(
         target=_bg_process,
-        args=(item["media_type"], item["source_path"]),
+        args=(item["media_type"], src),
         daemon=True,
     ).start()
     return redirect(url_for("queue"))

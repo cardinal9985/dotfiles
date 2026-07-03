@@ -101,6 +101,8 @@
         <th>PLATFORM</th><th>DEVELOPER</th><th>YEAR</th><th>GENRE</th>
         {% elif kind == 'book' %}
         <th>AUTHOR</th><th>YEAR</th><th>GENRE</th>
+        {% elif kind == 'video' %}
+        <th>TYPE</th><th>YEAR</th><th>GENRE</th>
         {% else %}
         <th>ARTIST</th><th>YEAR</th><th>GENRE</th>
         {% endif %}
@@ -113,6 +115,10 @@
           {% if kind == 'game' %}
           <td>{{ r.subtype|upper if r.subtype else '?' }}</td>
           <td>{{ r.artist or '-' }}</td>
+          <td>{{ r.year or '?' }}</td>
+          <td>{{ r.genre or '-' }}</td>
+          {% elif kind == 'video' %}
+          <td>{{ r.subtype|upper if r.subtype else '?' }}</td>
           <td>{{ r.year or '?' }}</td>
           <td>{{ r.genre or '-' }}</td>
           {% else %}

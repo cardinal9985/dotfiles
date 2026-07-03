@@ -172,6 +172,39 @@ GAMES = sorted([
     "Visual Novel",
 ])
 
+# Video genres. Roughly TMDB's movie + TV taxonomy merged. Free-text input,
+# this list only powers the datalist autocomplete on the edit page.
+VIDEO = sorted([
+    "Action",
+    "Adventure",
+    "Animation",
+    "Anime",
+    "Comedy",
+    "Crime",
+    "Documentary",
+    "Drama",
+    "Family",
+    "Fantasy",
+    "History",
+    "Horror",
+    "Kids",
+    "Music",
+    "Mystery",
+    "News",
+    "Reality",
+    "Romance",
+    "Sci-Fi",
+    "Sci-Fi & Fantasy",
+    "Soap",
+    "Sports",
+    "Talk",
+    "Thriller",
+    "TV Movie",
+    "War",
+    "War & Politics",
+    "Western",
+])
+
 
 def _norm(s):
     return (s or "").lower().replace("-", " ").replace("_", " ").strip()

@@ -13,6 +13,7 @@ import db
 import book
 import games
 import music
+import video
 
 WORKERS = int(os.environ.get("REFINERY_WORKERS", "3"))
 
@@ -128,6 +129,8 @@ def _process_one(full):
             book.process_book(work)
         elif kind == "game":
             games.process_game(work)
+        elif kind == "video":
+            video.process_video(work)
         else:
             with db.get_db() as conn:
                 conn.execute(

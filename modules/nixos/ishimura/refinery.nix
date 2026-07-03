@@ -10,6 +10,7 @@ let
     mutagen
     numpy
     ebooklib
+    guessit
   ]);
 
   app = pkgs.runCommand "ishimura-refinery" {} ''
@@ -18,7 +19,8 @@ let
           ${src}/downloader.py ${src}/game_dat.py ${src}/game_igdb.py \
           ${src}/game_platforms.py ${src}/games.py ${src}/genres.py \
           ${src}/library.py ${src}/music.py ${src}/quality.py \
-          ${src}/scanner.py ${src}/targets.py ${src}/templates $out/
+          ${src}/scanner.py ${src}/targets.py ${src}/video.py \
+          ${src}/templates $out/
   '';
 
   reprocessLibrary = pkgs.writeShellScriptBin "refinery-reprocess-library"
@@ -38,6 +40,7 @@ in
     "d /persist/refinery/ol_works       0750 refinery refinery -"
     "d /persist/refinery/book_covers    0750 refinery refinery -"
     "d /persist/refinery/game_covers    0750 refinery refinery -"
+    "d /persist/refinery/video_covers   0750 refinery refinery -"
     "d /persist/refinery/dats           0750 refinery refinery -"
     "d /persist/refinery/backups        0750 refinery refinery -"
   ];
@@ -84,6 +87,16 @@ in
       REFINERY_GAME_COVER_DIR=/persist/refinery/game_covers
       REFINERY_DAT_DIR=/persist/refinery/dats
       REFINERY_DAT_DB=/persist/refinery/dats.db
+      REFINERY_MOVIE_TARGET=/mnt/storage/media/movies
+      REFINERY_SHOW_TARGET=/mnt/storage/media/shows
+      REFINERY_ANIME_MOVIE_TARGET=/mnt/storage/media/anime/movies
+      REFINERY_ANIME_SHOW_TARGET=/mnt/storage/media/anime/shows
+      REFINERY_DOCUMENTARY_TARGET=/mnt/storage/media/documentaries
+      REFINERY_DOCUSERIES_TARGET=/mnt/storage/media/docuseries
+      REFINERY_SHORT_FILM_TARGET=/mnt/storage/media/short-films
+      REFINERY_FAN_EDIT_FILM_TARGET=/mnt/storage/media/fan-edits
+      REFINERY_VIDEO_COVER_DIR=/persist/refinery/video_covers
+      TMDB_TOKEN=${config.sops.placeholder."requests/tmdb_token"}
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
       IGDB_CLIENT_ID=${config.sops.placeholder."romm/igdb_client_id"}
       IGDB_CLIENT_SECRET=${config.sops.placeholder."romm/igdb_client_secret"}
@@ -122,14 +135,33 @@ in
     #  - /mnt/storage/media/music    (artist/album folders on approve)
     #  - /mnt/storage/media/books    (author folders on approve)
     #  - /mnt/storage/media/roms     (per-platform game folders, RomM shares these)
+    #  - /mnt/storage/media/{movies,shows,anime,documentaries,docuseries,short-films,fan-edits}
+    #    (video library roots - Jellyfin reads from these)
     #  - /mnt/storage/downloads/slskd (retag source files + accept uploads)
     # Default ACL on each root makes new subfolders inherit the grant, so
     # newly-created destinations are writable without re-running this. m::rwx
     # explicitly sets the mask so a subsequent chmod doesn't silently
-    # downgrade refinery's effective access.
+    # downgrade refinery's effective access. mkdir -p ensures the video roots
+    # exist before setfacl runs - the video processor creates <title>/ under
+    # each, but the root itself has to be there for the ACL grant.
     script = ''
+      for dir in /mnt/storage/media/movies /mnt/storage/media/shows \
+                 /mnt/storage/media/anime  /mnt/storage/media/anime/movies \
+                 /mnt/storage/media/anime/shows \
+                 /mnt/storage/media/documentaries \
+                 /mnt/storage/media/docuseries \
+                 /mnt/storage/media/short-films \
+                 /mnt/storage/media/fan-edits; do
+        mkdir -p "$dir" || true
+      done
       for dir in /mnt/storage/media/music /mnt/storage/media/books \
-                 /mnt/storage/media/roms  /mnt/storage/downloads/slskd; do
+                 /mnt/storage/media/roms  /mnt/storage/media/movies \
+                 /mnt/storage/media/shows /mnt/storage/media/anime \
+                 /mnt/storage/media/documentaries \
+                 /mnt/storage/media/docuseries \
+                 /mnt/storage/media/short-films \
+                 /mnt/storage/media/fan-edits \
+                 /mnt/storage/downloads/slskd; do
         if [ -d "$dir" ]; then
           ${pkgs.acl}/bin/setfacl -R    -m u:refinery:rwx,m::rwx "$dir" || true
           ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx,m::rwx "$dir" || true

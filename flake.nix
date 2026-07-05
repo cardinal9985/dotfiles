@@ -70,9 +70,14 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nix-gaming = {
+      url = "github:fufexan/nix-gaming";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, colmena, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, rocksmith-nix, nix-index-database, ... }@inputs:
+  outputs = { self, nixpkgs, colmena, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, rocksmith-nix, nix-index-database, nix-gaming, ... }@inputs:
   let
     system = "x86_64-linux";
 

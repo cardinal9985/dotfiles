@@ -19,6 +19,7 @@
     ./user.nix
     ./packages.nix
     ./steam.nix
+    ./mo2.nix
     ./swap.nix
     ./impermanence.nix
     ./security.nix

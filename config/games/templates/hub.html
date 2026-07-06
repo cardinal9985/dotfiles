@@ -69,6 +69,38 @@
     {{ tile("SLOTS", "▓", "Spin, hope, repeat. Rumored jackpot combo hides in the reels", "SOLO", url_for('slots.machine')) }}
   </div>
 
+  <h3 class="row-title">// ARCADE - RETRO SOLO</h3>
+  <div class="game-tiles">
+    {{ tile("SNAKE", "∽", "Grow the snake, don't eat yourself. High-score leaderboard", "SOLO") }}
+    {{ tile("TETRIS", "▦", "Stack blocks, clear lines. High-score leaderboard", "SOLO") }}
+    {{ tile("WHACK-A-MOLE", "◈", "Click moles as they pop. Chip payout per hit, timer round", "SOLO") }}
+    {{ tile("REACTION TIME", "⏱", "Click when the light turns green. Fastest reactions leaderboard", "SOLO") }}
+  </div>
+
+  <h3 class="row-title">// ARCADE - REAL-TIME COMPETITIVE</h3>
+  <div class="game-tiles">
+    {{ tile("PONG", "⚈", "Classic paddle bounce. Play 1v1 or vs BOT with adjustable AI level", "1V1 · BOT") }}
+    {{ tile("AIR HOCKEY", "⊚", "1v1 paddle-and-puck arena, rebound off the walls", "1V1") }}
+    {{ tile("TRON", "⧫", "1v1 light cycles - leave a trail, don't hit anything, survive", "1V1") }}
+    {{ tile("BOMBERMAN", "💣", "Multi-player party arcade - drop bombs, blast walls and opponents", "2-4P") }}
+  </div>
+
+  <h3 class="row-title">// CARNIVAL - AIM & TIMING</h3>
+  <div class="game-tiles">
+    {{ tile("HIGH STRIKER", "⇧", "Test your strength, hit the bell for the jackpot", "SOLO") }}
+    {{ tile("RING TOSS", "◎", "Aim + release, land rings on the pegs for chip payouts", "SOLO") }}
+    {{ tile("BALLOON POP", "🎈", "Click balloons as they float up, chip per pop, race the timer", "SOLO") }}
+    {{ tile("SKEE-BALL", "⊛", "Roll balls up the ramp into the scoring holes", "SOLO") }}
+  </div>
+
+  <h3 class="row-title">// CARNIVAL - MIDWAY PRIZE</h3>
+  <div class="game-tiles">
+    {{ tile("PLINKO", "▽", "Drop a chip, watch it bounce through the pegs into a prize slot", "SOLO") }}
+    {{ tile("PRIZE CLAW", "🎁", "Move the claw, drop it, hope the grip holds. Classic gacha tension", "SOLO") }}
+    {{ tile("COIN PUSHER", "🪙", "Drop chips, push others off the edge. Endlessly satisfying chip drain", "SOLO") }}
+    {{ tile("DUCK HUNT", "🎯", "Click ducks flying past. Shooting gallery, chip per hit", "SOLO") }}
+  </div>
+
 </div>
 
 {% endblock %}

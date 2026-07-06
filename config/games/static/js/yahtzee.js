@@ -37,9 +37,38 @@ function renderScorecard(state) {
       td.className = 'ytz-score';
     }
   });
+  // Pulse the available cells when the player MUST score
+  const tbody = document.getElementById('ytz-scorecard');
+  if (tbody) tbody.classList.toggle('must-score', state.status === 'playing' && state.rolls_left === 0);
   document.getElementById('ytz-upper-total').textContent =
     state.upper_total + (state.upper_total >= 63 ? ' (+35)' : '');
   document.getElementById('ytz-grand-total').textContent = state.grand_total;
+}
+
+function showGameOver(state, payout) {
+  const panel = document.getElementById('ytz-gameover-panel');
+  const scoreEl = document.getElementById('ytz-gameover-score');
+  const payEl   = document.getElementById('ytz-gameover-payout');
+  const fee = window.YTZ_ENTRY_FEE || 25;
+  scoreEl.textContent = state.grand_total;
+  const net = (payout || 0) - fee;
+  if (net > 0) {
+    payEl.className = 'ytz-gameover-payout win';
+    payEl.textContent = 'WIN :: +' + payout + ' TICKETS (net +' + net + ')';
+  } else if (net === 0) {
+    payEl.className = 'ytz-gameover-payout push';
+    payEl.textContent = 'BREAK EVEN :: entry returned';
+  } else {
+    payEl.className = 'ytz-gameover-payout loss';
+    payEl.textContent = 'NO PAYOUT :: -' + fee + ' TICKETS';
+  }
+  panel.style.display = 'flex';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hideGameOver() {
+  const panel = document.getElementById('ytz-gameover-panel');
+  if (panel) panel.style.display = 'none';
 }
 
 function renderStatus(state) {
@@ -111,9 +140,12 @@ async function newGame() {
     if (!confirm('Abandon current game and start new? (no ticket refund)')) return;
     await post('/yahtzee/api/abandon');
   }
+  hideGameOver();
   const data = await post('/yahtzee/api/new');
   if (data) {
     if (data.new_balance !== undefined) document.getElementById('chip-balance').textContent = data.new_balance;
+    const hint = document.getElementById('ytz-hint');
+    if (hint) hint.style.display = 'none';
     apply(data.state);
   }
 }
@@ -146,9 +178,15 @@ async function score(cat) {
   if (!data) return;
   if (data.new_balance !== undefined) document.getElementById('chip-balance').textContent = data.new_balance;
   apply(data.state);
-  if (data.total !== undefined && window.showToast) {
-    if (data.payout > 0) showToast('+' + data.payout + ' TICKETS', 'YAHTZEE ' + data.total, 'chip-win');
-    else showToast('YAHTZEE ' + data.total, 'no payout', 'chip-loss');
+  if (data.total !== undefined) {
+    // Game just finished
+    showGameOver(data.state, data.payout);
+    if (window.showToast) {
+      if (data.payout > (window.YTZ_ENTRY_FEE || 25))
+        showToast('+' + data.payout + ' TICKETS', 'YAHTZEE ' + data.total, 'chip-win');
+      else
+        showToast('YAHTZEE ' + data.total, 'no payout', 'chip-loss');
+    }
   }
 }
 
@@ -162,6 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-new').addEventListener('click', newGame);
   document.getElementById('btn-roll').addEventListener('click', roll);
   document.getElementById('btn-abandon').addEventListener('click', abandon);
+  const btnPanelNew = document.getElementById('btn-new-panel');
+  if (btnPanelNew) btnPanelNew.addEventListener('click', newGame);
 
   for (let i = 0; i < 5; i++) {
     const el = document.getElementById('ytz-die-' + i);
@@ -175,5 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
     td.addEventListener('click', () => score(td.dataset.cat));
   });
 
-  if (window.YTZ_INIT_STATE) apply(window.YTZ_INIT_STATE);
+  if (window.YTZ_INIT_STATE) {
+    apply(window.YTZ_INIT_STATE);
+    const hint = document.getElementById('ytz-hint');
+    if (hint) hint.style.display = 'none';
+  }
 });

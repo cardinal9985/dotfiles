@@ -119,6 +119,28 @@ CREATE TABLE IF NOT EXISTS connect4_games (
     completed_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS whack_rounds (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    hits       INTEGER NOT NULL,
+    misses     INTEGER NOT NULL,
+    entry_fee  INTEGER NOT NULL,
+    payout     INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_whack_user ON whack_rounds(username, hits DESC);
+
+CREATE TABLE IF NOT EXISTS snake_runs (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    score      INTEGER NOT NULL,
+    length     INTEGER NOT NULL,
+    entry_fee  INTEGER NOT NULL,
+    payout     INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_snake_user ON snake_runs(username, score DESC);
+
 CREATE TABLE IF NOT EXISTS reaction_attempts (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     username   TEXT    NOT NULL,

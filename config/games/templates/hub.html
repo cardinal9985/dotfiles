@@ -71,9 +71,9 @@
 
   <h3 class="row-title">// ARCADE - RETRO SOLO</h3>
   <div class="game-tiles">
-    {{ tile("SNAKE", "∽", "Grow the snake, don't eat yourself. High-score leaderboard", "SOLO") }}
+    {{ tile("SNAKE", "∽", "Grow the snake, don't eat yourself. High-score leaderboard", "SOLO", url_for('snake.table')) }}
     {{ tile("TETRIS", "▦", "Stack blocks, clear lines. High-score leaderboard", "SOLO") }}
-    {{ tile("WHACK-A-MOLE", "◈", "Click moles as they pop. Ticket payout per hit, timer round", "SOLO") }}
+    {{ tile("WHACK-A-MOLE", "◈", "Click moles as they pop. Ticket payout per hit, timer round", "SOLO", url_for('whack.table')) }}
     {{ tile("REACTION TIME", "⏱", "Click when the light turns green. Fastest reactions leaderboard", "SOLO", url_for('reaction.table')) }}
   </div>
 

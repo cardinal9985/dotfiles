@@ -1,0 +1,85 @@
+.whack-page { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.whack-hud {
+  display: flex; gap: 2rem; padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid rgba(58,159,191,0.2);
+  justify-content: center;
+}
+.hud-item { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.hud-label { font-size: 0.6rem; letter-spacing: 0.15em; color: var(--cyan); opacity: 0.7; }
+.hud-val { font-size: 1.4rem; font-weight: bold; color: var(--bright-amber); }
+
+.whack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(20,26,42,0.7), rgba(20,26,42,0.3));
+  border: 1px solid rgba(58,159,191,0.2);
+  max-width: 500px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+.whack-hole {
+  background: var(--surface);
+  border: 2px solid var(--surface-mid);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+  aspect-ratio: 1;
+}
+.whack-hole:hover { border-color: var(--cyan); }
+.whack-mole {
+  font-size: 3rem;
+  color: var(--bright-amber);
+  text-shadow: 0 0 15px rgba(251,191,96,0.7);
+  transition: transform 0.15s, opacity 0.15s;
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.whack-hole.active .whack-mole {
+  transform: scale(1);
+  opacity: 1;
+  animation: mole-bounce 0.15s ease-out;
+}
+@keyframes mole-bounce {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.whack-hole.hit {
+  border-color: var(--bright-green);
+  background: rgba(94,234,212,0.15);
+  animation: hole-flash 0.3s;
+}
+@keyframes hole-flash {
+  0%   { box-shadow: 0 0 20px rgba(94,234,212,0.9); }
+  100% { box-shadow: inset 0 0 12px rgba(0,0,0,0.6); }
+}
+.whack-hole.miss {
+  border-color: var(--bright-red);
+  animation: miss-shake 0.2s;
+}
+@keyframes miss-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-4px); }
+  75%      { transform: translateX(4px); }
+}
+
+.whack-controls {
+  display: flex; align-items: center; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
+}
+
+.whack-best {
+  font-size: 2.5rem;
+  color: var(--bright-amber);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 12px rgba(251,191,96,0.4);
+}
+
+.whack-recent { max-width: 600px; }

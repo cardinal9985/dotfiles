@@ -33,15 +33,47 @@ def hub():
         me = conn.execute("SELECT * FROM users WHERE username=?", (user,)).fetchone()
     return render_template("hub.html", user=user, me=me)
 
+MIN_TIP = 1
+MAX_TIP = 10000
+
 @app.route("/profile/<username>")
 def profile(username):
     user = get_user()
     with db.get_db() as conn:
         stats = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
         games = db.get_user_games(conn, username)
+        my_row = conn.execute("SELECT chips FROM users WHERE username=?", (user,)).fetchone()
     if not stats:
         abort(404)
-    return render_template("profile.html", user=user, subject=username, stats=stats, games=games)
+    my_chips = my_row["chips"] if my_row else 0
+    from flask import request as _req
+    tipped = _req.args.get("tipped")
+    return render_template("profile.html", user=user, subject=username, stats=stats,
+                           games=games, my_chips=my_chips,
+                           min_tip=MIN_TIP, max_tip=MAX_TIP, tipped=tipped)
+
+@app.route("/profile/<username>/tip", methods=["POST"])
+def tip(username):
+    from flask import request as _req, jsonify
+    sender = get_user()
+    if sender == username:
+        return jsonify({"error": "You can't tip yourself"}), 400
+    try:
+        amount = int(_req.form.get("amount", 0))
+    except Exception:
+        return jsonify({"error": "Bad amount"}), 400
+    if amount < MIN_TIP or amount > MAX_TIP:
+        return jsonify({"error": f"Amount must be {MIN_TIP}-{MAX_TIP}"}), 400
+    with db.get_db() as conn:
+        recipient = conn.execute("SELECT username FROM users WHERE username=?", (username,)).fetchone()
+        if not recipient:
+            return jsonify({"error": "Recipient not found"}), 404
+        me = conn.execute("SELECT chips FROM users WHERE username=?", (sender,)).fetchone()
+        if not me or me["chips"] < amount:
+            return jsonify({"error": "Not enough tickets"}), 400
+        db.adjust_chips(conn, sender, -amount, f"tip_to_{username}")
+        db.adjust_chips(conn, username, amount, f"tip_from_{sender}")
+    return redirect(url_for("profile", username=username, tipped=amount))
 
 @app.route("/leaderboard")
 def leaderboard():
@@ -89,6 +121,12 @@ duckrace_bp.register_sockets(socketio)
 
 import yahtzee_bp
 app.register_blueprint(yahtzee_bp.bp, url_prefix="/yahtzee")
+
+import whack_bp
+app.register_blueprint(whack_bp.bp, url_prefix="/whack")
+
+import snake_bp
+app.register_blueprint(snake_bp.bp, url_prefix="/snake")
 
 if __name__ == "__main__":
     db.init_db()

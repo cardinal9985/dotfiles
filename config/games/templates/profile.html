@@ -5,6 +5,19 @@
 <div class="profile-page">
   <h2 class="section-title">// CREW FILE: <span class="highlight-text">{{ subject }}</span></h2>
 
+  {% if tipped %}
+    <p class="tip-confirm">✓ TIPPED {{ tipped }} TICKETS TO {{ subject }}</p>
+  {% endif %}
+
+  {% if user and subject != user %}
+    <form class="tip-form" method="post" action="{{ url_for('tip', username=subject) }}">
+      <span class="tip-label">// SEND TICKETS TO {{ subject }}</span>
+      <input type="number" name="amount" min="{{ min_tip }}" max="{{ max_tip }}" step="1" value="10" required>
+      <button type="submit" class="btn-primary">TIP</button>
+      <span class="tip-balance">YOUR BALANCE: {{ my_chips }}</span>
+    </form>
+  {% endif %}
+
   <div class="stat-row">
     <div class="stat-block"><span class="stat-val stat-rating">{{ stats.rating }}</span><span class="stat-label">CHESS ELO</span></div>
     <div class="stat-block"><span class="stat-val stat-win">{{ stats.wins }}</span><span class="stat-label">WINS</span></div>

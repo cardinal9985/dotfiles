@@ -16,6 +16,16 @@
     </div>
   </div>
 
+  <div id="ytz-gameover-panel" class="ytz-gameover" style="display:none">
+    <div class="ytz-gameover-title">// GAME COMPLETE</div>
+    <div class="ytz-gameover-score" id="ytz-gameover-score">0</div>
+    <div class="ytz-gameover-payout" id="ytz-gameover-payout">+0 TICKETS</div>
+    <div class="ytz-gameover-actions">
+      <button type="button" id="btn-new-panel" class="btn-primary">PLAY AGAIN</button>
+      <a href="{{ url_for('hub') }}" class="btn-secondary">HUB</a>
+    </div>
+  </div>
+
   <div class="ytz-layout">
     <div class="ytz-play">
       <div class="ytz-dice-row" id="ytz-dice">
@@ -29,6 +39,7 @@
         <button type="button" id="btn-roll"    class="btn-secondary" style="display:none">ROLL</button>
         <button type="button" id="btn-abandon" class="btn-danger"    style="display:none">END GAME</button>
       </div>
+      <p class="ytz-hint" id="ytz-hint">Click a &nbsp;<span class="ytz-score available" style="display:inline">▶  score</span>&nbsp; row on the right to lock in that category. Preview values appear after your first roll.</p>
     </div>
 
     <div class="ytz-scorecard">
@@ -85,6 +96,7 @@
 {% block scripts %}
 <script>
   window.YTZ_INIT_STATE = {{ state|tojson if state else 'null' }};
+  window.YTZ_ENTRY_FEE = {{ entry_fee }};
 </script>
 <script src="{{ url_for('static', filename='js/yahtzee.js') }}"></script>
 {% endblock %}

@@ -156,6 +156,25 @@ def api_new():
     return jsonify({"state": payload, "new_balance": new_balance})
 
 
+@bp.route("/api/abandon", methods=["POST"])
+def api_abandon():
+    """Force-end a stuck or unwanted game. Records what's been scored, no payout."""
+    user = get_user()
+    with _games_lock:
+        state = _games.pop(user, None)
+    if not state:
+        return jsonify({"ok": True, "already_gone": True})
+    total = _grand_total(state["scorecard"])
+    with db.get_db() as conn:
+        conn.execute(
+            "INSERT INTO yahtzee_games (username, scorecard, total_score) VALUES (?, ?, ?)",
+            (user, json.dumps(state["scorecard"]), total)
+        )
+    stats_emit.emit(user, "yahtzee", 0, item_name="YAHTZEE (abandoned)", metadata={
+        "total_score": total, "payout": 0, "abandoned": True,
+    })
+    return jsonify({"ok": True, "total": total})
+
 @bp.route("/api/roll", methods=["POST"])
 def api_roll():
     user = get_user()

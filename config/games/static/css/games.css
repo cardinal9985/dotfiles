@@ -63,18 +63,25 @@
 .live-tag   { border-color: var(--bright-green); color: var(--bright-green); }
 .locked-tag { border-color: var(--surface-mid); color: var(--white); opacity: 0.5; }
 
-.player-tag {
-  font-size: 0.55rem;
-  letter-spacing: 0.15em;
-  padding: 0.1rem 0.4rem;
-  border: 1px solid var(--cyan);
-  color: var(--cyan);
-  align-self: flex-start;
-  opacity: 0.75;
-}
 .tile-tags {
   display: flex; gap: 0.35rem; flex-wrap: wrap;
   margin-top: 0.35rem;
+  align-items: center;
+}
+.tile-tags .game-tile-tag,
+.tile-tags .player-tag {
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid;
+  align-self: center;
+  margin-top: 0;
+  line-height: 1;
+}
+.player-tag {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  opacity: 0.75;
 }
 
 .game-tile-locked {

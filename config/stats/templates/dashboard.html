@@ -23,7 +23,7 @@
     </div>
     <div class="stat-card blue">
       <div class="value">{{ stats.games_touched }}</div>
-      <div class="label">GAMES PLAYED</div>
+      <div class="label">ROMS PLAYED</div>
     </div>
     <div class="stat-card yellow">
       <div class="value">{{ stats.books_read }}</div>
@@ -33,10 +33,14 @@
       <div class="value">{{ stats.reading_time_secs|duration }}</div>
       <div class="label">READING TIME</div>
     </div>
+    <div class="stat-card magenta">
+      <div class="value">{{ stats.rec_deck_plays }}</div>
+      <div class="label">REC DECK PLAYS</div>
+    </div>
   </div>
 </div>
 
-{% for src, label, color in [('jellyfin', 'JELLYFIN', 'magenta'), ('navidrome', 'NAVIDROME', 'green'), ('romm', 'ROMM', 'blue'), ('booklore', 'BOOKLORE', 'yellow')] %}
+{% for src, label, color in [('jellyfin', 'JELLYFIN', 'magenta'), ('navidrome', 'NAVIDROME', 'green'), ('romm', 'ROMM', 'blue'), ('booklore', 'BOOKLORE', 'yellow'), ('games', 'REC DECK', 'magenta')] %}
 {% set recent = stats['recent_' + src] %}
 {% if recent %}
 <div class="box">

@@ -168,7 +168,13 @@ def get_dashboard_stats(conn, username):
     stats["books_read"] = row["count"]
     stats["reading_time_secs"] = row["total_secs"]
 
-    for source in ("jellyfin", "navidrome", "romm", "booklore"):
+    row = conn.execute(
+        "SELECT COUNT(*) as count FROM events WHERE user_id = ? AND source = 'games'",
+        (username,)
+    ).fetchone()
+    stats["rec_deck_plays"] = row["count"]
+
+    for source in ("jellyfin", "navidrome", "romm", "booklore", "games"):
         recent = conn.execute(
             """SELECT item_name, item_type, played_at FROM events
                WHERE user_id = ? AND source = ?

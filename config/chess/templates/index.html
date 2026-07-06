@@ -44,7 +44,7 @@
           <tbody>
           {% for g in active_games %}
             <tr>
-              <td class="player-white">{{ 'AI' if g.white_is_ai else (g.white or '—') }}</td>
+              <td class="player-white">{{ 'AI' if g.white_is_ai else (g.white or '···') }}</td>
               <td class="player-black">{{ 'AI' if g.black_is_ai else (g.black or '···') }}</td>
               <td><span class="status-badge status-{{ g.status }}">{{ g.status.upper() }}</span></td>
               <td><a href="{{ url_for('game', game_id=g.id) }}" class="btn-small">
@@ -55,7 +55,7 @@
           </tbody>
         </table>
       {% else %}
-        <p class="empty">NO ACTIVE GAMES — INITIATE CONTACT</p>
+        <p class="empty">NO ACTIVE GAMES : INITIATE CONTACT</p>
       {% endif %}
     </section>
 
@@ -63,11 +63,12 @@
       <h2 class="section-title">// CREW RANKINGS</h2>
       {% if leaderboard %}
         <table class="data-table">
-          <thead><tr><th>CREW</th><th>W</th><th>L</th><th>D</th><th>WIN%</th></tr></thead>
+          <thead><tr><th>CREW</th><th>ELO</th><th>W</th><th>L</th><th>D</th><th>WIN%</th></tr></thead>
           <tbody>
           {% for p in leaderboard %}
             <tr {% if p.username == user %}class="highlight-row"{% endif %}>
               <td><a href="{{ url_for('profile', username=p.username) }}">{{ p.username }}</a></td>
+              <td class="stat-rating">{{ p.rating }}</td>
               <td class="stat-win">{{ p.wins }}</td>
               <td class="stat-loss">{{ p.losses }}</td>
               <td class="stat-draw">{{ p.draws }}</td>
@@ -87,6 +88,7 @@
   <section class="my-stats">
     <h2 class="section-title">// YOUR RECORD</h2>
     <div class="stat-row">
+      <div class="stat-block"><span class="stat-val stat-rating">{{ me.rating }}</span><span class="stat-label">ELO</span></div>
       <div class="stat-block"><span class="stat-val stat-win">{{ me.wins }}</span><span class="stat-label">WINS</span></div>
       <div class="stat-block"><span class="stat-val stat-loss">{{ me.losses }}</span><span class="stat-label">LOSSES</span></div>
       <div class="stat-block"><span class="stat-val stat-draw">{{ me.draws }}</span><span class="stat-label">DRAWS</span></div>

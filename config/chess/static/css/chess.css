@@ -126,9 +126,10 @@ nav a:hover { color: var(--bright-cyan); text-shadow: 0 0 8px rgba(110,200,230,0
 
 .player-white { color: var(--bright-amber); }
 .player-black { color: var(--bright-cyan); }
-.stat-win   { color: var(--bright-green); }
-.stat-loss  { color: var(--bright-red); }
-.stat-draw  { color: var(--white); }
+.stat-win    { color: var(--bright-green); }
+.stat-loss   { color: var(--bright-red); }
+.stat-draw   { color: var(--white); }
+.stat-rating { color: var(--bright-amber); }
 
 /* ── Status badges ── */
 .status-badge {

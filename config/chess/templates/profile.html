@@ -6,6 +6,7 @@
   <h2 class="section-title">// CREW FILE: <span class="highlight-text">{{ subject }}</span></h2>
 
   <div class="stat-row">
+    <div class="stat-block"><span class="stat-val stat-rating">{{ stats.rating }}</span><span class="stat-label">ELO</span></div>
     <div class="stat-block"><span class="stat-val stat-win">{{ stats.wins }}</span><span class="stat-label">WINS</span></div>
     <div class="stat-block"><span class="stat-val stat-loss">{{ stats.losses }}</span><span class="stat-label">LOSSES</span></div>
     <div class="stat-block"><span class="stat-val stat-draw">{{ stats.draws }}</span><span class="stat-label">DRAWS</span></div>
@@ -32,7 +33,7 @@
             <td><span class="result-badge {% if won %}result-win{% elif lost %}result-loss{% else %}result-draw{% endif %}">
               {% if won %}WIN{% elif lost %}LOSS{% else %}DRAW{% endif %}
             </span></td>
-            <td class="date-cell">{{ g.completed_at[:10] if g.completed_at else '—' }}</td>
+            <td class="date-cell">{{ g.completed_at[:10] if g.completed_at else '···' }}</td>
             <td><a href="{{ url_for('analysis', game_id=g.id) }}" class="btn-small">ANALYZE</a></td>
           </tr>
         {% endfor %}

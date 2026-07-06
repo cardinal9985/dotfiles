@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     wins        INTEGER NOT NULL DEFAULT 0,
     losses      INTEGER NOT NULL DEFAULT 0,
     draws       INTEGER NOT NULL DEFAULT 0,
+    rating      INTEGER NOT NULL DEFAULT 1200,
     created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -57,6 +58,17 @@ def get_db():
 def init_db():
     with get_db() as conn:
         conn.executescript(SCHEMA)
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
+        if "rating" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN rating INTEGER NOT NULL DEFAULT 1200")
+
+INITIAL_RATING = 1200
+K_FACTOR = 32
+
+def elo_update(rating_a, rating_b, score_a, k=K_FACTOR):
+    exp_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 400.0))
+    delta = k * (score_a - exp_a)
+    return round(rating_a + delta), round(rating_b - delta)
 
 def ensure_user(conn, username):
     conn.execute(
@@ -87,16 +99,28 @@ def record_result(conn, game_id, result):
         if not black_is_ai and black:
             conn.execute("UPDATE users SET draws=draws+1 WHERE username=?", (black,))
 
+    if not white_is_ai and not black_is_ai and white and black and result in ("white_wins", "black_wins", "draw"):
+        rows = conn.execute(
+            "SELECT username, rating FROM users WHERE username IN (?, ?)", (white, black)
+        ).fetchall()
+        ratings = {r["username"]: r["rating"] for r in rows}
+        w_rating = ratings.get(white, INITIAL_RATING)
+        b_rating = ratings.get(black, INITIAL_RATING)
+        score_w = {"white_wins": 1.0, "black_wins": 0.0, "draw": 0.5}[result]
+        new_w, new_b = elo_update(w_rating, b_rating, score_w)
+        conn.execute("UPDATE users SET rating=? WHERE username=?", (new_w, white))
+        conn.execute("UPDATE users SET rating=? WHERE username=?", (new_b, black))
+
 def get_leaderboard(conn, limit=10):
     return conn.execute("""
-        SELECT username, wins, losses, draws,
+        SELECT username, wins, losses, draws, rating,
                (wins + losses + draws) AS total,
                CASE WHEN (wins + losses + draws) = 0 THEN 0.0
                     ELSE ROUND(wins * 1.0 / (wins + losses + draws) * 100, 1)
                END AS win_pct
         FROM users
         WHERE (wins + losses + draws) > 0
-        ORDER BY wins DESC, win_pct DESC
+        ORDER BY rating DESC, wins DESC
         LIMIT ?
     """, (limit,)).fetchall()
 

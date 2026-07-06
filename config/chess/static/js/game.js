@@ -39,6 +39,14 @@ function initGame(cfg) {
     _socket.emit('join_game', { game_id: cfg.gameId });
   });
 
+  _socket.on('your_color', (data) => {
+    if (!data.color) return;
+    if (_cfg.myColor === data.color) return;
+    _cfg.myColor = data.color;
+    const shouldFlip = data.color === 'black';
+    if (_board.flipped !== shouldFlip) _board.flip();
+  });
+
   _socket.on('game_state', (state) => {
     const myTurn = state.turn === cfg.myColor;
     const lm = myTurn && !state.duck_pending ? state.legal_moves : {};

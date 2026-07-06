@@ -54,6 +54,10 @@
         <label></label>
         <span class="variant-desc" id="variant-desc">{{ variants['standard'].desc }}</span>
       </div>
+      <div class="form-row" id="ai-warning-row" style="display:none">
+        <label></label>
+        <span class="ai-warning">⚠ BOT DOES NOT UNDERSTAND THIS VARIANT - IT WILL PLAY STANDARD CHESS MOVES</span>
+      </div>
 
       <div class="form-row">
         <label>TIME CONTROL</label>
@@ -145,10 +149,23 @@
   const botRow     = document.getElementById('bot-row');
   const variantSel = document.getElementById('variant-select');
   const variantDesc = document.getElementById('variant-desc');
+  const aiWarnRow  = document.getElementById('ai-warning-row');
 
-  function updateAI() { botRow.style.display = aiRadio.checked ? 'flex' : 'none'; }
+  const BOT_COMPATIBLE = new Set(['standard', 'chess960']);
+
+  function updateAI() {
+    botRow.style.display = aiRadio.checked ? 'flex' : 'none';
+    updateWarning();
+  }
+  function updateWarning() {
+    const show = aiRadio.checked && !BOT_COMPATIBLE.has(variantSel.value);
+    aiWarnRow.style.display = show ? 'flex' : 'none';
+  }
   aiRadio.addEventListener('change', updateAI);
   humanRadio.addEventListener('change', updateAI);
-  variantSel.addEventListener('change', () => { variantDesc.textContent = variantDescs[variantSel.value] || ''; });
+  variantSel.addEventListener('change', () => {
+    variantDesc.textContent = variantDescs[variantSel.value] || '';
+    updateWarning();
+  });
 </script>
 {% endblock %}

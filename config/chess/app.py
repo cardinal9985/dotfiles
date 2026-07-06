@@ -621,6 +621,14 @@ def on_join(data):
         if tc["initial_ms"] > 0:
             _schedule_timeout_check(game_id)
 
+    my_color = None
+    with _games_lock:
+        g = _games.get(game_id)
+        if g:
+            if g["white"] == user:   my_color = "white"
+            elif g["black"] == user: my_color = "black"
+    emit("your_color", {"color": my_color})
+
     state = _board_state(game_id)
     emit("game_state", state, to=game_id)
 

@@ -172,8 +172,14 @@ def get_db_conn():
 
 @app.before_request
 def require_auth():
+    if request.path == "/health":
+        return None
     if not get_user() and not app.debug:
         return "Unauthorized", 401
+
+@app.route("/health")
+def health():
+    return "ok", 200
 
 @app.route("/")
 def index():

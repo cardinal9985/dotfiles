@@ -37,6 +37,14 @@ let
       healthUrl   = "http://${ishimuraTailnetIP}:8083/api/heartbeat";
     }
     {
+      name        = "Chess";
+      description = "Chess Terminal";
+      url         = "https://chess.ishimura.lol";
+      icon        = "♞";
+      statusPath  = "/health/chess";
+      healthUrl   = "http://${ishimuraTailnetIP}:5001/health";
+    }
+    {
       name        = "Tools";
       description = "Dev Utilities";
       url         = "https://tools.ishimura.lol";

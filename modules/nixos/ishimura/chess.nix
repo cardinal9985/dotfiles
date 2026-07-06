@@ -31,9 +31,6 @@ in
   };
   users.groups.chess = {};
 
-  sops.secrets."chess/secret_key" = { owner = "chess"; mode = "0400"; };
-  sops.secrets."chess/discord_webhook" = { owner = "chess"; mode = "0400"; };
-
   sops.templates."chess.env" = {
     owner   = "chess";
     content = ''

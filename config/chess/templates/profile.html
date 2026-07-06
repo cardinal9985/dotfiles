@@ -34,7 +34,10 @@
               {% if won %}WIN{% elif lost %}LOSS{% else %}DRAW{% endif %}
             </span></td>
             <td class="date-cell">{{ g.completed_at[:10] if g.completed_at else '···' }}</td>
-            <td><a href="{{ url_for('analysis', game_id=g.id) }}" class="btn-small">ANALYZE</a></td>
+            <td>
+              <a href="{{ url_for('analysis', game_id=g.id) }}" class="btn-small">ANALYZE</a>
+              <a href="{{ url_for('game_pgn', game_id=g.id) }}" class="btn-small">PGN</a>
+            </td>
           </tr>
         {% endfor %}
         </tbody>

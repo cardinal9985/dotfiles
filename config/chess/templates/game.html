@@ -10,19 +10,32 @@
 
 <div class="game-page">
 
+  <div class="variant-banner">
+    <span class="variant-tag">{{ game.variant.upper() if game.variant else 'STANDARD' }}</span>
+    {% if game.time_control and game.time_control != 'unlimited' %}
+      <span class="tc-tag">{{ game.time_control.upper() }}</span>
+    {% endif %}
+    {% if game.bot_name %}
+      <span class="bot-tag">VS {{ game.bot_name }}</span>
+    {% endif %}
+  </div>
+
   <div class="game-header">
     <div class="player-tag player-black-tag">
       <span class="player-color-dot dot-black"></span>
-      <span id="black-name">{{ 'AI' if game.black_is_ai else (game.black or '···') }}</span>
+      <span id="black-name">{{ (game.bot_name if game.black_is_ai and game.bot_name else 'BOT') if game.black_is_ai else (game.black or '···') }}</span>
+      <span class="clock" id="black-clock" style="display:none">--:--</span>
     </div>
     <div class="game-status-bar">
       <span id="status-text">
         {% if game.status == 'waiting' %}WAITING FOR OPPONENT{% elif game.status == 'active' %}ACTIVE{% else %}{{ game.result|upper if game.result else 'COMPLETED' }}{% endif %}
       </span>
+      <span id="check-counter" class="check-counter" style="display:none"></span>
     </div>
     <div class="player-tag player-white-tag">
       <span class="player-color-dot dot-white"></span>
-      <span id="white-name">{{ 'AI' if game.white_is_ai else (game.white or '···') }}</span>
+      <span id="white-name">{{ (game.bot_name if game.white_is_ai and game.bot_name else 'BOT') if game.white_is_ai else (game.white or '···') }}</span>
+      <span class="clock" id="white-clock" style="display:none">--:--</span>
     </div>
   </div>
 
@@ -37,10 +50,12 @@
           <button id="btn-resign" class="btn-danger">RESIGN</button>
           <button id="btn-draw" class="btn-secondary">OFFER DRAW</button>
         {% endif %}
+        <button id="btn-mute" class="btn-small" title="Toggle sound">SOUND: ON</button>
         {% if game.status == 'waiting' and not my_color %}
           <p class="share-hint">SHARE LINK TO INVITE OPPONENT</p>
           <input type="text" class="share-url" value="{{ request.url }}" readonly onclick="this.select()">
         {% endif %}
+        <span id="duck-hint" class="duck-hint" style="display:none">CLICK AN EMPTY SQUARE TO PLACE THE DUCK</span>
       </div>
     </div>
 
@@ -65,7 +80,9 @@
       </div>
       <div id="game-over-panel" class="game-over-panel" style="display:none">
         <p id="game-over-text"></p>
+        <p id="rating-change-text" class="rating-change" style="display:none"></p>
         <a href="{{ url_for('analysis', game_id=game_id) }}" class="btn-primary" id="analysis-link">ANALYZE GAME</a>
+        <a href="{{ url_for('game_pgn', game_id=game_id) }}" class="btn-secondary" id="pgn-link">DOWNLOAD PGN</a>
         <a href="{{ url_for('index') }}" class="btn-secondary">LOBBY</a>
       </div>
     </div>
@@ -84,6 +101,8 @@
     gameId:  "{{ game_id }}",
     myColor: "{{ my_color or '' }}",
     status:  "{{ game.status }}",
+    variant: "{{ game.variant or 'standard' }}",
+    timeControl: "{{ game.time_control or 'unlimited' }}",
   });
 </script>
 {% endblock %}

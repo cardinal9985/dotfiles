@@ -42,12 +42,15 @@ class ChessBoard {
     this.el       = document.getElementById(containerId);
     this.flipped  = opts.flipped || false;
     this.onMove   = opts.onMove  || null;
+    this.onSquareClick = opts.onSquareClick || null;
     this.fen      = '8/8/8/8/8/8/8/8 w - - 0 1';
     this.legalMoves   = {};
     this.selected     = null;
     this.legalDests   = [];
     this.lastMove     = null;
     this.inCheckSq    = null;
+    this.duckSquare   = null;
+    this.duckPickerActive = false;
     this.interactive  = opts.interactive !== false;
     this._build();
   }
@@ -78,9 +81,7 @@ class ChessBoard {
           cf.textContent = file;
           cell.appendChild(cf);
         }
-        if (this.interactive) {
-          cell.addEventListener('click', () => this._onClick(sqName));
-        }
+        cell.addEventListener('click', () => this._onClick(sqName));
         this.el.appendChild(cell);
         this.squares.push(cell);
       }
@@ -114,6 +115,8 @@ class ChessBoard {
       }
     }
 
+    const duckSqName = (this.duckSquare != null) ? _squareIntToName(this.duckSquare) : null;
+
     for (let r = 0; r < 8; r++) {
       for (let f = 0; f < 8; f++) {
         const rank = ranks[r];
@@ -133,6 +136,7 @@ class ChessBoard {
         if (this.selected === sqName) cell.classList.add('selected');
         if (this.legalDests.includes(sqName)) cell.classList.add('legal-dest');
         if (this.inCheckSq === sqName) cell.classList.add('in-check');
+        if (duckSqName === sqName) cell.classList.add('duck');
 
         // Remove old piece
         const old = cell.querySelector('.piece');
@@ -147,16 +151,24 @@ class ChessBoard {
           span.textContent = PIECES[piece] || '?';
           cell.appendChild(span);
         }
+
+        // Duck target overlay
+        if (this.duckPickerActive && !piece && duckSqName !== sqName) {
+          cell.classList.add('duck-target');
+        }
       }
     }
   }
 
   _onClick(sqName) {
+    if (this.duckPickerActive) {
+      if (this.onSquareClick) this.onSquareClick(sqName);
+      return;
+    }
     if (!this.interactive) return;
 
     if (this.selected) {
       if (this.legalDests.includes(sqName)) {
-        // Move
         const from = this.selected;
         this._clearSelection();
         if (this.onMove) this.onMove(from, sqName);
@@ -202,6 +214,13 @@ class ChessBoard {
     this._build();
     this.setPosition(this.fen, this.legalMoves, this.lastMove, null, this.turn);
   }
+}
+
+// Convert python-chess square int (0=a1, 63=h8) to square name
+function _squareIntToName(sqInt) {
+  const file = FILES[sqInt % 8];
+  const rank = Math.floor(sqInt / 8) + 1;
+  return file + rank;
 }
 
 // Render move list into #move-list as paired rows

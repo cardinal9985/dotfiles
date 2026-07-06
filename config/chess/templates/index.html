@@ -7,15 +7,17 @@
   <section class="new-game-panel">
     <h2 class="section-title">// NEW GAME</h2>
     <form method="post" action="{{ url_for('new_game') }}" class="new-game-form">
+
       <div class="form-row">
         <label>OPPONENT</label>
         <div class="toggle-group">
           <input type="radio" name="type" id="type-human" value="human" checked>
           <label for="type-human" class="toggle-btn">HUMAN</label>
           <input type="radio" name="type" id="type-ai" value="ai">
-          <label for="type-ai" class="toggle-btn">STOCKFISH</label>
+          <label for="type-ai" class="toggle-btn">BOT</label>
         </div>
       </div>
+
       <div class="form-row">
         <label>PLAY AS</label>
         <div class="toggle-group">
@@ -25,11 +27,44 @@
           <label for="color-black" class="toggle-btn">BLACK</label>
         </div>
       </div>
-      <div class="form-row ai-only" id="ai-level-row" style="display:none">
-        <label>AI LEVEL</label>
-        <input type="range" name="ai_level" min="1" max="20" value="5" id="ai-level-slider">
-        <span id="ai-level-display">5</span>
+
+      <div class="form-row bot-only" id="bot-row" style="display:none">
+        <label>SELECT BOT</label>
+        <div class="bot-grid">
+          {% for key, b in bots.items() %}
+            <input type="radio" name="bot" id="bot-{{ key }}" value="{{ key }}" {% if key == 'officer' %}checked{% endif %}>
+            <label for="bot-{{ key }}" class="bot-card">
+              <div class="bot-name">{{ b.name }}</div>
+              <div class="bot-elo">ELO {{ b.elo }}</div>
+              <div class="bot-desc">{{ b.desc }}</div>
+            </label>
+          {% endfor %}
+        </div>
       </div>
+
+      <div class="form-row">
+        <label>VARIANT</label>
+        <select name="variant" id="variant-select" class="chess-select">
+          {% for key, v in variants.items() %}
+            <option value="{{ key }}">{{ v.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row variant-desc-row">
+        <label></label>
+        <span class="variant-desc" id="variant-desc">{{ variants['standard'].desc }}</span>
+      </div>
+
+      <div class="form-row">
+        <label>TIME CONTROL</label>
+        <div class="toggle-group time-group">
+          {% for key, t in time_controls.items() %}
+            <input type="radio" name="time_control" id="tc-{{ key }}" value="{{ key }}" {% if key == 'unlimited' %}checked{% endif %}>
+            <label for="tc-{{ key }}" class="toggle-btn">{{ t.name }}</label>
+          {% endfor %}
+        </div>
+      </div>
+
       <button type="submit" class="btn-primary">INITIALIZE GAME</button>
     </form>
   </section>
@@ -44,8 +79,8 @@
           <tbody>
           {% for g in active_games %}
             <tr>
-              <td class="player-white">{{ 'AI' if g.white_is_ai else (g.white or '···') }}</td>
-              <td class="player-black">{{ 'AI' if g.black_is_ai else (g.black or '···') }}</td>
+              <td class="player-white">{{ 'BOT' if g.white_is_ai else (g.white or '···') }}</td>
+              <td class="player-black">{{ 'BOT' if g.black_is_ai else (g.black or '···') }}</td>
               <td><span class="status-badge status-{{ g.status }}">{{ g.status.upper() }}</span></td>
               <td><a href="{{ url_for('game', game_id=g.id) }}" class="btn-small">
                 {% if g.status == 'waiting' and g.white != user and g.black != user %}JOIN{% else %}VIEW{% endif %}
@@ -78,7 +113,7 @@
           </tbody>
         </table>
       {% else %}
-        <p class="empty">NO RECORDS — BE THE FIRST</p>
+        <p class="empty">NO RECORDS : BE THE FIRST</p>
       {% endif %}
     </section>
 
@@ -101,17 +136,19 @@
 {% endblock %}
 {% block scripts %}
 <script>
-  const aiRadio = document.getElementById('type-ai');
-  const humanRadio = document.getElementById('type-human');
-  const aiRow = document.getElementById('ai-level-row');
-  const slider = document.getElementById('ai-level-slider');
-  const display = document.getElementById('ai-level-display');
+  const variantDescs = {
+    {% for key, v in variants.items() %}"{{ key }}": "{{ v.desc }}"{% if not loop.last %},{% endif %}{% endfor %}
+  };
 
-  function updateAI() {
-    aiRow.style.display = aiRadio.checked ? 'flex' : 'none';
-  }
+  const aiRadio    = document.getElementById('type-ai');
+  const humanRadio = document.getElementById('type-human');
+  const botRow     = document.getElementById('bot-row');
+  const variantSel = document.getElementById('variant-select');
+  const variantDesc = document.getElementById('variant-desc');
+
+  function updateAI() { botRow.style.display = aiRadio.checked ? 'flex' : 'none'; }
   aiRadio.addEventListener('change', updateAI);
   humanRadio.addEventListener('change', updateAI);
-  slider.addEventListener('input', () => { display.textContent = slider.value; });
+  variantSel.addEventListener('change', () => { variantDesc.textContent = variantDescs[variantSel.value] || ''; });
 </script>
 {% endblock %}

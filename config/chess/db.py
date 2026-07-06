@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS games (
     white_is_ai     INTEGER NOT NULL DEFAULT 0,
     black_is_ai     INTEGER NOT NULL DEFAULT 0,
     ai_level        INTEGER NOT NULL DEFAULT 5,
+    bot_name        TEXT    NOT NULL DEFAULT '',
+    variant         TEXT    NOT NULL DEFAULT 'standard',
+    time_control    TEXT    NOT NULL DEFAULT 'unlimited',
+    white_time_ms   INTEGER NOT NULL DEFAULT 0,
+    black_time_ms   INTEGER NOT NULL DEFAULT 0,
     status          TEXT    NOT NULL DEFAULT 'waiting',
     result          TEXT,
     moves           TEXT    NOT NULL DEFAULT '',
@@ -61,14 +66,27 @@ def init_db():
         cols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
         if "rating" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN rating INTEGER NOT NULL DEFAULT 1200")
+        gcols = {r[1] for r in conn.execute("PRAGMA table_info(games)").fetchall()}
+        for col, ddl in [
+            ("bot_name",      "ALTER TABLE games ADD COLUMN bot_name TEXT NOT NULL DEFAULT ''"),
+            ("variant",       "ALTER TABLE games ADD COLUMN variant TEXT NOT NULL DEFAULT 'standard'"),
+            ("time_control",  "ALTER TABLE games ADD COLUMN time_control TEXT NOT NULL DEFAULT 'unlimited'"),
+            ("white_time_ms", "ALTER TABLE games ADD COLUMN white_time_ms INTEGER NOT NULL DEFAULT 0"),
+            ("black_time_ms", "ALTER TABLE games ADD COLUMN black_time_ms INTEGER NOT NULL DEFAULT 0"),
+        ]:
+            if col not in gcols:
+                conn.execute(ddl)
 
 INITIAL_RATING = 1200
 K_FACTOR = 32
+RATING_FLOOR = 100
 
 def elo_update(rating_a, rating_b, score_a, k=K_FACTOR):
     exp_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 400.0))
     delta = k * (score_a - exp_a)
-    return round(rating_a + delta), round(rating_b - delta)
+    new_a = max(RATING_FLOOR, round(rating_a + delta))
+    new_b = max(RATING_FLOOR, round(rating_b - delta))
+    return new_a, new_b
 
 def ensure_user(conn, username):
     conn.execute(
@@ -110,6 +128,11 @@ def record_result(conn, game_id, result):
         new_w, new_b = elo_update(w_rating, b_rating, score_w)
         conn.execute("UPDATE users SET rating=? WHERE username=?", (new_w, white))
         conn.execute("UPDATE users SET rating=? WHERE username=?", (new_b, black))
+        return {
+            "white": {"user": white, "old": w_rating, "new": new_w, "delta": new_w - w_rating},
+            "black": {"user": black, "old": b_rating, "new": new_b, "delta": new_b - b_rating},
+        }
+    return None
 
 def get_leaderboard(conn, limit=10):
     return conn.execute("""

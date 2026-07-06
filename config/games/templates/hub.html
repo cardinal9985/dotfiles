@@ -53,12 +53,12 @@
       <div class="game-tile-desc">European wheel, inside + outside bets, standard payouts</div>
       <div class="game-tile-tag locked-tag">COMING SOON</div>
     </div>
-    <div class="game-tile game-tile-locked">
+    <a href="{{ url_for('baccarat.table') }}" class="game-tile">
       <div class="game-tile-icon">♦</div>
       <div class="game-tile-name">BACCARAT</div>
-      <div class="game-tile-desc">Player vs Banker vs Tie, house-banked</div>
-      <div class="game-tile-tag locked-tag">COMING SOON</div>
-    </div>
+      <div class="game-tile-desc">Player vs Banker vs Tie, house-banked, 8:1 on ties</div>
+      <div class="game-tile-tag bj-tag">LIVE</div>
+    </a>
   </div>
 
   <h3 class="row-title">// DICE</h3>
@@ -97,24 +97,24 @@
       <div class="game-tile-desc">1v1, drop discs, four in a row wins</div>
       <div class="game-tile-tag locked-tag">COMING SOON</div>
     </div>
-    <div class="game-tile game-tile-locked">
+    <a href="{{ url_for('war.lobby') }}" class="game-tile">
       <div class="game-tile-icon">⚡</div>
       <div class="game-tile-name">WAR</div>
-      <div class="game-tile-desc">Classic card flip vs opponent, ante per round, ties trigger the Arbiter</div>
-      <div class="game-tile-tag locked-tag">COMING SOON</div>
-    </div>
+      <div class="game-tile-desc">1v1 card duel, best of 5, ties trigger the Arbiter, winner takes the pot</div>
+      <div class="game-tile-tag bj-tag">LIVE</div>
+    </a>
     <div class="game-tile game-tile-locked">
       <div class="game-tile-icon">🦆</div>
       <div class="game-tile-name">DUCK RACE</div>
       <div class="game-tile-desc">Pick a duck, watch it race, winner takes the pot</div>
       <div class="game-tile-tag locked-tag">COMING SOON</div>
     </div>
-    <div class="game-tile game-tile-locked">
+    <a href="{{ url_for('slots.machine') }}" class="game-tile">
       <div class="game-tile-icon">▓</div>
       <div class="game-tile-name">SLOTS</div>
       <div class="game-tile-desc">Spin, hope, repeat. Rumored jackpot combo hides in the reels</div>
-      <div class="game-tile-tag locked-tag">COMING SOON</div>
-    </div>
+      <div class="game-tile-tag bj-tag">LIVE</div>
+    </a>
   </div>
 
   {% if me %}

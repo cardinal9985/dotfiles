@@ -52,10 +52,26 @@
 
   <section style="margin-top:2rem">
     <h3 class="section-title">// ARBITER LEDGER <span class="sub">rulings on all ties</span></h3>
-    <div class="arbiter-placeholder">
-      <p class="empty">ARBITER OFFLINE :: AWAITING FIRST RULING</p>
-      <p class="arbiter-hint">The Arbiter is the ship's tiebreaker system. When two players are tied (chess draw, war card tie, poker chip-off, blackjack push on 21), the Arbiter rolls a coin flip or a round of Rock-Paper-Scissors at random. Winner gets +100 chips. Rulings are tallied here.</p>
-    </div>
+    {% if arbiter_lb %}
+      <table class="data-table">
+        <thead><tr><th>CREW</th><th>RULINGS</th><th>COIN</th><th>RPS</th></tr></thead>
+        <tbody>
+        {% for r in arbiter_lb %}
+          <tr {% if r.username == user %}class="highlight-row"{% endif %}>
+            <td><a href="{{ url_for('profile', username=r.username) }}">{{ r.username }}</a></td>
+            <td class="stat-rating">{{ r.rulings }}</td>
+            <td>{{ r.coin_wins }}</td>
+            <td>{{ r.rps_wins }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="arbiter-placeholder">
+        <p class="empty">ARBITER OFFLINE :: AWAITING FIRST RULING</p>
+        <p class="arbiter-hint">The Arbiter is the ship's tiebreaker system. When two players are tied (chess draw, war card tie, poker chip-off, blackjack push on 21), the Arbiter rolls a coin flip or a round of Rock-Paper-Scissors at random. Winner gets +100 chips. Rulings are tallied here.</p>
+      </div>
+    {% endif %}
   </section>
 </div>
 

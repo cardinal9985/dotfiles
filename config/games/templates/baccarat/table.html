@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}BACCARAT // USG REC{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/blackjack.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/baccarat.css') }}">
+{% endblock %}
+{% block content %}
+
+<div class="bacc-page">
+
+  <div class="bj-header">
+    <h2 class="section-title">// BACCARAT <span class="sub">Punto Banco</span></h2>
+    <div class="bj-chips">
+      <span class="stat-label">CHIPS</span>
+      <span class="stat-val stat-chip" id="chip-balance">{{ me.chips }}</span>
+    </div>
+  </div>
+
+  <div class="bacc-table">
+    <div class="bacc-side">
+      <div class="hand-label">PLAYER <span class="hand-total" id="player-total"></span></div>
+      <div class="cards" id="player-cards"></div>
+    </div>
+
+    <div class="bacc-versus">
+      <div class="bacc-vs" id="bacc-vs">VS</div>
+      <div class="bacc-result" id="bacc-result"></div>
+    </div>
+
+    <div class="bacc-side">
+      <div class="hand-label">BANKER <span class="hand-total" id="banker-total"></span></div>
+      <div class="cards" id="banker-cards"></div>
+    </div>
+  </div>
+
+  <div class="bacc-bets">
+    <div class="bet-box" data-bet="player">
+      <div class="bet-label">PLAYER</div>
+      <div class="bet-payout">1 : 1</div>
+      <input type="number" class="bet-input" id="bet-player" min="0" max="{{ max_bet }}" value="0">
+    </div>
+    <div class="bet-box tie" data-bet="tie">
+      <div class="bet-label">TIE</div>
+      <div class="bet-payout">8 : 1</div>
+      <input type="number" class="bet-input" id="bet-tie" min="0" max="{{ max_bet }}" value="0">
+    </div>
+    <div class="bet-box" data-bet="banker">
+      <div class="bet-label">BANKER</div>
+      <div class="bet-payout">0.95 : 1</div>
+      <input type="number" class="bet-input" id="bet-banker" min="0" max="{{ max_bet }}" value="0">
+    </div>
+  </div>
+
+  <div class="bacc-controls">
+    <div class="chip-adder">
+      <label>ADD TO SELECTED</label>
+      <button type="button" class="chip-btn" data-add="10">+10</button>
+      <button type="button" class="chip-btn" data-add="50">+50</button>
+      <button type="button" class="chip-btn" data-add="100">+100</button>
+      <button type="button" class="chip-btn" data-clear="1">CLEAR</button>
+    </div>
+    <button type="button" id="btn-deal" class="btn-primary">DEAL</button>
+    <button type="button" id="btn-clear" class="btn-secondary">CLEAR BETS</button>
+  </div>
+
+  <section class="bacc-recent">
+    <h3 class="section-title">// RECENT HANDS</h3>
+    {% if recent %}
+      <table class="data-table">
+        <thead><tr><th>P/BK/T</th><th>PLAYER</th><th>BANKER</th><th>RESULT</th><th>PAYOUT</th><th>DATE</th></tr></thead>
+        <tbody>
+        {% for h in recent %}
+          <tr>
+            <td>{{ h.bet_player }}/{{ h.bet_banker }}/{{ h.bet_tie }}</td>
+            <td class="mono">{{ h.player_cards }} = {{ h.player_total }}</td>
+            <td class="mono">{{ h.banker_cards }} = {{ h.banker_total }}</td>
+            <td><span class="result-badge result-{{ 'win' if h.payout > (h.bet_player + h.bet_banker + h.bet_tie) else ('draw' if h.payout == (h.bet_player + h.bet_banker + h.bet_tie) else 'loss') }}">{{ h.result.upper() }}</span></td>
+            <td>{{ h.payout }}</td>
+            <td class="date-cell">{{ h.created_at[:16].replace('T',' ') }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">NO HANDS PLAYED YET</p>
+    {% endif %}
+  </section>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/baccarat.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,109 @@
+.war-page { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.war-scoreboard {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 1rem; align-items: center;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid rgba(58,159,191,0.15);
+}
+.war-player { text-align: center; }
+.war-score {
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--bright-amber);
+  text-shadow: 0 0 12px rgba(251,191,96,0.4);
+}
+.war-round-info { text-align: center; font-size: 0.75rem; letter-spacing: 0.15em; color: var(--cyan); }
+.war-status {
+  font-size: 0.65rem;
+  color: var(--bright-white);
+  opacity: 0.75;
+  margin-top: 0.35rem;
+}
+
+.war-arena {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2rem;
+  align-items: center;
+  min-height: 130px;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(20,26,42,0.7), rgba(20,26,42,0.3));
+  border: 1px solid rgba(58,159,191,0.2);
+}
+.war-card-slot {
+  display: flex; justify-content: center; align-items: center;
+  min-height: 90px;
+}
+.war-card-slot .card {
+  transform: scale(1.15);
+}
+.war-vs {
+  font-size: 1.2rem;
+  letter-spacing: 0.3em;
+  color: var(--cyan);
+  opacity: 0.55;
+  text-align: center;
+}
+.war-vs.tie   { color: var(--bright-red);   opacity: 1; animation: pulse-red 1s infinite; }
+.war-vs.a-win { color: var(--bright-amber); opacity: 1; }
+.war-vs.b-win { color: var(--bright-cyan);  opacity: 1; }
+
+.war-controls {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}
+
+.arbiter-panel {
+  padding: 1rem;
+  border: 1px solid var(--bright-amber);
+  background: rgba(251,191,96,0.05);
+  text-align: center;
+  animation: arbiter-in 0.4s ease-out;
+}
+@keyframes arbiter-in {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.arbiter-title {
+  color: var(--bright-amber);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  margin-bottom: 0.4rem;
+}
+.arbiter-mode {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--cyan);
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}
+.arbiter-visual {
+  font-size: 3rem;
+  min-height: 4rem;
+  display: flex; align-items: center; justify-content: center; gap: 1.5rem;
+}
+.arbiter-verdict {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--bright-white);
+  letter-spacing: 0.1em;
+}
+.arbiter-verdict .winner { color: var(--bright-green); font-weight: bold; }
+
+.coin-spinning {
+  display: inline-block;
+  font-size: 3rem;
+  animation: coin-flip 0.7s ease-in-out;
+}
+@keyframes coin-flip {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(1440deg); }
+}
+.rps-hand {
+  display: inline-block;
+  font-size: 3rem;
+  transition: transform 0.3s;
+}
+.rps-hand.chosen { transform: scale(1.2); }

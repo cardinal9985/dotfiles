@@ -69,6 +69,57 @@ CREATE TABLE IF NOT EXISTS blackjack_hands (
     created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_bj_user ON blackjack_hands(username, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS arbiter_calls (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    winner     TEXT    NOT NULL,
+    loser      TEXT,
+    mode       TEXT    NOT NULL,
+    reason     TEXT,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_arbiter_winner ON arbiter_calls(winner, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS baccarat_hands (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT    NOT NULL,
+    bet_player    INTEGER NOT NULL DEFAULT 0,
+    bet_banker    INTEGER NOT NULL DEFAULT 0,
+    bet_tie       INTEGER NOT NULL DEFAULT 0,
+    player_cards  TEXT    NOT NULL,
+    banker_cards  TEXT    NOT NULL,
+    player_total  INTEGER NOT NULL,
+    banker_total  INTEGER NOT NULL,
+    result        TEXT    NOT NULL,
+    payout        INTEGER NOT NULL,
+    created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_bacc_user ON baccarat_hands(username, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS slot_spins (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    bet        INTEGER NOT NULL,
+    reels      TEXT    NOT NULL,
+    payout     INTEGER NOT NULL,
+    combo      TEXT,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_slots_user ON slot_spins(username, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS war_games (
+    id           TEXT PRIMARY KEY,
+    player_a     TEXT NOT NULL,
+    player_b     TEXT,
+    ante         INTEGER NOT NULL,
+    rounds_total INTEGER NOT NULL DEFAULT 5,
+    a_score      INTEGER NOT NULL DEFAULT 0,
+    b_score      INTEGER NOT NULL DEFAULT 0,
+    status       TEXT    NOT NULL DEFAULT 'waiting',
+    winner       TEXT,
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+    completed_at TEXT
+);
 """
 
 @contextmanager
@@ -185,6 +236,18 @@ def get_leaderboard(conn, limit=10):
         FROM users
         WHERE (wins + losses + draws) > 0
         ORDER BY rating DESC, wins DESC
+        LIMIT ?
+    """, (limit,)).fetchall()
+
+def get_arbiter_ledger(conn, limit=10):
+    return conn.execute("""
+        SELECT winner AS username,
+               COUNT(*) AS rulings,
+               SUM(CASE WHEN mode='coin' THEN 1 ELSE 0 END) AS coin_wins,
+               SUM(CASE WHEN mode='rps'  THEN 1 ELSE 0 END) AS rps_wins
+        FROM arbiter_calls
+        GROUP BY winner
+        ORDER BY rulings DESC
         LIMIT ?
     """, (limit,)).fetchall()
 

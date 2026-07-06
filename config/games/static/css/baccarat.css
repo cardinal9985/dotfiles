@@ -1,0 +1,96 @@
+.bacc-page { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.bacc-table {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1.5rem;
+  padding: 2rem 1.5rem;
+  background: linear-gradient(180deg, rgba(20,26,42,0.7), rgba(20,26,42,0.3));
+  border: 1px solid rgba(58,159,191,0.2);
+  align-items: center;
+  min-height: 200px;
+}
+.bacc-side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+.bacc-side .cards { min-height: 100px; justify-content: center; }
+.bacc-versus { text-align: center; }
+.bacc-vs {
+  font-size: 1.4rem;
+  letter-spacing: 0.3em;
+  color: var(--cyan);
+  opacity: 0.55;
+}
+.bacc-vs.player { color: var(--bright-amber); opacity: 1; }
+.bacc-vs.banker { color: var(--bright-cyan);  opacity: 1; }
+.bacc-vs.tie    { color: var(--bright-green); opacity: 1; }
+.bacc-result {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  color: var(--bright-white);
+  min-height: 1.5rem;
+}
+
+.bacc-bets {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+}
+.bet-box {
+  border: 1px solid var(--surface-mid);
+  padding: 0.8rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--surface);
+}
+.bet-box:hover { border-color: var(--cyan); }
+.bet-box.selected {
+  border-color: var(--bright-amber);
+  background: rgba(251,191,96,0.06);
+  box-shadow: 0 0 12px rgba(251,191,96,0.2);
+}
+.bet-box.tie { border-color: rgba(94,234,212,0.35); }
+.bet-box.tie.selected { border-color: var(--bright-green); background: rgba(94,234,212,0.06); }
+
+.bet-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  color: var(--bright-cyan);
+  font-weight: bold;
+}
+.bet-payout {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--white);
+  opacity: 0.6;
+  margin-top: 0.2rem;
+}
+.bet-input {
+  margin-top: 0.55rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--surface-mid);
+  color: var(--bright-amber);
+  font-family: "Courier New", monospace;
+  font-size: 1.2rem;
+  text-align: center;
+  width: 100%;
+  padding: 0.3rem 0;
+}
+.bet-input:focus {
+  outline: none;
+  border-bottom-color: var(--bright-amber);
+}
+
+.bacc-controls {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}
+.chip-adder {
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.chip-adder label {
+  color: var(--cyan);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  margin-right: 0.4rem;
+}

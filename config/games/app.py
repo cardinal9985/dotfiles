@@ -47,9 +47,11 @@ def profile(username):
 def leaderboard():
     user = get_user()
     with db.get_db() as conn:
-        chess_lb = db.get_leaderboard(conn)
-        chip_lb  = db.get_chip_leaderboard(conn)
-    return render_template("leaderboard.html", user=user, chess_lb=chess_lb, chip_lb=chip_lb)
+        chess_lb   = db.get_leaderboard(conn)
+        chip_lb    = db.get_chip_leaderboard(conn)
+        arbiter_lb = db.get_arbiter_ledger(conn)
+    return render_template("leaderboard.html", user=user, chess_lb=chess_lb,
+                           chip_lb=chip_lb, arbiter_lb=arbiter_lb)
 
 import chess_bp
 app.register_blueprint(chess_bp.bp, url_prefix="/chess")
@@ -57,6 +59,16 @@ chess_bp.register_sockets(socketio)
 
 import blackjack_bp
 app.register_blueprint(blackjack_bp.bp, url_prefix="/blackjack")
+
+import war_bp
+app.register_blueprint(war_bp.bp, url_prefix="/war")
+war_bp.register_sockets(socketio)
+
+import slots_bp
+app.register_blueprint(slots_bp.bp, url_prefix="/slots")
+
+import baccarat_bp
+app.register_blueprint(baccarat_bp.bp, url_prefix="/baccarat")
 
 if __name__ == "__main__":
     db.init_db()

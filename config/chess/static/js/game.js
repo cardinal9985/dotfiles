@@ -53,12 +53,17 @@ function initGame(cfg) {
       white_wins: 'WHITE WINS',
       black_wins: 'BLACK WINS',
       draw:       'DRAW',
+      cancelled:  'GAME CANCELLED',
     };
     let msg = labels[data.result] || data.result.toUpperCase();
-    if (data.resigned) msg += ` — ${data.resigned} RESIGNED`;
+    if (data.resigned && data.result !== 'cancelled') msg += ` : ${data.resigned} RESIGNED`;
     text.textContent = msg;
     document.getElementById('status-text').textContent = msg;
     _board.interactive = false;
+    if (data.result === 'cancelled') {
+      const link = document.getElementById('analysis-link');
+      if (link) link.style.display = 'none';
+    }
   });
 
   _socket.on('draw_offered', (data) => {

@@ -432,7 +432,17 @@ def on_resign(data):
 
     with _games_lock:
         g = _games.get(game_id)
-        if not g or g["status"] != "active":
+        if not g:
+            return
+        if g["status"] == "waiting":
+            if user not in (g["white"], g["black"]):
+                return
+            _games.pop(game_id, None)
+            with get_db_conn() as conn:
+                conn.execute("DELETE FROM games WHERE id=?", (game_id,))
+            emit("game_over", {"result": "cancelled", "pgn": "", "resigned": user}, to=game_id)
+            return
+        if g["status"] != "active":
             return
         result = "black_wins" if g["white"] == user else "white_wins"
         g["status"] = "completed"

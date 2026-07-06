@@ -203,6 +203,7 @@ input[type=range] { accent-color: var(--bright-amber); }
 #board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
   width: min(480px, 90vw);
   height: min(480px, 90vw);
   user-select: none;

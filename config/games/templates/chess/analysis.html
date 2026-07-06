@@ -51,7 +51,7 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/board.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
-<script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chess-analysis.js') }}"></script>
 <script>
   initAnalysis({
     gameId:   "{{ game_id }}",

@@ -163,7 +163,7 @@ let
         rewrite-refinery-health:
           replacePath:
             path: "/health"
-        rewrite-chess-health:
+        rewrite-games-health:
           replacePath:
             path: "/health"
         dicebear-strip-api:
@@ -601,9 +601,9 @@ let
           middlewares:
             - noindex-headers
             - rewrite-refinery-health
-        homepage-health-chess-router:
-          rule: "Host(`${domain}`) && Path(`/health/chess`)"
-          service: chess-service
+        homepage-health-games-router:
+          rule: "Host(`${domain}`) && Path(`/health/games`)"
+          service: games-service
           entryPoints:
             - websecure
           tls:
@@ -615,7 +615,7 @@ let
           priority: 50
           middlewares:
             - noindex-headers
-            - rewrite-chess-health
+            - rewrite-games-health
         homepage-health-slskd-router:
           rule: "Host(`${domain}`) && Path(`/health/slskd`)"
           service: slskd-service
@@ -1075,9 +1075,9 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
-        chess-router:
-          rule: "Host(`chess.${domain}`)"
-          service: chess-service
+        games-router:
+          rule: "Host(`games.${domain}`)"
+          service: games-service
           entryPoints:
             - websecure
           tls:
@@ -1270,7 +1270,7 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5006"
-        chess-service:
+        games-service:
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5001"

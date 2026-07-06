@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}HUB // USG GAMES{% endblock %}
+{% block content %}
+
+<div class="hub">
+  <h2 class="section-title">// GAMES CATALOG</h2>
+
+  <div class="game-tiles">
+    <a href="{{ url_for('chess.lobby') }}" class="game-tile game-tile-chess">
+      <div class="game-tile-icon">♞</div>
+      <div class="game-tile-name">CHESS</div>
+      <div class="game-tile-desc">Standard + Chess960 + KOTH + 3-Check + Atomic + Horde + Duck</div>
+      <div class="game-tile-tag chess-tag">SKILL - ELO RATED</div>
+    </a>
+
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">♠</div>
+      <div class="game-tile-name">POKER</div>
+      <div class="game-tile-desc">Texas Hold'em + Omaha + Short Deck + 5-Card Draw</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">♣</div>
+      <div class="game-tile-name">BLACKJACK</div>
+      <div class="game-tile-desc">Player vs dealer - single deck, standard rules</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">⚄</div>
+      <div class="game-tile-name">DICE</div>
+      <div class="game-tile-desc">TBD</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+  </div>
+
+  {% if me %}
+  <section class="my-stats hub-stats">
+    <h2 class="section-title">// {{ user }} :: DOSSIER</h2>
+    <div class="stat-row">
+      <div class="stat-block"><span class="stat-val stat-rating">{{ me.rating }}</span><span class="stat-label">CHESS ELO</span></div>
+      <div class="stat-block"><span class="stat-val stat-win">{{ me.wins }}</span><span class="stat-label">CHESS WINS</span></div>
+      <div class="stat-block"><span class="stat-val stat-chip">{{ me.chips }}</span><span class="stat-label">CHIPS</span></div>
+      <div class="stat-block"><span class="stat-val stat-chip-total">{{ me.chips_lifetime_won }}</span><span class="stat-label">CHIPS WON</span></div>
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+
+{% endblock %}

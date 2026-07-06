@@ -2,7 +2,7 @@ import os
 import sqlite3
 from contextlib import contextmanager
 
-DB_PATH = os.environ.get("CHESS_DB_PATH", "/tmp/chess.db")
+DB_PATH = os.environ.get("GAMES_DB_PATH", "/tmp/games.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
     losses      INTEGER NOT NULL DEFAULT 0,
     draws       INTEGER NOT NULL DEFAULT 0,
     rating      INTEGER NOT NULL DEFAULT 1200,
+    chips       INTEGER NOT NULL DEFAULT 10000,
+    chips_lifetime_won INTEGER NOT NULL DEFAULT 0,
     created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -43,6 +45,16 @@ CREATE TABLE IF NOT EXISTS game_analysis (
     PRIMARY KEY (game_id, move_number),
     FOREIGN KEY (game_id) REFERENCES games(id)
 );
+
+CREATE TABLE IF NOT EXISTS chip_transactions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    username    TEXT    NOT NULL,
+    delta       INTEGER NOT NULL,
+    reason      TEXT    NOT NULL,
+    game_ref    TEXT,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_chip_txn_user ON chip_transactions(username, created_at DESC);
 """
 
 @contextmanager
@@ -63,9 +75,14 @@ def get_db():
 def init_db():
     with get_db() as conn:
         conn.executescript(SCHEMA)
-        cols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
-        if "rating" not in cols:
-            conn.execute("ALTER TABLE users ADD COLUMN rating INTEGER NOT NULL DEFAULT 1200")
+        ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
+        for col, ddl in [
+            ("rating",             "ALTER TABLE users ADD COLUMN rating INTEGER NOT NULL DEFAULT 1200"),
+            ("chips",              "ALTER TABLE users ADD COLUMN chips INTEGER NOT NULL DEFAULT 10000"),
+            ("chips_lifetime_won", "ALTER TABLE users ADD COLUMN chips_lifetime_won INTEGER NOT NULL DEFAULT 0"),
+        ]:
+            if col not in ucols:
+                conn.execute(ddl)
         gcols = {r[1] for r in conn.execute("PRAGMA table_info(games)").fetchall()}
         for col, ddl in [
             ("bot_name",      "ALTER TABLE games ADD COLUMN bot_name TEXT NOT NULL DEFAULT ''"),
@@ -89,15 +106,25 @@ def elo_update(rating_a, rating_b, score_a, k=K_FACTOR):
     return new_a, new_b
 
 def ensure_user(conn, username):
+    conn.execute("INSERT OR IGNORE INTO users (username) VALUES (?)", (username,))
+
+def adjust_chips(conn, username, delta, reason, game_ref=None):
+    """Apply a chip delta to a user's balance, log it in transactions."""
+    if delta == 0:
+        return
+    ensure_user(conn, username)
+    conn.execute("UPDATE users SET chips = chips + ? WHERE username = ?", (delta, username))
+    if delta > 0:
+        conn.execute("UPDATE users SET chips_lifetime_won = chips_lifetime_won + ? WHERE username = ?", (delta, username))
     conn.execute(
-        "INSERT OR IGNORE INTO users (username) VALUES (?)",
-        (username,)
+        "INSERT INTO chip_transactions (username, delta, reason, game_ref) VALUES (?, ?, ?, ?)",
+        (username, delta, reason, game_ref)
     )
 
 def record_result(conn, game_id, result):
     game = conn.execute("SELECT white, black, white_is_ai, black_is_ai FROM games WHERE id=?", (game_id,)).fetchone()
     if not game:
-        return
+        return None
     white, black = game["white"], game["black"]
     white_is_ai, black_is_ai = game["white_is_ai"], game["black_is_ai"]
 
@@ -147,9 +174,18 @@ def get_leaderboard(conn, limit=10):
         LIMIT ?
     """, (limit,)).fetchall()
 
+def get_chip_leaderboard(conn, limit=10):
+    return conn.execute("""
+        SELECT username, chips, chips_lifetime_won
+        FROM users
+        WHERE chips_lifetime_won > 0 OR chips <> 10000
+        ORDER BY chips_lifetime_won DESC, chips DESC
+        LIMIT ?
+    """, (limit,)).fetchall()
+
 def get_user_games(conn, username, limit=20):
     return conn.execute("""
-        SELECT id, white, black, white_is_ai, black_is_ai, result, created_at, completed_at
+        SELECT id, white, black, white_is_ai, black_is_ai, variant, result, created_at, completed_at
         FROM games
         WHERE (white=? OR black=?) AND status='completed'
         ORDER BY completed_at DESC
@@ -158,7 +194,7 @@ def get_user_games(conn, username, limit=20):
 
 def get_active_games(conn):
     return conn.execute("""
-        SELECT id, white, black, white_is_ai, black_is_ai, status, ai_level, created_at
+        SELECT id, white, black, white_is_ai, black_is_ai, status, ai_level, variant, created_at
         FROM games
         WHERE status IN ('waiting', 'active')
         ORDER BY created_at DESC

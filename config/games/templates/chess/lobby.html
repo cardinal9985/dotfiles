@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}LOBBY // USG CHESS{% endblock %}
+{% block title %}CHESS LOBBY // USG GAMES{% endblock %}
 {% block content %}
 
 <div class="lobby">
 
   <section class="new-game-panel">
-    <h2 class="section-title">// NEW GAME</h2>
-    <form method="post" action="{{ url_for('new_game') }}" class="new-game-form">
+    <h2 class="section-title">// NEW CHESS GAME</h2>
+    <form method="post" action="{{ url_for('chess.new_game') }}" class="new-game-form">
 
       <div class="form-row">
         <label>OPPONENT</label>
@@ -86,7 +86,7 @@
               <td class="player-white">{{ 'BOT' if g.white_is_ai else (g.white or '···') }}</td>
               <td class="player-black">{{ 'BOT' if g.black_is_ai else (g.black or '···') }}</td>
               <td><span class="status-badge status-{{ g.status }}">{{ g.status.upper() }}</span></td>
-              <td><a href="{{ url_for('game', game_id=g.id) }}" class="btn-small">
+              <td><a href="{{ url_for('chess.game', game_id=g.id) }}" class="btn-small">
                 {% if g.status == 'waiting' and g.white != user and g.black != user %}JOIN{% else %}VIEW{% endif %}
               </a></td>
             </tr>

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}USG CHESS{% endblock %}</title>
+  <title>{% block title %}USG GAMES{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/games.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chess.css') }}">
   {% block head %}{% endblock %}
 </head>
@@ -13,31 +14,26 @@
     <header>
       <div class="logo">
         <span class="logo-usg">USG</span><span class="logo-name">ISHIMURA</span>
-        <span class="logo-sub">// CHESS TERMINAL</span>
+        <span class="logo-sub">// GAMES TERMINAL</span>
       </div>
       <nav>
-        <a href="{{ url_for('index') }}">LOBBY</a>
+        <a href="{{ url_for('hub') }}">HUB</a>
+        <a href="{{ url_for('leaderboard') }}">RANKINGS</a>
         <a href="{{ url_for('profile', username=user) }}">{{ user }}</a>
       </nav>
     </header>
     {% block content %}{% endblock %}
   </div>
   <script>
-    // Starfield
     (function() {
       const c = document.getElementById('star-canvas');
       const ctx = c.getContext('2d');
       let stars = [];
-      function resize() {
-        c.width = window.innerWidth;
-        c.height = window.innerHeight;
-      }
+      function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
       function init() {
         stars = Array.from({length: 120}, () => ({
-          x: Math.random() * c.width,
-          y: Math.random() * c.height,
-          r: Math.random() * 1.2,
-          o: Math.random() * 0.5 + 0.1,
+          x: Math.random() * c.width, y: Math.random() * c.height,
+          r: Math.random() * 1.2, o: Math.random() * 0.5 + 0.1,
         }));
       }
       function draw() {

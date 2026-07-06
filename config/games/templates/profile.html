@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{{ subject }} // USG CHESS{% endblock %}
+{% block title %}{{ subject }} // USG GAMES{% endblock %}
 {% block content %}
 
 <div class="profile-page">
   <h2 class="section-title">// CREW FILE: <span class="highlight-text">{{ subject }}</span></h2>
 
   <div class="stat-row">
-    <div class="stat-block"><span class="stat-val stat-rating">{{ stats.rating }}</span><span class="stat-label">ELO</span></div>
+    <div class="stat-block"><span class="stat-val stat-rating">{{ stats.rating }}</span><span class="stat-label">CHESS ELO</span></div>
     <div class="stat-block"><span class="stat-val stat-win">{{ stats.wins }}</span><span class="stat-label">WINS</span></div>
     <div class="stat-block"><span class="stat-val stat-loss">{{ stats.losses }}</span><span class="stat-label">LOSSES</span></div>
     <div class="stat-block"><span class="stat-val stat-draw">{{ stats.draws }}</span><span class="stat-label">DRAWS</span></div>
@@ -15,13 +15,15 @@
       <span class="stat-val">{{ ((stats.wins / total * 100) | round(1)) if total > 0 else 0 }}%</span>
       <span class="stat-label">WIN RATE</span>
     </div>
+    <div class="stat-block"><span class="stat-val stat-chip">{{ stats.chips }}</span><span class="stat-label">CHIPS</span></div>
+    <div class="stat-block"><span class="stat-val stat-chip-total">{{ stats.chips_lifetime_won }}</span><span class="stat-label">CHIPS WON</span></div>
   </div>
 
   <section style="margin-top:2rem">
-    <h3 class="section-title">// GAME HISTORY</h3>
+    <h3 class="section-title">// CHESS HISTORY</h3>
     {% if games %}
       <table class="data-table">
-        <thead><tr><th>WHITE</th><th>BLACK</th><th>RESULT</th><th>DATE</th><th></th></tr></thead>
+        <thead><tr><th>WHITE</th><th>BLACK</th><th>VARIANT</th><th>RESULT</th><th>DATE</th><th></th></tr></thead>
         <tbody>
         {% for g in games %}
           {% set my_side = 'white' if g.white == subject else 'black' %}
@@ -30,13 +32,14 @@
           <tr>
             <td class="player-white">{{ 'AI' if g.white_is_ai else (g.white or '?') }}</td>
             <td class="player-black">{{ 'AI' if g.black_is_ai else (g.black or '?') }}</td>
+            <td>{{ (g.variant or 'standard').upper() }}</td>
             <td><span class="result-badge {% if won %}result-win{% elif lost %}result-loss{% else %}result-draw{% endif %}">
               {% if won %}WIN{% elif lost %}LOSS{% else %}DRAW{% endif %}
             </span></td>
             <td class="date-cell">{{ g.completed_at[:10] if g.completed_at else '···' }}</td>
             <td>
-              <a href="{{ url_for('analysis', game_id=g.id) }}" class="btn-small">ANALYZE</a>
-              <a href="{{ url_for('game_pgn', game_id=g.id) }}" class="btn-small">PGN</a>
+              <a href="{{ url_for('chess.analysis', game_id=g.id) }}" class="btn-small">ANALYZE</a>
+              <a href="{{ url_for('chess.game_pgn', game_id=g.id) }}" class="btn-small">PGN</a>
             </td>
           </tr>
         {% endfor %}

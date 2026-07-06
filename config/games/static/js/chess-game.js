@@ -33,7 +33,7 @@ function initGame(cfg) {
     onSquareClick: handleSquareClick,
   });
 
-  _socket = io({ transports: ['websocket'] });
+  _socket = io('/chess', { transports: ['websocket'] });
 
   _socket.on('connect', () => {
     _socket.emit('join_game', { game_id: cfg.gameId });

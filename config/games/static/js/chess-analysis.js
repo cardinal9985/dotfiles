@@ -39,7 +39,7 @@ function initAnalysis(cfg) {
     btnAnalyze.addEventListener('click', () => {
       btnAnalyze.textContent = 'ANALYZING...';
       btnAnalyze.disabled = true;
-      _aSocket = io({ transports: ['websocket'] });
+      _aSocket = io('/chess', { transports: ['websocket'] });
       _aSocket.on('connect', () => {
         _aSocket.emit('join_game', { game_id: cfg.gameId });
         _aSocket.emit('request_analysis', { game_id: cfg.gameId });
@@ -137,7 +137,7 @@ function computeFens(moves) {
   if (!moves.length) return fens;
   try {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/fens', false);
+    xhr.open('POST', '/chess/api/fens', false);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.send(JSON.stringify({ moves }));
     if (xhr.status === 200) {

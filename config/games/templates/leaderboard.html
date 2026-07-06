@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}RANKINGS // USG GAMES{% endblock %}
+{% block content %}
+
+<div class="leaderboards">
+  <h2 class="section-title">// CREW RANKINGS</h2>
+
+  <div class="lobby-columns">
+    <section>
+      <h3 class="section-title">// CHESS ELO</h3>
+      {% if chess_lb %}
+        <table class="data-table">
+          <thead><tr><th>CREW</th><th>ELO</th><th>W</th><th>L</th><th>D</th><th>WIN%</th></tr></thead>
+          <tbody>
+          {% for p in chess_lb %}
+            <tr {% if p.username == user %}class="highlight-row"{% endif %}>
+              <td><a href="{{ url_for('profile', username=p.username) }}">{{ p.username }}</a></td>
+              <td class="stat-rating">{{ p.rating }}</td>
+              <td class="stat-win">{{ p.wins }}</td>
+              <td class="stat-loss">{{ p.losses }}</td>
+              <td class="stat-draw">{{ p.draws }}</td>
+              <td>{{ p.win_pct }}%</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">NO CHESS RECORDS YET</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h3 class="section-title">// CHIP LEADERS</h3>
+      {% if chip_lb %}
+        <table class="data-table">
+          <thead><tr><th>CREW</th><th>CHIPS</th><th>LIFETIME WON</th></tr></thead>
+          <tbody>
+          {% for p in chip_lb %}
+            <tr {% if p.username == user %}class="highlight-row"{% endif %}>
+              <td><a href="{{ url_for('profile', username=p.username) }}">{{ p.username }}</a></td>
+              <td class="stat-chip">{{ p.chips }}</td>
+              <td class="stat-chip-total">{{ p.chips_lifetime_won }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">NO CHIP ACTIVITY YET</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+{% endblock %}

@@ -81,12 +81,12 @@
       <div id="game-over-panel" class="game-over-panel" style="display:none">
         <p id="game-over-text"></p>
         <p id="rating-change-text" class="rating-change" style="display:none"></p>
-        <form method="post" action="{{ url_for('rematch', game_id=game_id) }}" style="margin:0">
+        <form method="post" action="{{ url_for('chess.rematch', game_id=game_id) }}" style="margin:0">
           <button type="submit" class="btn-primary" id="rematch-link">REMATCH (SWAP COLORS)</button>
         </form>
-        <a href="{{ url_for('analysis', game_id=game_id) }}" class="btn-secondary" id="analysis-link">ANALYZE GAME</a>
-        <a href="{{ url_for('game_pgn', game_id=game_id) }}" class="btn-secondary" id="pgn-link">DOWNLOAD PGN</a>
-        <a href="{{ url_for('index') }}" class="btn-secondary">LOBBY</a>
+        <a href="{{ url_for('chess.analysis', game_id=game_id) }}" class="btn-secondary" id="analysis-link">ANALYZE GAME</a>
+        <a href="{{ url_for('chess.game_pgn', game_id=game_id) }}" class="btn-secondary" id="pgn-link">DOWNLOAD PGN</a>
+        <a href="{{ url_for('chess.lobby') }}" class="btn-secondary">LOBBY</a>
       </div>
     </div>
 
@@ -98,7 +98,7 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/board.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
-<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chess-game.js') }}"></script>
 <script>
   initGame({
     gameId:  "{{ game_id }}",

@@ -71,6 +71,7 @@ function setBanner(state) {
   el.textContent = labels[state.status] || state.status.toUpperCase();
 }
 
+let _lastStatus = null;
 function applyState(state) {
   if (!state) {
     renderHand('player-cards', []);
@@ -79,6 +80,7 @@ function applyState(state) {
     setTotal('dealer-total', null);
     setBanner(null);
     setControls(null);
+    _lastStatus = null;
     return;
   }
   const dealerHidden = state.status === 'playing';
@@ -91,6 +93,22 @@ function applyState(state) {
   if (state.new_balance !== undefined && state.new_balance !== null) {
     document.getElementById('chip-balance').textContent = state.new_balance;
   }
+  // Toast chip changes at result transitions
+  if (window.showToast && state.status !== _lastStatus && state.status !== 'playing') {
+    const bet = state.bet;
+    const payout = state.payout || 0;
+    const net = payout - bet;
+    if (state.status === 'blackjack') {
+      showToast('+' + net + ' CHIPS', 'BLACKJACK :: 3:2 payout', 'chip-win');
+    } else if (state.status === 'win') {
+      showToast('+' + net + ' CHIPS', 'WIN :: dealer beaten', 'chip-win');
+    } else if (state.status === 'loss') {
+      showToast('-' + bet + ' CHIPS', 'HAND LOST', 'chip-loss');
+    } else if (state.status === 'push') {
+      showToast('BET RETURNED', 'PUSH :: no chip change', '');
+    }
+  }
+  _lastStatus = state.status;
 }
 
 async function post(url, body) {

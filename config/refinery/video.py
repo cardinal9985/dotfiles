@@ -28,6 +28,7 @@ from pathlib import Path
 import requests as http
 
 import db
+import subtitles
 import targets
 
 try:
@@ -40,6 +41,13 @@ log = logging.getLogger("refinery.video")
 VIDEO_EXTS = {".mkv", ".mp4", ".avi", ".mov", ".webm", ".m4v"}
 SIDECAR_EXTS = {".srt", ".ass", ".ssa", ".sub", ".idx", ".vtt", ".nfo", ".jpg",
                 ".jpeg", ".png"}
+SUBTITLE_EXTS = {".srt", ".ass", ".ssa", ".sub", ".idx", ".vtt"}
+
+# Torrent samples: usually named `sample.<ext>` or `<title>-sample.<ext>`, and
+# always tiny (< 100 MB even for a 4K sample). Skip so we don't stage the
+# preview clip as a movie item alongside the real one.
+SAMPLE_MAX_BYTES = 100 * 1024 * 1024
+SAMPLE_RE = re.compile(r"(?:^|[\s._-])sample(?:[\s._-]|$)", re.IGNORECASE)
 
 VIDEO_COVER_DIR = os.environ.get("REFINERY_VIDEO_COVER_DIR",
                                  "/persist/refinery/video_covers")
@@ -162,13 +170,87 @@ def parse_filename(path):
     return out
 
 
+def _looks_like_sample(path):
+    try:
+        size_ok = path.stat().st_size < SAMPLE_MAX_BYTES
+    except OSError:
+        return False
+    return size_ok and bool(SAMPLE_RE.search(path.name))
+
+
 def list_video_files(folder):
-    """All video files under `folder`, sorted."""
+    """All non-sample video files under `folder`, sorted."""
     p = Path(folder)
     if p.is_file():
-        return [p] if p.suffix.lower() in VIDEO_EXTS else []
-    return sorted(f for f in p.rglob("*")
-                  if f.is_file() and f.suffix.lower() in VIDEO_EXTS)
+        if p.suffix.lower() not in VIDEO_EXTS or _looks_like_sample(p):
+            return []
+        return [p]
+    out = []
+    for f in p.rglob("*"):
+        if not f.is_file():
+            continue
+        if f.suffix.lower() not in VIDEO_EXTS:
+            continue
+        if _looks_like_sample(f):
+            log.info("skipping sample file: %s", f)
+            continue
+        out.append(f)
+    return sorted(out)
+
+
+# ── NFO fallback (Radarr/Sonarr sidecars) ────────────────────────────────────
+
+_NFO_TMDB_RE = re.compile(r"<tmdbid>\s*(\d+)\s*</tmdbid>", re.IGNORECASE)
+_NFO_IMDB_RE = re.compile(r"<imdb_?id>\s*(tt\d+)\s*</imdb_?id>", re.IGNORECASE)
+_NFO_URL_TMDB_RE = re.compile(
+    r"themoviedb\.org/(?:movie|tv)/(\d+)", re.IGNORECASE)
+_NFO_URL_IMDB_RE = re.compile(r"imdb\.com/title/(tt\d+)", re.IGNORECASE)
+
+
+def read_nfo(video_path):
+    """Look for an .nfo sibling of the video and pull tmdb_id / imdb_id.
+    Radarr/Sonarr NFOs are XML with <tmdbid>/<imdbid> tags; some scrapers
+    only embed URLs, so we regex both. Returns {'tmdb_id':int|None,
+    'imdb_id':str|None} or {} when no NFO is found."""
+    video_path = Path(video_path)
+    candidates = [
+        video_path.with_suffix(".nfo"),
+        video_path.parent / "movie.nfo",
+        video_path.parent / "tvshow.nfo",
+    ]
+    for nfo in candidates:
+        if not nfo.exists():
+            continue
+        try:
+            body = nfo.read_text(errors="replace")
+        except Exception:
+            continue
+        out = {}
+        m = _NFO_TMDB_RE.search(body) or _NFO_URL_TMDB_RE.search(body)
+        if m:
+            try:
+                out["tmdb_id"] = int(m.group(1))
+            except ValueError:
+                pass
+        m = _NFO_IMDB_RE.search(body) or _NFO_URL_IMDB_RE.search(body)
+        if m:
+            out["imdb_id"] = m.group(1)
+        if out:
+            log.info("NFO hit for %s: %s", video_path.name, out)
+            return out
+    return {}
+
+
+def tmdb_find_by_imdb(imdb_id):
+    """TMDB /find lets us look up by external id. Returns the first movie or
+    tv result, if any."""
+    j = _tmdb_get(f"/find/{imdb_id}",
+                  {"external_source": "imdb_id"}) or {}
+    if j.get("movie_results"):
+        return ("movie", j["movie_results"][0])
+    if j.get("tv_results"):
+        return ("tv", j["tv_results"][0])
+    return (None, None)
 
 
 # ── Subtype classification ───────────────────────────────────────────────────
@@ -244,8 +326,24 @@ def _stage_movie(file_path, parsed, folder):
     title = parsed.get("title") or Path(file_path).stem
     year  = parsed.get("year")
 
-    tmdb_hit    = tmdb_search_movie(title, year) if tmdb_enabled() else None
-    tmdb_detail = tmdb_movie(tmdb_hit["id"]) if tmdb_hit else None
+    # NFO takes precedence over guessit-title search - Radarr/Sonarr write
+    # canonical IDs, and search-by-name mis-hits on ambiguous titles.
+    nfo = read_nfo(file_path)
+    tmdb_hit    = None
+    tmdb_detail = None
+    if tmdb_enabled():
+        if nfo.get("tmdb_id"):
+            tmdb_detail = tmdb_movie(nfo["tmdb_id"])
+            if tmdb_detail:
+                tmdb_hit = {"id": nfo["tmdb_id"]}
+        elif nfo.get("imdb_id"):
+            kind, hit = tmdb_find_by_imdb(nfo["imdb_id"])
+            if kind == "movie" and hit:
+                tmdb_hit = hit
+                tmdb_detail = tmdb_movie(hit["id"])
+        if not tmdb_detail:
+            tmdb_hit    = tmdb_search_movie(title, year)
+            tmdb_detail = tmdb_movie(tmdb_hit["id"]) if tmdb_hit else None
     subtype     = classify_subtype("movie", tmdb_detail)
 
     poster_local = None
@@ -303,8 +401,23 @@ def _stage_season(files_parsed, folder):
     season_no  = first.get("season") or 1
     year_hint  = _extract_year([p for _, p in files_parsed])
 
-    tmdb_hit    = tmdb_search_tv(show_title, year_hint) if tmdb_enabled() else None
-    tmdb_detail = tmdb_tv(tmdb_hit["id"]) if tmdb_hit else None
+    # NFO fallback (tvshow.nfo alongside the season folder).
+    nfo = read_nfo(files_parsed[0][0])
+    tmdb_hit    = None
+    tmdb_detail = None
+    if tmdb_enabled():
+        if nfo.get("tmdb_id"):
+            tmdb_detail = tmdb_tv(nfo["tmdb_id"])
+            if tmdb_detail:
+                tmdb_hit = {"id": nfo["tmdb_id"]}
+        elif nfo.get("imdb_id"):
+            kind, hit = tmdb_find_by_imdb(nfo["imdb_id"])
+            if kind == "tv" and hit:
+                tmdb_hit = hit
+                tmdb_detail = tmdb_tv(hit["id"])
+        if not tmdb_detail:
+            tmdb_hit    = tmdb_search_tv(show_title, year_hint)
+            tmdb_detail = tmdb_tv(tmdb_hit["id"]) if tmdb_hit else None
     subtype     = classify_subtype("show", tmdb_detail)
 
     show_year = year_hint
@@ -461,11 +574,38 @@ def library_path_for(item, tracks=None):
     return Path(root) / stem / f"{stem}{src.suffix.lower()}"
 
 
+_SXXEYY_RE = re.compile(r"[Ss](\d{1,2})[Ee](\d{1,3})")
+
+
+def _sxxeyy(name):
+    m = _SXXEYY_RE.search(name or "")
+    if not m:
+        return None
+    return (int(m.group(1)), int(m.group(2)))
+
+
+def _find_subs_folder(src_dir):
+    """Return the first sibling folder that looks like a subtitle dump. Some
+    releases nest them (`Movie/Subs/`), and multi-episode packs commonly ship
+    `Subs/` at the season root."""
+    for name in ("Subs", "subs", "Subtitles", "subtitles"):
+        cand = src_dir / name
+        if cand.is_dir():
+            return cand
+    return None
+
+
 def _copy_sidecars(src_file, dest_file):
-    """Copy any subtitles / nfo / artwork sitting next to the source video
-    to sit next to the destination too. Match by stem prefix."""
-    src = Path(src_file)
+    """Copy subtitles / nfo / artwork sitting next to the source video into
+    the destination folder. Two paths:
+      1. Siblings whose stem starts with the video stem (Sonarr layout).
+      2. Files under an adjacent `Subs/` folder that share the video's
+         SxxEyy tag OR - for movies with no such tag - copy every subtitle
+         under Subs/ verbatim."""
+    src  = Path(src_file)
     dest = Path(dest_file)
+
+    # 1. Sibling stem match
     for f in src.parent.iterdir():
         if not f.is_file():
             continue
@@ -479,10 +619,42 @@ def _copy_sidecars(src_file, dest_file):
         except Exception as e:
             log.warning("sidecar copy failed %s: %s", f, e)
 
+    # 2. Subs/ folder match
+    subs_dir = _find_subs_folder(src.parent)
+    if not subs_dir:
+        return
+    video_sxx = _sxxeyy(src.name)
+    for sub in subs_dir.rglob("*"):
+        if not sub.is_file():
+            continue
+        if sub.suffix.lower() not in SUBTITLE_EXTS:
+            continue
+        if video_sxx:
+            # Episode: only pick subs whose own name (or ancestor folder
+            # name) tags the same SxxEyy.
+            ancestry = "/".join([sub.name] + [p.name for p in sub.parents])
+            sub_sxx = _sxxeyy(ancestry)
+            if sub_sxx != video_sxx:
+                continue
+        # Preserve language hint if present (`.en.srt`, `English.srt`).
+        lang_hint = ""
+        parts = sub.stem.split(".")
+        if len(parts) > 1 and len(parts[-1]) in (2, 3):
+            lang_hint = "." + parts[-1].lower()
+        elif sub.stem.lower() in ("english", "spanish", "french", "german",
+                                   "japanese", "chinese"):
+            lang_hint = "." + sub.stem.lower()[:2]
+        new = dest.parent / f"{dest.stem}{lang_hint}{sub.suffix.lower()}"
+        try:
+            shutil.copy2(sub, new)
+        except Exception as e:
+            log.warning("Subs/ copy failed %s: %s", sub, e)
 
-def write_and_move(item, tracks=None):
+
+def write_and_move(item, tracks=None, fetch_subs=False):
     """Approve pathway. For movies: move the file. For shows: move each
-    episode into <show>/Season NN/<show> - SxxEyy - <title>.ext."""
+    episode into <show>/Season NN/<show> - SxxEyy - <title>.ext. When
+    fetch_subs is True, hit OpenSubtitles for each landed video."""
     meta = item.get("meta_json") or "{}"
     if isinstance(meta, str):
         try:
@@ -494,6 +666,8 @@ def write_and_move(item, tracks=None):
     root    = targets.target_for(subtype)
     title   = _safe_path(item.get("title") or "Unknown")
     year    = item.get("year")
+    tmdb    = meta.get("tmdb") or {}
+    tmdb_id = tmdb.get("id")
 
     # ── Show ── move each episode into a Jellyfin-style season folder.
     if meta.get("kind") == "show":
@@ -534,6 +708,17 @@ def write_and_move(item, tracks=None):
                 log.error("move failed %s -> %s: %s", src, dest, e)
                 raise
 
+            if fetch_subs and tmdb_id:
+                try:
+                    subtitles.fetch_for_video(
+                        dest,
+                        parent_tmdb_id=tmdb_id,
+                        season_no=season,
+                        episode_no=int(ep_no) if ep_no else None,
+                    )
+                except Exception:
+                    log.exception("subtitle fetch failed for %s", dest)
+
         # Clean up an empty download folder
         folder = meta.get("folder")
         if folder and Path(folder).exists() and not any(Path(folder).iterdir()):
@@ -570,6 +755,12 @@ def write_and_move(item, tracks=None):
         raise
 
     _copy_sidecars(src, dest)
+
+    if fetch_subs and tmdb_id:
+        try:
+            subtitles.fetch_for_video(dest, tmdb_id=tmdb_id)
+        except Exception:
+            log.exception("subtitle fetch failed for %s", dest)
 
     # Clean up an empty parent (if this was a one-file bundle)
     try:

@@ -85,6 +85,25 @@
         </div>
       </div>
       {% endif %}
+
+      <div style="grid-column: span 2;">
+        <label style="display: inline; font-size: 0.7rem;">
+          <input type="checkbox" name="fetch_subs" value="1"
+                 {% if subs_enabled and meta.tmdb %}checked{% endif %}
+                 {% if not subs_enabled or not meta.tmdb %}disabled{% endif %}>
+          FETCH SUBTITLES ON APPROVE (OpenSubtitles;
+          {% if subs_langs %}langs: {{ subs_langs|join(', ') }}{% endif %})
+        </label>
+        {% if not subs_enabled %}
+        <div style="font-size: 0.65rem; color: var(--white);">
+          Disabled: set OPENSUBTITLES_API_KEY (sops).
+        </div>
+        {% elif not meta.tmdb %}
+        <div style="font-size: 0.65rem; color: var(--white);">
+          Disabled: no TMDB match to query with.
+        </div>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>

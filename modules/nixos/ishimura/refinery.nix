@@ -19,8 +19,8 @@ let
           ${src}/downloader.py ${src}/game_dat.py ${src}/game_igdb.py \
           ${src}/game_platforms.py ${src}/games.py ${src}/genres.py \
           ${src}/library.py ${src}/music.py ${src}/quality.py \
-          ${src}/scanner.py ${src}/targets.py ${src}/video.py \
-          ${src}/templates $out/
+          ${src}/scanner.py ${src}/subtitles.py ${src}/targets.py \
+          ${src}/video.py ${src}/templates $out/
   '';
 
   reprocessLibrary = pkgs.writeShellScriptBin "refinery-reprocess-library"
@@ -96,7 +96,16 @@ in
       REFINERY_SHORT_FILM_TARGET=/mnt/storage/media/short-films
       REFINERY_FAN_EDIT_FILM_TARGET=/mnt/storage/media/fan-edits
       REFINERY_VIDEO_COVER_DIR=/persist/refinery/video_covers
+      REFINERY_SUBTITLE_LANGS=en
       TMDB_TOKEN=${config.sops.placeholder."requests/tmdb_token"}
+      # OpenSubtitles: sign up at opensubtitles.com, grab an API key. To
+      # enable, add `opensubtitles/{api_key,username,password}` to
+      # secrets.yaml (sops edit), declare them in sops.nix, then swap the
+      # empty lines below for placeholder references. Subtitle fetch is a
+      # per-approve checkbox and silently no-ops when the key is unset.
+      OPENSUBTITLES_API_KEY=
+      OPENSUBTITLES_USERNAME=
+      OPENSUBTITLES_PASSWORD=
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
       IGDB_CLIENT_ID=${config.sops.placeholder."romm/igdb_client_id"}
       IGDB_CLIENT_SECRET=${config.sops.placeholder."romm/igdb_client_secret"}

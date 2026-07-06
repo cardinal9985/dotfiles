@@ -42,7 +42,10 @@ def classify_folder(path):
     counts = Counter()
     p = Path(path)
     if p.is_file():
-        ext = p.suffix.lower()
+        # Single-file drop (e.g. Movie.mkv straight in the inbox). Count its
+        # extension so the same voting logic below fires - without this the
+        # scored dict is all zeros and we return None.
+        counts[p.suffix.lower()] += 1
     else:
         for f in p.rglob("*"):
             if f.is_file():

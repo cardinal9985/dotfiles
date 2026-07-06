@@ -8,6 +8,7 @@ import urllib.request
 from pathlib import Path
 from datetime import datetime, timedelta
 
+import re
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import (Flask, render_template, request, redirect, url_for, abort,
                    send_file)
@@ -269,10 +270,13 @@ def edit(item_id):
             ("anime_show",    "Anime Show"),
             ("docuseries",    "Documentary Series"),
         ]
+        import subtitles as _subs
         return render_template("edit_video.html", user=user, item=item,
                                tracks=tracks, meta=meta,
                                genres=genres.VIDEO, conflict=conflict,
-                               subtypes=video_subtypes)
+                               subtypes=video_subtypes,
+                               subs_enabled=_subs.enabled(),
+                               subs_langs=_subs.DEFAULT_LANGS)
     if item["media_type"] == "game":
         platform = item["subtype"] or meta.get("platform")
         ext      = Path(item["source_path"]).suffix.lower()
@@ -418,7 +422,9 @@ def approve(item_id):
             result = games.write_and_move(item_dict, GAME_TARGET,
                                           convert_chd=convert_chd)
         elif item_dict["media_type"] == "video":
-            result = video.write_and_move(item_dict, tracks)
+            fetch_subs = request.form.get("fetch_subs") == "1"
+            result = video.write_and_move(item_dict, tracks,
+                                          fetch_subs=fetch_subs)
         else:
             raise ValueError(f"unknown media_type {item_dict['media_type']}")
         log.info("Approved %s %d → %s",
@@ -572,6 +578,50 @@ def approve_verified():
 
     notify("Refinery: bulk approve",
            f"Approved {approved} of {len(candidates)} verified albums")
+    return redirect(url_for("queue"))
+
+
+@app.route("/_approve_tmdb_matched", methods=["POST"])
+def approve_tmdb_matched():
+    """Bulk-approve every ready video movie item that has a TMDB match.
+    Movies are usually accurate on first hit; this saves clicking REVIEW +
+    APPROVE 30 times after a big drop."""
+    user = _get_user()
+    if not user:
+        return "unauthorized", 401
+
+    with db.get_db() as conn:
+        candidates = conn.execute(
+            "SELECT id, subtype, meta_json FROM items "
+            "WHERE status='ready' AND media_type='video'"
+        ).fetchall()
+
+    movie_subtypes = {"movie", "anime_movie", "documentary", "short_film",
+                      "fan_edit_film"}
+    approved = 0
+    eligible = 0
+    for c in candidates:
+        if c["subtype"] not in movie_subtypes:
+            continue
+        try:
+            meta = json.loads(c["meta_json"] or "{}")
+        except Exception:
+            meta = {}
+        if not (meta.get("tmdb") and meta["tmdb"].get("id")):
+            continue
+        eligible += 1
+        with app.test_request_context(f"/item/{c['id']}/approve",
+                                       method="POST",
+                                       headers={"Remote-User": user}):
+            try:
+                approve(c["id"])
+                approved += 1
+            except Exception as e:
+                log.exception("bulk video approve failed for %d: %s",
+                              c["id"], e)
+
+    notify("Refinery: bulk approve videos",
+           f"Approved {approved} of {eligible} TMDB-matched movies")
     return redirect(url_for("queue"))
 
 
@@ -872,6 +922,62 @@ def library_radar():
     releases = library.radar(days=days, include_upcoming=upcoming)
     return render_template("library_radar.html", user=user,
                            releases=releases, days=days, upcoming=upcoming)
+
+
+@app.route("/library/videos")
+def library_videos():
+    user   = _get_user()
+    movies = library.list_movies()
+    shows  = library.list_shows()
+    return render_template("library_videos.html", user=user,
+                           movies=movies, shows=shows)
+
+
+@app.route("/library/videos/radar")
+def library_videos_radar():
+    user = _get_user()
+    try:
+        days = max(1, min(int(request.args.get("days", 90)), 730))
+    except (TypeError, ValueError):
+        days = 90
+    releases = library.video_radar(days=days)
+    return render_template("library_videos_radar.html", user=user,
+                           releases=releases, days=days)
+
+
+@app.route("/library/videos/show/<path:show_title>")
+def library_video_show(show_title):
+    """Show detail: list owned seasons + episodes, and gaps against TMDB."""
+    user  = _get_user()
+    shows = {s["title"].lower(): s for s in library.list_shows()}
+    entry = shows.get(show_title.lower())
+    if not entry:
+        abort(404)
+    # Walk on-disk seasons to gather owned files.
+    from targets import target_for
+    root = Path(target_for(entry["subtype"])) / (
+        f"{entry['title']} ({entry['year']})" if entry["year"] else entry["title"]
+    )
+    seasons = []
+    if root.is_dir():
+        for season_dir in sorted(root.iterdir()):
+            if not season_dir.is_dir() or not season_dir.name.lower().startswith("season"):
+                continue
+            m = re.search(r"(\d+)", season_dir.name)
+            if not m:
+                continue
+            season_no = int(m.group(1))
+            owned = [p for p in season_dir.iterdir()
+                     if p.is_file() and p.suffix.lower() in video.VIDEO_EXTS]
+            missing = library.missing_episodes(entry["tmdb_id"], season_no,
+                                                [str(p) for p in owned])
+            seasons.append({
+                "season_no": season_no,
+                "owned":     sorted(p.name for p in owned),
+                "missing":   missing,
+            })
+    return render_template("library_video_show.html", user=user,
+                           show=entry, seasons=seasons)
 
 
 @app.route("/library/<path:artist>")

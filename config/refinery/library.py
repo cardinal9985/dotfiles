@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import music  # for _http_get, MB_BASE
+import db
+import video   # TMDB helpers - keep the TMDB client in one module
 
 log = logging.getLogger("refinery.library")
 
@@ -447,3 +449,139 @@ def missing_albums(artist_name):
         if _norm(rg["title"]) not in owned_titles:
             out.append(rg)
     return sorted(out, key=lambda x: x.get("first_release_date") or "")
+
+
+# ── Video library ────────────────────────────────────────────────────────────
+
+_SHOW_SUBTYPES  = ("show", "anime_show", "docuseries")
+_MOVIE_SUBTYPES = ("movie", "anime_movie", "documentary", "short_film",
+                   "fan_edit_film")
+
+
+def _iter_video_items(subtypes):
+    """Approved video items in one of the given subtypes, meta_json parsed."""
+    with db.get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, title, year, subtype, source_path, meta_json, "
+            "  cover_local "
+            "FROM items "
+            "WHERE media_type='video' AND status='approved' "
+            "  AND subtype IN ({})".format(",".join("?" * len(subtypes))),
+            subtypes,
+        ).fetchall()
+    out = []
+    for r in rows:
+        try:
+            meta = json.loads(r["meta_json"] or "{}")
+        except Exception:
+            meta = {}
+        out.append({
+            "id":          r["id"],
+            "title":       r["title"],
+            "year":        r["year"],
+            "subtype":     r["subtype"],
+            "source_path": r["source_path"],
+            "meta":        meta,
+            "cover_local": r["cover_local"],
+        })
+    return out
+
+
+def list_shows():
+    """Approved shows, grouped so multi-season imports collapse. Returns
+    [{title, subtype, year, tmdb_id, seasons:[...], item_ids:[...]}]."""
+    items = _iter_video_items(_SHOW_SUBTYPES)
+    grouped = {}
+    for it in items:
+        show = (it["meta"].get("show_title") or it["title"] or "").strip()
+        if not show:
+            continue
+        key = show.lower()
+        entry = grouped.setdefault(key, {
+            "title":    show,
+            "subtype":  it["subtype"],
+            "year":     it["year"],
+            "tmdb_id":  None,
+            "seasons":  [],
+            "item_ids": [],
+        })
+        tmdb = it["meta"].get("tmdb") or {}
+        if tmdb.get("id") and not entry["tmdb_id"]:
+            entry["tmdb_id"] = tmdb["id"]
+        s = it["meta"].get("season_no")
+        if s and s not in entry["seasons"]:
+            entry["seasons"].append(s)
+        entry["item_ids"].append(it["id"])
+    for e in grouped.values():
+        e["seasons"].sort()
+    return sorted(grouped.values(), key=lambda x: x["title"].lower())
+
+
+def list_movies():
+    """Approved movies, one row per item (unlike shows there's no grouping
+    to do). Sorted newest year first."""
+    items = _iter_video_items(_MOVIE_SUBTYPES)
+    return sorted(items,
+                  key=lambda x: (-(x["year"] or 0), x["title"] or ""))
+
+
+def missing_episodes(tmdb_id, season_no, owned_paths):
+    """Given a show's TMDB id + season, return the list of TMDB episodes
+    that don't have an owned file. owned_paths = iterable of on-disk file
+    paths for that season - we extract SxxEyy from each name to compare."""
+    season = video.tmdb_tv_season(tmdb_id, season_no) if tmdb_id else None
+    if not season:
+        return []
+    owned_eps = set()
+    for p in owned_paths:
+        m = re.search(r"[Ss]\d{1,2}[Ee](\d{1,3})", Path(p).name)
+        if m:
+            owned_eps.add(int(m.group(1)))
+    out = []
+    for ep in season.get("episodes") or []:
+        n = ep.get("episode_number")
+        if n is None or n in owned_eps:
+            continue
+        out.append({
+            "episode":  n,
+            "name":     ep.get("name"),
+            "air_date": ep.get("air_date"),
+            "overview": (ep.get("overview") or "")[:280],
+        })
+    return sorted(out, key=lambda x: x["episode"])
+
+
+def video_radar(days=90):
+    """Upcoming episodes for approved shows with a TMDB id. Uses each show's
+    next_episode_to_air (single-shot call per show - no per-episode
+    walking). `days` is the horizon; TMDB dates past `today + days` are
+    dropped."""
+    cutoff = datetime.now().date() + timedelta(days=days)
+    out = []
+    for s in list_shows():
+        if not s["tmdb_id"]:
+            continue
+        detail = video._tmdb_get(f"/tv/{s['tmdb_id']}")
+        if not detail:
+            continue
+        nxt = detail.get("next_episode_to_air") or {}
+        air = nxt.get("air_date")
+        if not air:
+            continue
+        try:
+            date = datetime.strptime(air, "%Y-%m-%d").date()
+        except Exception:
+            continue
+        if date > cutoff:
+            continue
+        out.append({
+            "show":     s["title"],
+            "subtype":  s["subtype"],
+            "season":   nxt.get("season_number"),
+            "episode":  nxt.get("episode_number"),
+            "name":     nxt.get("name"),
+            "air_date": air,
+            "overview": (nxt.get("overview") or "")[:280],
+            "tmdb_id":  s["tmdb_id"],
+        })
+    return sorted(out, key=lambda x: x["air_date"])

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ show.title }}{% endblock %}
+{% block content %}
+<div style="margin-bottom: 0.75rem;">
+  <a class="btn ghost" href="/library/videos">&lt; BACK</a>
+</div>
+
+<div class="box">
+  <div class="title">&gt; {{ show.title|upper }} ({{ show.year or '?' }}) - {{ show.subtype|upper }}</div>
+  <div style="padding: 0.5rem 0; font-size: 0.75rem; color: var(--white);">
+    {% if show.tmdb_id %}TMDB: <a href="https://www.themoviedb.org/tv/{{ show.tmdb_id }}" target="_blank" rel="noopener">{{ show.tmdb_id }}</a>{% else %}<span style="color: var(--bright-yellow);">No TMDB ID linked - missing-episode detection disabled.</span>{% endif %}
+  </div>
+</div>
+
+{% for s in seasons %}
+<div class="box">
+  <div class="title">&gt; SEASON {{ '%02d' % s.season_no }} - {{ s.owned|length }} OWNED, {{ s.missing|length }} MISSING</div>
+
+  {% if s.owned %}
+  <table>
+    <thead><tr><th>EPISODE FILE</th></tr></thead>
+    <tbody>
+      {% for f in s.owned %}<tr><td style="font-family: monospace; font-size: 0.8rem;">{{ f }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if s.missing %}
+  <div style="margin-top: 0.75rem;">
+    <div style="font-size: 0.75rem; color: var(--bright-yellow); margin-bottom: 0.3rem;">MISSING PER TMDB</div>
+    <table>
+      <thead><tr><th style="width:4rem;">EP</th><th style="width:8rem;">AIRED</th><th>TITLE</th><th>SYNOPSIS</th></tr></thead>
+      <tbody>
+        {% for m in s.missing %}
+        <tr>
+          <td>{{ m.episode }}</td>
+          <td>{{ m.air_date or '?' }}</td>
+          <td>{{ m.name or '-' }}</td>
+          <td style="font-size: 0.75rem; color: var(--white);">{{ m.overview or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

@@ -150,6 +150,12 @@
       <button type="submit" class="btn">APPROVE ALL VERIFIED (MUSIC)</button>
     </form>
     {% endif %}
+    {% if 'video' in ready_groups %}
+    <form method="POST" action="/_approve_tmdb_matched"
+          onsubmit="return confirm('Approve every TMDB-matched movie in the queue?')">
+      <button type="submit" class="btn">APPROVE ALL TMDB-MATCHED (MOVIES)</button>
+    </form>
+    {% endif %}
   </div>
   <div style="margin-top: 0.5rem; font-size: 0.7rem; color: var(--white);">
     keyboard: <b>j/k</b> next/prev, <b>enter</b> review, <b>/</b> focus filter

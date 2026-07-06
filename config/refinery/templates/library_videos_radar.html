@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Video Radar{% endblock %}
+{% block content %}
+<div class="rec-tabs" style="margin-bottom: 1rem;">
+  <a class="rec-tab" href="/library">MUSIC</a>
+  <a class="rec-tab" href="/library/books">BOOKS</a>
+  <a class="rec-tab active" href="/library/videos">VIDEOS</a>
+</div>
+
+<div style="margin-bottom: 0.75rem;">
+  <form method="GET" action="/library/videos/radar" style="display: flex; gap: 0.5rem; align-items: center;">
+    <label style="margin: 0;">HORIZON (DAYS)</label>
+    <input type="number" name="days" value="{{ days }}" min="1" max="730" style="width: 6rem;">
+    <button type="submit" class="btn ghost">UPDATE</button>
+    <a class="btn ghost" href="/library/videos">&lt; BACK</a>
+  </form>
+</div>
+
+<div class="box">
+  <div class="title">&gt; UPCOMING EPISODES ({{ releases|length }})</div>
+  {% if not releases %}
+  <div class="empty">No upcoming episodes in the next {{ days }} days for shows in the library. Either TMDB has nothing scheduled or your shows all lack a TMDB ID (approve them fresh via refinery to link).</div>
+  {% else %}
+  <table>
+    <thead><tr>
+      <th>DATE</th><th>SHOW</th><th>EP</th><th>TITLE</th><th>SYNOPSIS</th>
+    </tr></thead>
+    <tbody>
+      {% for r in releases %}
+      <tr>
+        <td style="white-space:nowrap;">{{ r.air_date }}</td>
+        <td>{{ r.show }}</td>
+        <td>S{{ '%02d' % r.season }}E{{ '%02d' % r.episode }}</td>
+        <td>{{ r.name or '-' }}</td>
+        <td style="font-size: 0.75rem; color: var(--white);">{{ r.overview or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

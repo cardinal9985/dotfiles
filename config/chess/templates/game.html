@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}GAME {{ game_id[:8] }} // USG CHESS{% endblock %}
+{% block head %}
+<style>
+  .game-layout { display: grid; grid-template-columns: 1fr 280px; gap: 1.5rem; align-items: start; }
+  @media (max-width: 800px) { .game-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="game-page">
+
+  <div class="game-header">
+    <div class="player-tag player-black-tag">
+      <span class="player-color-dot dot-black"></span>
+      <span id="black-name">{{ 'AI' if game.black_is_ai else (game.black or '···') }}</span>
+    </div>
+    <div class="game-status-bar">
+      <span id="status-text">
+        {% if game.status == 'waiting' %}WAITING FOR OPPONENT{% elif game.status == 'active' %}ACTIVE{% else %}{{ game.result|upper if game.result else 'COMPLETED' }}{% endif %}
+      </span>
+    </div>
+    <div class="player-tag player-white-tag">
+      <span class="player-color-dot dot-white"></span>
+      <span id="white-name">{{ 'AI' if game.white_is_ai else (game.white or '···') }}</span>
+    </div>
+  </div>
+
+  <div class="game-layout">
+
+    <div class="board-area">
+      <div id="board-wrap">
+        <div id="board"></div>
+      </div>
+      <div class="board-controls">
+        {% if game.status in ('active', 'waiting') and my_color %}
+          <button id="btn-resign" class="btn-danger">RESIGN</button>
+          <button id="btn-draw" class="btn-secondary">OFFER DRAW</button>
+        {% endif %}
+        {% if game.status == 'waiting' and not my_color %}
+          <p class="share-hint">SHARE LINK TO INVITE OPPONENT</p>
+          <input type="text" class="share-url" value="{{ request.url }}" readonly onclick="this.select()">
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="move-list-wrap">
+        <h3 class="section-title">// MOVE LOG</h3>
+        <div id="move-list" class="move-list"></div>
+      </div>
+      <div id="draw-offer-ui" class="draw-offer" style="display:none">
+        <p>DRAW OFFERED</p>
+        <button id="btn-accept-draw" class="btn-primary">ACCEPT</button>
+        <button id="btn-decline-draw" class="btn-danger">DECLINE</button>
+      </div>
+      <div id="promotion-ui" class="promotion-ui" style="display:none">
+        <p>PROMOTE TO:</p>
+        <div class="promo-choices">
+          <button class="promo-btn" data-piece="q">♛ QUEEN</button>
+          <button class="promo-btn" data-piece="r">♜ ROOK</button>
+          <button class="promo-btn" data-piece="b">♝ BISHOP</button>
+          <button class="promo-btn" data-piece="n">♞ KNIGHT</button>
+        </div>
+      </div>
+      <div id="game-over-panel" class="game-over-panel" style="display:none">
+        <p id="game-over-text"></p>
+        <a href="{{ url_for('analysis', game_id=game_id) }}" class="btn-primary" id="analysis-link">ANALYZE GAME</a>
+        <a href="{{ url_for('index') }}" class="btn-secondary">LOBBY</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+<script>
+  initGame({
+    gameId:  "{{ game_id }}",
+    myColor: "{{ my_color or '' }}",
+    status:  "{{ game.status }}",
+  });
+</script>
+{% endblock %}

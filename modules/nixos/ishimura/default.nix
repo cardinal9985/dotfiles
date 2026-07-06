@@ -10,6 +10,7 @@
     ./prometheus.nix
     ./impermanence.nix
     ./booklore.nix
+    ./chess.nix
     ./dicebear.nix
     ./filebrowser.nix
     ./it-tools.nix

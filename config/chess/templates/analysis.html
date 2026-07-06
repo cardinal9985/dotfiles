@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}ANALYSIS {{ game_id[:8] }} // USG CHESS{% endblock %}
+{% block content %}
+
+<div class="analysis-page">
+  <h2 class="section-title">// GAME ANALYSIS
+    <span class="sub">
+      {{ 'AI' if game.white_is_ai else game.white }} vs
+      {{ 'AI' if game.black_is_ai else game.black }}
+    </span>
+  </h2>
+
+  <div class="analysis-layout">
+
+    <div class="board-area">
+      <div id="board-wrap"><div id="board"></div></div>
+      <div class="analysis-nav">
+        <button id="btn-start" class="btn-small">|&lt;</button>
+        <button id="btn-prev"  class="btn-small">&lt;</button>
+        <span id="move-counter">0 / 0</span>
+        <button id="btn-next"  class="btn-small">&gt;</button>
+        <button id="btn-end"   class="btn-small">&gt;|</button>
+      </div>
+      {% if not analysis %}
+      <button id="btn-analyze" class="btn-primary" style="margin-top:1rem">RUN STOCKFISH ANALYSIS</button>
+      {% endif %}
+    </div>
+
+    <div class="sidebar">
+      <div class="eval-bar-wrap">
+        <h3 class="section-title">// EVALUATION</h3>
+        <div class="eval-bar-outer">
+          <div id="eval-bar" class="eval-bar-inner"></div>
+        </div>
+        <span id="eval-label">+0.00</span>
+      </div>
+
+      <div class="move-list-wrap">
+        <h3 class="section-title">// MOVES</h3>
+        <div id="move-list" class="move-list analysis-moves"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
+<script>
+  initAnalysis({
+    gameId:   "{{ game_id }}",
+    moves:    {{ (game.moves or '').split()|tojson }},
+    analysis: {{ analysis | map(attribute='evaluation') | list | tojson if analysis else 'null' }},
+    bestMoves:{{ analysis | map(attribute='best_move') | list | tojson if analysis else 'null' }},
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,119 @@
+import os
+import sqlite3
+from contextlib import contextmanager
+
+DB_PATH = os.environ.get("CHESS_DB_PATH", "/tmp/chess.db")
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    username    TEXT PRIMARY KEY,
+    wins        INTEGER NOT NULL DEFAULT 0,
+    losses      INTEGER NOT NULL DEFAULT 0,
+    draws       INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS games (
+    id              TEXT    PRIMARY KEY,
+    white           TEXT,
+    black           TEXT,
+    white_is_ai     INTEGER NOT NULL DEFAULT 0,
+    black_is_ai     INTEGER NOT NULL DEFAULT 0,
+    ai_level        INTEGER NOT NULL DEFAULT 5,
+    status          TEXT    NOT NULL DEFAULT 'waiting',
+    result          TEXT,
+    moves           TEXT    NOT NULL DEFAULT '',
+    pgn             TEXT    NOT NULL DEFAULT '',
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    completed_at    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS game_analysis (
+    game_id     TEXT    NOT NULL,
+    move_number INTEGER NOT NULL,
+    move_uci    TEXT    NOT NULL,
+    evaluation  INTEGER,
+    best_move   TEXT,
+    PRIMARY KEY (game_id, move_number),
+    FOREIGN KEY (game_id) REFERENCES games(id)
+);
+"""
+
+@contextmanager
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def init_db():
+    with get_db() as conn:
+        conn.executescript(SCHEMA)
+
+def ensure_user(conn, username):
+    conn.execute(
+        "INSERT OR IGNORE INTO users (username) VALUES (?)",
+        (username,)
+    )
+
+def record_result(conn, game_id, result):
+    game = conn.execute("SELECT white, black, white_is_ai, black_is_ai FROM games WHERE id=?", (game_id,)).fetchone()
+    if not game:
+        return
+    white, black = game["white"], game["black"]
+    white_is_ai, black_is_ai = game["white_is_ai"], game["black_is_ai"]
+
+    if result == "white_wins":
+        if not white_is_ai and white:
+            conn.execute("UPDATE users SET wins=wins+1 WHERE username=?", (white,))
+        if not black_is_ai and black:
+            conn.execute("UPDATE users SET losses=losses+1 WHERE username=?", (black,))
+    elif result == "black_wins":
+        if not white_is_ai and white:
+            conn.execute("UPDATE users SET losses=losses+1 WHERE username=?", (white,))
+        if not black_is_ai and black:
+            conn.execute("UPDATE users SET wins=wins+1 WHERE username=?", (black,))
+    elif result == "draw":
+        if not white_is_ai and white:
+            conn.execute("UPDATE users SET draws=draws+1 WHERE username=?", (white,))
+        if not black_is_ai and black:
+            conn.execute("UPDATE users SET draws=draws+1 WHERE username=?", (black,))
+
+def get_leaderboard(conn, limit=10):
+    return conn.execute("""
+        SELECT username, wins, losses, draws,
+               (wins + losses + draws) AS total,
+               CASE WHEN (wins + losses + draws) = 0 THEN 0.0
+                    ELSE ROUND(wins * 1.0 / (wins + losses + draws) * 100, 1)
+               END AS win_pct
+        FROM users
+        WHERE (wins + losses + draws) > 0
+        ORDER BY wins DESC, win_pct DESC
+        LIMIT ?
+    """, (limit,)).fetchall()
+
+def get_user_games(conn, username, limit=20):
+    return conn.execute("""
+        SELECT id, white, black, white_is_ai, black_is_ai, result, created_at, completed_at
+        FROM games
+        WHERE (white=? OR black=?) AND status='completed'
+        ORDER BY completed_at DESC
+        LIMIT ?
+    """, (username, username, limit)).fetchall()
+
+def get_active_games(conn):
+    return conn.execute("""
+        SELECT id, white, black, white_is_ai, black_is_ai, status, ai_level, created_at
+        FROM games
+        WHERE status IN ('waiting', 'active')
+        ORDER BY created_at DESC
+        LIMIT 20
+    """).fetchall()

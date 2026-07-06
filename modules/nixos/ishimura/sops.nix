@@ -83,5 +83,7 @@
         mode = "0400";
       };
     };
+      "chess/secret_key" = { mode = "0400"; };
+      "chess/discord_webhook" = { mode = "0400"; };
   };
 }

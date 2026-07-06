@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ subject }} // USG CHESS{% endblock %}
+{% block content %}
+
+<div class="profile-page">
+  <h2 class="section-title">// CREW FILE: <span class="highlight-text">{{ subject }}</span></h2>
+
+  <div class="stat-row">
+    <div class="stat-block"><span class="stat-val stat-win">{{ stats.wins }}</span><span class="stat-label">WINS</span></div>
+    <div class="stat-block"><span class="stat-val stat-loss">{{ stats.losses }}</span><span class="stat-label">LOSSES</span></div>
+    <div class="stat-block"><span class="stat-val stat-draw">{{ stats.draws }}</span><span class="stat-label">DRAWS</span></div>
+    <div class="stat-block">
+      {% set total = stats.wins + stats.losses + stats.draws %}
+      <span class="stat-val">{{ ((stats.wins / total * 100) | round(1)) if total > 0 else 0 }}%</span>
+      <span class="stat-label">WIN RATE</span>
+    </div>
+  </div>
+
+  <section style="margin-top:2rem">
+    <h3 class="section-title">// GAME HISTORY</h3>
+    {% if games %}
+      <table class="data-table">
+        <thead><tr><th>WHITE</th><th>BLACK</th><th>RESULT</th><th>DATE</th><th></th></tr></thead>
+        <tbody>
+        {% for g in games %}
+          {% set my_side = 'white' if g.white == subject else 'black' %}
+          {% set won = (my_side == 'white' and g.result == 'white_wins') or (my_side == 'black' and g.result == 'black_wins') %}
+          {% set lost = (my_side == 'white' and g.result == 'black_wins') or (my_side == 'black' and g.result == 'white_wins') %}
+          <tr>
+            <td class="player-white">{{ 'AI' if g.white_is_ai else (g.white or '?') }}</td>
+            <td class="player-black">{{ 'AI' if g.black_is_ai else (g.black or '?') }}</td>
+            <td><span class="result-badge {% if won %}result-win{% elif lost %}result-loss{% else %}result-draw{% endif %}">
+              {% if won %}WIN{% elif lost %}LOSS{% else %}DRAW{% endif %}
+            </span></td>
+            <td class="date-cell">{{ g.completed_at[:10] if g.completed_at else '—' }}</td>
+            <td><a href="{{ url_for('analysis', game_id=g.id) }}" class="btn-small">ANALYZE</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">NO COMPLETED GAMES</p>
+    {% endif %}
+  </section>
+</div>
+
+{% endblock %}

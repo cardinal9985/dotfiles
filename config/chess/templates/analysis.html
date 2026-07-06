@@ -21,8 +21,11 @@
         <button id="btn-next"  class="btn-small">&gt;</button>
         <button id="btn-end"   class="btn-small">&gt;|</button>
       </div>
-      {% if not analysis %}
+      {% set analyzable = (game.variant or 'standard') in ('standard', 'chess960') %}
+      {% if not analysis and analyzable %}
       <button id="btn-analyze" class="btn-primary" style="margin-top:1rem">RUN STOCKFISH ANALYSIS</button>
+      {% elif not analyzable %}
+      <p class="empty" style="margin-top:1rem">STOCKFISH CANNOT ANALYZE {{ (game.variant or '').upper() }} : ENGINE ONLY UNDERSTANDS STANDARD CHESS</p>
       {% endif %}
     </div>
 

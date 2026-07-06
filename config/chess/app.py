@@ -92,6 +92,31 @@ def make_board(variant, chess960_fen=None):
 _games = {}
 _games_lock = threading.Lock()
 
+STALE_TIMEOUT_SEC = 3600  # evict games with no activity for 1 hour
+
+def _touch(g):
+    g["last_activity"] = _time.monotonic()
+
+def _cleanup_stale_games():
+    while True:
+        _time.sleep(600)
+        now = _time.monotonic()
+        engines_to_quit = []
+        with _games_lock:
+            for gid in list(_games.keys()):
+                g = _games[gid]
+                last = g.get("last_activity", now)
+                if now - last > STALE_TIMEOUT_SEC:
+                    engine = g.get("engine")
+                    if engine:
+                        engines_to_quit.append(engine)
+                    _games.pop(gid, None)
+        for e in engines_to_quit:
+            try: e.quit()
+            except Exception: pass
+
+threading.Thread(target=_cleanup_stale_games, daemon=True).start()
+
 def get_user():
     return request.headers.get("Remote-User", "").strip()
 
@@ -126,6 +151,7 @@ def _board_state(game_id):
             "black_is_ai":  g["black_is_ai"],
             "bot_name":     g.get("bot_name", ""),
             "move_stack":   [m.uci() for m in board.move_stack],
+            "san_stack":    list(g.get("san_stack", [])),
             "status":       g["status"],
             "variant":      g.get("variant", "standard"),
             "time_control": g.get("time_control", "unlimited"),
@@ -315,6 +341,11 @@ def _ai_move(game_id):
         g = _games.get(game_id)
         if not g or g["status"] != "active":
             return
+        try:
+            san = g["board"].san(move)
+        except Exception:
+            san = move.uci()
+        g.setdefault("san_stack", []).append(san)
         g["board"].push(move)
         board = g["board"]
         if g.get("variant") == "duck":
@@ -322,6 +353,7 @@ def _ai_move(game_id):
             if empty:
                 g["duck_square"] = random.choice(empty)
             g["duck_pending"] = False
+        _touch(g)
         timeout = _apply_move_clock(g)
 
     if timeout:
@@ -344,9 +376,15 @@ def _ai_move(game_id):
     state = _board_state(game_id)
     socketio.emit("game_state", state, to=game_id)
 
-    if board.is_game_over():
-        outcome = board.outcome()
-        result = _outcome_to_result(outcome)
+    with _games_lock:
+        variant = _games.get(game_id, {}).get("variant", "standard")
+    is_over = board.is_game_over() or (variant == "duck" and _duck_king_captured(board))
+    if is_over:
+        if variant == "duck" and _duck_king_captured(board):
+            result = "white_wins" if board.turn == chess.BLACK else "black_wins"
+        else:
+            outcome = board.outcome()
+            result = _outcome_to_result(outcome)
         pgn = _board_to_pgn(board, game_id)
         rc = _finish_game(game_id, result, pgn)
         socketio.emit("game_over", {"result": result, "pgn": pgn, "rating_change": rc}, to=game_id)
@@ -360,10 +398,31 @@ def _outcome_to_result(outcome):
         return "black_wins"
     return "draw"
 
+PGN_VARIANT_TAGS = {
+    "chess960": "Chess960",
+    "koth":     "King of the Hill",
+    "3check":   "Three-check",
+    "atomic":   "Atomic",
+    "horde":    "Horde",
+    "duck":     "Duck",
+}
+
 def _board_to_pgn(board, game_id):
-    """Very minimal PGN export."""
-    game = chess.pgn.Game.from_board(board)
-    return str(game)
+    """Minimal PGN export with Variant tag for non-standard games."""
+    pgn_game = chess.pgn.Game.from_board(board)
+    with _games_lock:
+        g = _games.get(game_id, {})
+        variant = g.get("variant", "standard")
+        if g.get("white"): pgn_game.headers["White"] = g["white"]
+        if g.get("black"): pgn_game.headers["Black"] = g["black"]
+        if g.get("bot_name"):
+            side = "White" if g.get("white_is_ai") else "Black"
+            pgn_game.headers[side] = f"Bot ({g['bot_name']})"
+    tag = PGN_VARIANT_TAGS.get(variant)
+    if tag:
+        pgn_game.headers["Variant"] = tag
+    pgn_game.headers["Site"] = "USG Ishimura Chess"
+    return str(pgn_game)
 
 def get_db_conn():
     return db.get_db()
@@ -466,8 +525,10 @@ def new_game():
             "white_time_ms": white_time_ms,
             "black_time_ms": black_time_ms,
             "turn_started_at": _time.monotonic() if status == "active" else None,
+            "last_activity": _time.monotonic(),
             "duck_square": None,
             "duck_pending": False,
+            "san_stack":   [],
             "engine":      engine,
             "status":      status,
             "draw_offered_by": None,
@@ -494,9 +555,15 @@ def game(game_id):
         if game_id not in _games and row["status"] in ("waiting", "active"):
             variant = row["variant"] or "standard"
             board = make_board(variant)
+            san_stack = []
             for uci in (row["moves"] or "").split():
                 if uci:
-                    board.push(chess.Move.from_uci(uci))
+                    m = chess.Move.from_uci(uci)
+                    try:
+                        san_stack.append(board.san(m))
+                    except Exception:
+                        san_stack.append(uci)
+                    board.push(m)
             _games[game_id] = {
                 "board":       board,
                 "white":       row["white"],
@@ -510,8 +577,10 @@ def game(game_id):
                 "white_time_ms": row["white_time_ms"] or 0,
                 "black_time_ms": row["black_time_ms"] or 0,
                 "turn_started_at": _time.monotonic() if row["status"] == "active" else None,
+                "last_activity": _time.monotonic(),
                 "duck_square": None,
                 "duck_pending": False,
+                "san_stack":   san_stack,
                 "engine":      None,
                 "status":      row["status"],
                 "draw_offered_by": None,
@@ -552,6 +621,103 @@ def profile(username):
         abort(404)
     return render_template("profile.html", user=user, subject=username,
                            stats=stats, games=games)
+
+@app.route("/game/<game_id>/rematch", methods=["POST", "GET"])
+def rematch(game_id):
+    user = get_user()
+    with get_db_conn() as conn:
+        prev = conn.execute("SELECT * FROM games WHERE id=?", (game_id,)).fetchone()
+    if not prev:
+        abort(404)
+
+    prev_white = prev["white"]
+    prev_black = prev["black"]
+    was_ai = bool(prev["white_is_ai"] or prev["black_is_ai"])
+
+    if user == prev_white:
+        my_prev_color = "white"
+    elif user == prev_black:
+        my_prev_color = "black"
+    else:
+        my_prev_color = "white"
+
+    new_color = "black" if my_prev_color == "white" else "white"
+
+    bot_key = "officer"
+    for k, b in BOTS.items():
+        if b["name"] == (prev["bot_name"] or ""):
+            bot_key = k
+            break
+
+    new_game_id = uuid.uuid4().hex
+    white = black = None
+    white_is_ai = black_is_ai = False
+    bot_name = ""
+
+    if was_ai:
+        if new_color == "white":
+            white, black = user, None
+            black_is_ai = True
+        else:
+            white, black = None, user
+            white_is_ai = True
+        status = "active"
+        bot_name = BOTS[bot_key]["name"]
+    else:
+        if new_color == "white":
+            white = user
+            if prev_white and prev_white != user: black = prev_white
+            elif prev_black and prev_black != user: black = prev_black
+        else:
+            black = user
+            if prev_white and prev_white != user: white = prev_white
+            elif prev_black and prev_black != user: white = prev_black
+        status = "active" if (white and black) else "waiting"
+
+    variant = prev["variant"] or "standard"
+    time_control = prev["time_control"] or "unlimited"
+    tc = TIME_CONTROLS.get(time_control, TIME_CONTROLS["unlimited"])
+
+    with get_db_conn() as conn:
+        db.ensure_user(conn, user)
+        conn.execute(
+            "INSERT INTO games (id, white, black, white_is_ai, black_is_ai, ai_level, bot_name, variant, time_control, white_time_ms, black_time_ms, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (new_game_id, white, black, int(white_is_ai), int(black_is_ai),
+             BOTS[bot_key]["level"], bot_name,
+             variant, time_control, tc["initial_ms"], tc["initial_ms"], status)
+        )
+
+    if variant == "chess960":
+        board = chess.Board.from_chess960_pos(random.randint(0, 959))
+    else:
+        board = make_board(variant)
+
+    engine = None
+    if was_ai:
+        try:
+            engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
+        except Exception:
+            engine = None
+
+    with _games_lock:
+        _games[new_game_id] = {
+            "board": board, "white": white, "black": black,
+            "white_is_ai": white_is_ai, "black_is_ai": black_is_ai,
+            "ai_level": BOTS[bot_key]["level"], "bot_name": bot_name,
+            "variant": variant, "time_control": time_control,
+            "white_time_ms": tc["initial_ms"], "black_time_ms": tc["initial_ms"],
+            "turn_started_at": _time.monotonic() if status == "active" else None,
+            "last_activity": _time.monotonic(),
+            "duck_square": None, "duck_pending": False, "san_stack": [],
+            "engine": engine, "status": status, "draw_offered_by": None,
+        }
+
+    if status == "active" and tc["initial_ms"] > 0:
+        _schedule_timeout_check(new_game_id)
+    if was_ai and white_is_ai:
+        threading.Thread(target=_ai_move, args=(new_game_id,), daemon=True).start()
+
+    return redirect(url_for("game", game_id=new_game_id))
 
 @app.route("/game/<game_id>/pgn")
 def game_pgn(game_id):
@@ -598,6 +764,7 @@ def on_join(data):
         if not g:
             return
 
+        _touch(g)
         # Second human player joining a waiting game
         just_activated = False
         if g["status"] == "waiting" and user not in (g["white"], g["black"]):
@@ -681,7 +848,13 @@ def on_move(data):
             elif move not in board.legal_moves:
                 emit("error", {"message": "Illegal move"})
                 return
+            try:
+                san = board.san(move)
+            except Exception:
+                san = move.uci()
+            g.setdefault("san_stack", []).append(san)
             board.push(move)
+            _touch(g)
         except Exception:
             emit("error", {"message": "Invalid move"})
             return
@@ -752,6 +925,7 @@ def on_place_duck(data):
             return
         g["duck_square"] = target
         g["duck_pending"] = False
+        _touch(g)
         ai_to_move = (board.turn == chess.WHITE and g["white_is_ai"]) or \
                      (board.turn == chess.BLACK and g["black_is_ai"])
 

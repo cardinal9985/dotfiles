@@ -80,6 +80,7 @@ function initGame(cfg) {
     updateStatusText(state);
     updateDuckHint(state);
     updateCheckCounter(state.check_counts);
+    updateTabTitle(state, myTurn);
 
     if (state.white) document.getElementById('white-name').textContent =
       state.white_is_ai ? (state.bot_name || 'BOT') : state.white;
@@ -92,12 +93,15 @@ function initGame(cfg) {
     if (_timedGame) startClockLoop();
     renderClocks();
 
-    renderMoveList(uciToDisplay(moves), moves.length - 1);
+    const displayMoves = (state.san_stack && state.san_stack.length === moves.length)
+      ? state.san_stack : uciToDisplay(moves);
+    renderMoveList(displayMoves, moves.length - 1);
   });
 
   _socket.on('game_over', (data) => {
     _gameOver = true;
     stopClockLoop();
+    document.title = _defaultTitle;
     const panel = document.getElementById('game-over-panel');
     const text  = document.getElementById('game-over-text');
     panel.style.display = 'flex';
@@ -219,6 +223,17 @@ function updateDuckHint(state) {
   const hint = document.getElementById('duck-hint');
   if (!hint) return;
   hint.style.display = (state.duck_pending && isMyDuckToPlace(state)) ? 'inline-block' : 'none';
+}
+
+const _defaultTitle = document.title;
+function updateTabTitle(state, myTurn) {
+  if (_gameOver || state.status !== 'active') { document.title = _defaultTitle; return; }
+  const duckMine = state.duck_pending && isMyDuckToPlace(state);
+  if ((myTurn && !state.duck_pending) || duckMine) {
+    document.title = `[!] YOUR TURN - ${_defaultTitle}`;
+  } else {
+    document.title = _defaultTitle;
+  }
 }
 
 function updateCheckCounter(counts) {

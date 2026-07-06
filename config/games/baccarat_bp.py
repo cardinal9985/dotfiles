@@ -3,6 +3,7 @@ import random
 from flask import Blueprint, render_template, request, jsonify
 
 import db
+import stats_emit
 from shared_auth import get_user
 
 MIN_BET = 10
@@ -127,14 +128,24 @@ def api_deal():
     with db.get_db() as conn:
         if payout > 0:
             db.adjust_chips(conn, user, payout, f"baccarat_{result}")
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO baccarat_hands (username, bet_player, bet_banker, bet_tie, player_cards, banker_cards, player_total, banker_total, result, payout) VALUES (?,?,?,?,?,?,?,?,?,?)",
             (user, bp_bet, bb_bet, bt_bet,
              " ".join(f"{r}{s}" for r, s in player),
              " ".join(f"{r}{s}" for r, s in banker),
              p_total, b_total, result, payout)
         )
+        hand_id = cur.lastrowid
         new_balance = conn.execute("SELECT chips FROM users WHERE username=?", (user,)).fetchone()["chips"]
+
+    stats_emit.emit(user, "baccarat", hand_id, item_name="BACCARAT", metadata={
+        "bets":         {"player": bp_bet, "banker": bb_bet, "tie": bt_bet},
+        "player_total": p_total,
+        "banker_total": b_total,
+        "result":       result,
+        "payout":       payout,
+        "net":          payout - total_bet,
+    })
 
     return jsonify({
         "player":       player,

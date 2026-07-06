@@ -88,6 +88,29 @@ def webhook_jellyfin():
     return "ok", 200
 
 
+@app.route("/webhook/games", methods=["POST"])
+def webhook_games():
+    if not WEBHOOK_SECRET or request.headers.get("X-Stats-Secret") != WEBHOOK_SECRET:
+        return "forbidden", 403
+    payload = request.get_json(silent=True) or {}
+    required = ("user_id", "source", "item_type", "item_id", "played_at")
+    if any(k not in payload for k in required):
+        return "bad request", 400
+    with db.get_db() as conn:
+        db.insert_event(
+            conn,
+            user_id=payload["user_id"],
+            source=payload["source"],
+            item_type=payload["item_type"],
+            item_id=payload["item_id"],
+            item_name=payload.get("item_name") or "",
+            metadata=payload.get("item_metadata") or {},
+            played_at=payload["played_at"],
+            duration_secs=payload.get("duration_secs"),
+        )
+    return "ok", 200
+
+
 @app.route("/")
 def dashboard():
     user = _get_user()

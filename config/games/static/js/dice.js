@@ -36,10 +36,8 @@ async function roll() {
   banner.textContent = '';
   _rolling = true;
 
-  const shuffle = setInterval(() => {
-    renderPips(d1, Math.floor(Math.random() * 6) + 1);
-    renderPips(d2, Math.floor(Math.random() * 6) + 1);
-  }, 70);
+  const shuffle1 = setInterval(() => renderPips(d1, Math.floor(Math.random() * 6) + 1), 110);
+  const shuffle2 = setInterval(() => renderPips(d2, Math.floor(Math.random() * 6) + 1), 110);
 
   let data = null;
   try {
@@ -50,25 +48,28 @@ async function roll() {
     });
     data = await res.json();
     if (!res.ok || data.error) {
-      clearInterval(shuffle);
+      clearInterval(shuffle1); clearInterval(shuffle2);
       d1.classList.remove('rolling'); d2.classList.remove('rolling');
       _rolling = false;
       alert(data.error || 'Error');
       return;
     }
   } catch (e) {
-    clearInterval(shuffle);
+    clearInterval(shuffle1); clearInterval(shuffle2);
     d1.classList.remove('rolling'); d2.classList.remove('rolling');
     _rolling = false;
     return;
   }
 
-  // Stagger stops
+  // Stagger stops - each interval cleared independently so the settled die
+  // doesn't get repainted with a random face
   setTimeout(() => {
+    clearInterval(shuffle1);
     d1.classList.remove('rolling');
     renderPips(d1, data.d1);
   }, 800);
   setTimeout(() => {
+    clearInterval(shuffle2);
     d2.classList.remove('rolling');
     renderPips(d2, data.d2);
     finish(data);

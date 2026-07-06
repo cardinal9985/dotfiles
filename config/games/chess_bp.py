@@ -15,6 +15,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, abort,
 from flask_socketio import join_room, emit
 
 import db
+import stats_emit
 from shared_auth import get_user
 
 STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "stockfish")
@@ -253,6 +254,26 @@ def _finish_game(game_id, result, pgn):
         if engine:
             try: engine.quit()
             except Exception: pass
+        base_meta = {
+            "result":         result,
+            "variant":        g.get("variant"),
+            "time_control":   g.get("time_control"),
+            "white":          g.get("white"),
+            "black":          g.get("black"),
+            "white_is_ai":    g.get("white_is_ai"),
+            "black_is_ai":    g.get("black_is_ai"),
+            "bot_name":       g.get("bot_name"),
+            "moves":          len(g.get("board").move_stack) if g.get("board") else 0,
+            "rating_change":  rating_change,
+        }
+        for role, uname, is_ai in (("white", g.get("white"), g.get("white_is_ai")),
+                                    ("black", g.get("black"), g.get("black_is_ai"))):
+            if uname and not is_ai:
+                stats_emit.emit(uname, "chess", game_id,
+                                item_name=f"CHESS {g.get('variant','standard').upper()}",
+                                metadata={**base_meta, "self_role": role,
+                                          "won": (result == f"{role}_wins"),
+                                          "drew": result == "draw"})
         _games.pop(game_id, None)
 
     return rating_change

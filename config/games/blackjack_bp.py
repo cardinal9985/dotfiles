@@ -4,6 +4,7 @@ import threading
 from flask import Blueprint, render_template, request, jsonify, abort
 
 import db
+import stats_emit
 from shared_auth import get_user
 
 MIN_BET = 10
@@ -98,17 +99,27 @@ def _resolve(state, user):
         if payout > 0:
             db.adjust_chips(conn, user, payout, f"blackjack_{result}")
         new_balance = conn.execute("SELECT chips FROM users WHERE username=?", (user,)).fetchone()["chips"]
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO blackjack_hands (username, bet, player_cards, dealer_cards, player_total, dealer_total, result, payout) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (user, bet,
              " ".join(f"{r}{s}" for r, s in state["player"]),
              " ".join(f"{r}{s}" for r, s in state["dealer"]),
              p_total, d_total, result, payout)
         )
+        hand_id = cur.lastrowid
     state["status"]      = result
     state["result"]      = result
     state["payout"]      = payout
     state["new_balance"] = new_balance
+
+    stats_emit.emit(user, "blackjack", hand_id, item_name="BLACKJACK", metadata={
+        "bet":          bet,
+        "player_total": p_total,
+        "dealer_total": d_total,
+        "result":       result,
+        "payout":       payout,
+        "net":          payout - bet,
+    })
 
 @bp.route("/")
 def table():

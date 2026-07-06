@@ -13,6 +13,7 @@ let
   app = pkgs.runCommand "ishimura-games" {} ''
     mkdir -p $out
     cp -r ${src}/app.py ${src}/db.py ${src}/shared_auth.py ${src}/arbiter.py \
+          ${src}/stats_emit.py \
           ${src}/chess_bp.py ${src}/blackjack_bp.py ${src}/war_bp.py \
           ${src}/slots_bp.py ${src}/baccarat_bp.py ${src}/dice_bp.py \
           ${src}/roulette_bp.py ${src}/connect4_bp.py \
@@ -44,6 +45,8 @@ in
       CHESS_DISCORD_WEBHOOK=${config.sops.placeholder."chess/discord_webhook"}
       GAMES_DB_PATH=/persist/games/games.db
       STOCKFISH_PATH=${pkgs.stockfish}/bin/stockfish
+      STATS_WEBHOOK_URL=http://127.0.0.1:5005/webhook/games
+      STATS_WEBHOOK_SECRET=${config.sops.placeholder."stats/webhook_secret"}
     '';
   };
 

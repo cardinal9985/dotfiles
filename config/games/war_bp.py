@@ -7,6 +7,7 @@ from flask_socketio import join_room, emit
 
 import db
 import arbiter as arbiter_mod
+import stats_emit
 from shared_auth import get_user
 
 MIN_ANTE = 10
@@ -96,6 +97,20 @@ def _finish(state):
             "UPDATE war_games SET a_score=?, b_score=?, status='completed', winner=?, completed_at=datetime('now') WHERE id=?",
             (state["a_score"], state["b_score"], winner_user, state["id"])
         )
+
+    for role, uname in (("a", state["player_a"]), ("b", state["player_b"])):
+        if not uname:
+            continue
+        opp = state["player_b"] if role == "a" else state["player_a"]
+        stats_emit.emit(uname, "war", state["id"], item_name="WAR", metadata={
+            "opponent": opp,
+            "ante":     state["ante"],
+            "pot":      state["pot"],
+            "a_score":  state["a_score"],
+            "b_score":  state["b_score"],
+            "won":      uname == winner_user,
+            "drew":     winner_user is None,
+        })
 
 @bp.route("/")
 def lobby():

@@ -3,6 +3,7 @@ import random
 from flask import Blueprint, render_template, request, jsonify
 
 import db
+import stats_emit
 from shared_auth import get_user
 
 MIN_BET = 5
@@ -67,11 +68,21 @@ def api_roll():
     with db.get_db() as conn:
         if payout > 0:
             db.adjust_chips(conn, user, payout, "dice_win")
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO dice_rolls (username, bet_over, bet_under, bet_equal, d1, d2, total, payout) VALUES (?,?,?,?,?,?,?,?)",
             (user, b_over, b_under, b_equal, d1, d2, total, payout)
         )
+        roll_id = cur.lastrowid
         new_balance = conn.execute("SELECT chips FROM users WHERE username=?", (user,)).fetchone()["chips"]
+
+    stats_emit.emit(user, "dice", roll_id, item_name="DICE HI-LO", metadata={
+        "bets":   {"over": b_over, "under": b_under, "equal": b_equal},
+        "d1":     d1,
+        "d2":     d2,
+        "total":  total,
+        "payout": payout,
+        "net":    payout - total_bet,
+    })
 
     return jsonify({
         "d1": d1, "d2": d2, "total": total,

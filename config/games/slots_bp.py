@@ -3,6 +3,7 @@ import random
 from flask import Blueprint, render_template, request, jsonify
 
 import db
+import stats_emit
 from shared_auth import get_user
 
 MIN_BET = 5
@@ -88,11 +89,20 @@ def api_spin():
     with db.get_db() as conn:
         if payout > 0:
             db.adjust_chips(conn, user, payout, "slots_win")
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO slot_spins (username, bet, reels, payout, combo) VALUES (?, ?, ?, ?, ?)",
             (user, bet, " ".join(reels), payout, combo)
         )
+        spin_id = cur.lastrowid
         new_balance = conn.execute("SELECT chips FROM users WHERE username=?", (user,)).fetchone()["chips"]
+
+    stats_emit.emit(user, "slots", spin_id, item_name="SLOTS", metadata={
+        "bet":    bet,
+        "reels":  reels,
+        "combo":  combo,
+        "payout": payout,
+        "net":    payout - bet,
+    })
 
     return jsonify({
         "reels":       reels,

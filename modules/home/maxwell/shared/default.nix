@@ -8,6 +8,7 @@
     ./shell.nix
     ./prompt.nix
     ./credentials.nix
+    ./ssh.nix
   ];
 
 }

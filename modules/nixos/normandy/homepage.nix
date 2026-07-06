@@ -37,9 +37,9 @@ let
       healthUrl   = "http://${ishimuraTailnetIP}:8083/api/heartbeat";
     }
     {
-      name        = "Games";
+      name        = "Rec Room";
       description = "Chess, Poker, Blackjack";
-      url         = "https://games.ishimura.lol";
+      url         = "https://rec.ishimura.lol";
       icon        = "♞";
       statusPath  = "/health/games";
       healthUrl   = "http://${ishimuraTailnetIP}:5001/health";

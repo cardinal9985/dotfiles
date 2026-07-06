@@ -1076,7 +1076,7 @@ let
             - noindex-headers
             - voidauth-forwardauth
         games-router:
-          rule: "Host(`games.${domain}`)"
+          rule: "Host(`rec.${domain}`)"
           service: games-service
           entryPoints:
             - websecure

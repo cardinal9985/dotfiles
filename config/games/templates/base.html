@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}USG GAMES{% endblock %}</title>
+  <title>{% block title %}USG REC{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/games.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chess.css') }}">
   {% block head %}{% endblock %}
@@ -14,7 +14,7 @@
     <header>
       <div class="logo">
         <span class="logo-usg">USG</span><span class="logo-name">ISHIMURA</span>
-        <span class="logo-sub">// GAMES TERMINAL</span>
+        <span class="logo-sub">// REC DECK</span>
       </div>
       <nav>
         <a href="{{ url_for('hub') }}">HUB</a>

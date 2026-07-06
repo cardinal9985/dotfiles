@@ -5,32 +5,114 @@
 <div class="hub">
   <h2 class="section-title">// GAMES CATALOG</h2>
 
+  <h3 class="row-title">// SKILL - ELO RATED</h3>
   <div class="game-tiles">
-    <a href="{{ url_for('chess.lobby') }}" class="game-tile game-tile-chess">
+    <a href="{{ url_for('chess.lobby') }}" class="game-tile">
       <div class="game-tile-icon">♞</div>
       <div class="game-tile-name">CHESS</div>
       <div class="game-tile-desc">Standard + Chess960 + KOTH + 3-Check + Atomic + Horde + Duck</div>
-      <div class="game-tile-tag chess-tag">SKILL - ELO RATED</div>
+      <div class="game-tile-tag chess-tag">LIVE</div>
     </a>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">◉</div>
+      <div class="game-tile-name">CHECKERS</div>
+      <div class="game-tile-desc">1v1 board skill, mandatory captures, king promotion</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">▲</div>
+      <div class="game-tile-name">BACKGAMMON</div>
+      <div class="game-tile-desc">1v1, dice + doubling cube, race off the board</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">⚔</div>
+      <div class="game-tile-name">HNEFATAFL</div>
+      <div class="game-tile-desc">Viking chess - asymmetric attackers vs king + defenders</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+  </div>
 
+  <h3 class="row-title">// CASINO TABLE</h3>
+  <div class="game-tiles">
     <div class="game-tile game-tile-locked">
       <div class="game-tile-icon">♠</div>
       <div class="game-tile-name">POKER</div>
       <div class="game-tile-desc">Texas Hold'em + Omaha + Short Deck + 5-Card Draw</div>
       <div class="game-tile-tag locked-tag">COMING SOON</div>
     </div>
-
-    <a href="{{ url_for('blackjack.table') }}" class="game-tile game-tile-blackjack">
+    <a href="{{ url_for('blackjack.table') }}" class="game-tile">
       <div class="game-tile-icon">♣</div>
       <div class="game-tile-name">BLACKJACK</div>
-      <div class="game-tile-desc">Player vs dealer - 6-deck shoe, standard rules, blackjack pays 3:2</div>
-      <div class="game-tile-tag bj-tag">CHIP WAGER</div>
+      <div class="game-tile-desc">Player vs dealer, 6-deck shoe, blackjack pays 3:2</div>
+      <div class="game-tile-tag bj-tag">LIVE</div>
     </a>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">⊙</div>
+      <div class="game-tile-name">ROULETTE</div>
+      <div class="game-tile-desc">European wheel, inside + outside bets, standard payouts</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">♦</div>
+      <div class="game-tile-name">BACCARAT</div>
+      <div class="game-tile-desc">Player vs Banker vs Tie, house-banked</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+  </div>
 
+  <h3 class="row-title">// DICE</h3>
+  <div class="game-tiles">
     <div class="game-tile game-tile-locked">
       <div class="game-tile-icon">⚄</div>
       <div class="game-tile-name">DICE</div>
-      <div class="game-tile-desc">TBD</div>
+      <div class="game-tile-desc">Variant TBD (Hi-Lo / Sic Bo / Craps)</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">🎲</div>
+      <div class="game-tile-name">LIAR'S DICE</div>
+      <div class="game-tile-desc">Multi-seat bluffing - bid on hidden dice, call the liar</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">⚅</div>
+      <div class="game-tile-name">YAHTZEE</div>
+      <div class="game-tile-desc">Scorecard dice, three rolls per turn, chase the categories</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">⚁</div>
+      <div class="game-tile-name">FARKLE</div>
+      <div class="game-tile-desc">Push-your-luck dice, bank scoring runs or lose everything</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+  </div>
+
+  <h3 class="row-title">// QUICK & PARTY</h3>
+  <div class="game-tiles">
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">●</div>
+      <div class="game-tile-name">CONNECT 4</div>
+      <div class="game-tile-desc">1v1, drop discs, four in a row wins</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">⚡</div>
+      <div class="game-tile-name">WAR</div>
+      <div class="game-tile-desc">Classic card flip vs opponent, ante per round, ties trigger the Arbiter</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">🦆</div>
+      <div class="game-tile-name">DUCK RACE</div>
+      <div class="game-tile-desc">Pick a duck, watch it race, winner takes the pot</div>
+      <div class="game-tile-tag locked-tag">COMING SOON</div>
+    </div>
+    <div class="game-tile game-tile-locked">
+      <div class="game-tile-icon">▓</div>
+      <div class="game-tile-name">SLOTS</div>
+      <div class="game-tile-desc">Spin, hope, repeat. Rumored jackpot combo hides in the reels</div>
       <div class="game-tile-tag locked-tag">COMING SOON</div>
     </div>
   </div>

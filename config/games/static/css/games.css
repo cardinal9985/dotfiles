@@ -1,11 +1,22 @@
 /* Shared hub styles - chess.css layers on top */
 
-.hub { display: flex; flex-direction: column; gap: 2rem; }
+.hub { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.row-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  color: var(--cyan);
+  opacity: 0.75;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
 
 .game-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 0.5rem;
 }
 
 .game-tile {

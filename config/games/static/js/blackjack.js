@@ -99,13 +99,13 @@ function applyState(state) {
     const payout = state.payout || 0;
     const net = payout - bet;
     if (state.status === 'blackjack') {
-      showToast('+' + net + ' CHIPS', 'BLACKJACK :: 3:2 payout', 'chip-win');
+      showToast('+' + net + ' TICKETS', 'BLACKJACK :: 3:2 payout', 'chip-win');
     } else if (state.status === 'win') {
-      showToast('+' + net + ' CHIPS', 'WIN :: dealer beaten', 'chip-win');
+      showToast('+' + net + ' TICKETS', 'WIN :: dealer beaten', 'chip-win');
     } else if (state.status === 'loss') {
-      showToast('-' + bet + ' CHIPS', 'HAND LOST', 'chip-loss');
+      showToast('-' + bet + ' TICKETS', 'HAND LOST', 'chip-loss');
     } else if (state.status === 'push') {
-      showToast('BET RETURNED', 'PUSH :: no chip change', '');
+      showToast('BET RETURNED', 'PUSH :: no ticket change', '');
     }
   }
   _lastStatus = state.status;

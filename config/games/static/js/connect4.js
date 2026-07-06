@@ -56,7 +56,7 @@ function handleGameOver(state) {
   panel.style.display = 'flex';
   if (state.winner) {
     text.textContent = state.winner.toUpperCase() + ' TAKES THE POT';
-    pay.textContent = '+' + state.pot + ' CHIPS';
+    pay.textContent = '+' + state.pot + ' TICKETS';
   } else {
     text.textContent = 'DRAW';
   }

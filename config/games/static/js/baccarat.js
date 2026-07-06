@@ -61,15 +61,15 @@ async function deal() {
   vs.textContent = data.result.toUpperCase() + ' WINS';
 
   const resEl = document.getElementById('bacc-result');
-  if (data.net > 0)      resEl.textContent = '+' + data.net + ' CHIPS';
-  else if (data.net < 0) resEl.textContent = data.net + ' CHIPS';
+  if (data.net > 0)      resEl.textContent = '+' + data.net + ' TICKETS';
+  else if (data.net < 0) resEl.textContent = data.net + ' TICKETS';
   else                    resEl.textContent = 'PUSH';
 
   document.getElementById('chip-balance').textContent = data.new_balance;
 
   if (window.showToast) {
-    if (data.net > 0)      showToast('+' + data.payout + ' CHIPS', data.result.toUpperCase() + ' :: net +' + data.net, 'chip-win');
-    else if (data.net < 0) showToast(data.net + ' CHIPS', data.result.toUpperCase() + ' :: bet lost', 'chip-loss');
+    if (data.net > 0)      showToast('+' + data.payout + ' TICKETS', data.result.toUpperCase() + ' :: net +' + data.net, 'chip-win');
+    else if (data.net < 0) showToast(data.net + ' TICKETS', data.result.toUpperCase() + ' :: bet lost', 'chip-loss');
     else                   showToast('BET PUSHED', data.result.toUpperCase() + ' :: no change', '');
   }
 }

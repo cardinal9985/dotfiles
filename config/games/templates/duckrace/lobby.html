@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}DUCK RACE LOBBY // USG REC{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/duckrace.css') }}">
+{% endblock %}
+{% block content %}
+
+<div class="lobby">
+  <section class="new-game-panel">
+    <h2 class="section-title">// NEW DUCK RACE <span class="sub">1-6 ducks, winner takes the pot</span></h2>
+    <form method="post" action="{{ url_for('duckrace.new_race') }}" class="new-game-form">
+      <div class="form-row">
+        <label>ENTRY FEE</label>
+        <input type="number" name="entry_fee" min="{{ min_entry }}" max="{{ max_entry }}" value="50" step="10" class="chess-select" style="width:120px;text-align:right">
+        <span class="variant-desc">Each duck costs this to enter. Winner takes all.</span>
+      </div>
+      <div class="form-row">
+        <label></label>
+        <span class="variant-desc">TICKETS: {{ me.chips }}</span>
+      </div>
+      <button type="submit" class="btn-primary">OPEN RACE</button>
+    </form>
+  </section>
+
+  <section class="active-games">
+    <h2 class="section-title">// OPEN RACES</h2>
+    {% if active %}
+      <table class="data-table">
+        <thead><tr><th>CREATOR</th><th>ENTRY</th><th>POT</th><th>STATUS</th><th></th></tr></thead>
+        <tbody>
+        {% for r in active %}
+          <tr>
+            <td>{{ r.creator }}</td>
+            <td class="stat-chip">{{ r.entry_fee }}</td>
+            <td class="stat-chip-total">{{ r.pot }}</td>
+            <td><span class="status-badge status-{{ r.status }}">{{ r.status.upper() }}</span></td>
+            <td><a href="{{ url_for('duckrace.race', race_id=r.id) }}" class="btn-small">
+              {% if r.status == 'waiting' and r.creator != user %}JOIN{% else %}VIEW{% endif %}
+            </a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">NO OPEN RACES : OPEN ONE</p>
+    {% endif %}
+  </section>
+</div>
+
+{% endblock %}

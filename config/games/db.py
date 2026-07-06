@@ -119,6 +119,38 @@ CREATE TABLE IF NOT EXISTS connect4_games (
     completed_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS reaction_attempts (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    wager      INTEGER NOT NULL,
+    time_ms    INTEGER NOT NULL,
+    payout     INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_reaction_user ON reaction_attempts(username, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reaction_time ON reaction_attempts(time_ms ASC);
+
+CREATE TABLE IF NOT EXISTS duckrace_games (
+    id           TEXT PRIMARY KEY,
+    creator      TEXT NOT NULL,
+    entry_fee    INTEGER NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'waiting',
+    ducks        TEXT NOT NULL DEFAULT '',
+    winner       TEXT,
+    pot          INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS yahtzee_games (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    username     TEXT NOT NULL,
+    scorecard    TEXT NOT NULL,
+    total_score  INTEGER NOT NULL,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_yahtzee_user ON yahtzee_games(username, total_score DESC);
+
 CREATE TABLE IF NOT EXISTS baccarat_hands (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     username      TEXT    NOT NULL,

@@ -1,0 +1,70 @@
+.ytz-page { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.ytz-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 800px) { .ytz-layout { grid-template-columns: 1fr; } }
+
+.ytz-play {
+  display: flex; flex-direction: column; gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(20,26,42,0.7), rgba(20,26,42,0.3));
+  border: 1px solid rgba(58,159,191,0.2);
+  align-items: center;
+}
+.ytz-dice-row {
+  display: flex; gap: 0.75rem;
+  flex-wrap: wrap; justify-content: center;
+}
+.ytz-die {
+  width: 70px; height: 70px;
+  cursor: pointer;
+}
+.ytz-die.held {
+  border-color: var(--bright-amber);
+  box-shadow: 0 0 15px rgba(251,191,96,0.5);
+  transform: translateY(-4px);
+}
+.ytz-die.held::after {
+  content: 'HELD';
+  position: absolute;
+  bottom: -12px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.55rem;
+  color: var(--bright-amber);
+  letter-spacing: 0.15em;
+}
+
+.ytz-controls {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}
+
+.ytz-scorecard { min-width: 260px; }
+.ytz-score {
+  text-align: right;
+  cursor: pointer;
+  transition: background 0.1s;
+  min-width: 60px;
+}
+.ytz-score.available {
+  color: var(--bright-cyan);
+}
+.ytz-score.available:hover {
+  background: rgba(110,200,230,0.15);
+  color: var(--bright-amber);
+}
+.ytz-score.scored {
+  color: var(--bright-white);
+  cursor: default;
+}
+.ytz-total-row td { color: var(--cyan); font-weight: bold; border-top: 1px solid rgba(58,159,191,0.3); }
+
+.ytz-best {
+  font-size: 2.5rem;
+  color: var(--bright-amber);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 12px rgba(251,191,96,0.4);
+}

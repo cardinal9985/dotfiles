@@ -61,7 +61,7 @@ function handleGameOver(state) {
   panel.style.display = 'flex';
   if (state.winner) {
     text.textContent = state.winner.toUpperCase() + ' TAKES THE POT';
-    payText.textContent = '+' + state.pot + ' CHIPS';
+    payText.textContent = '+' + state.pot + ' TICKETS';
     if (state.winner === (_cfg.myRole === 'a' ? state.player_a : state.player_b) && !_muted) playSound('win');
   } else {
     text.textContent = 'DRAW';

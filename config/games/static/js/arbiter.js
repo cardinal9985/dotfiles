@@ -21,8 +21,8 @@ window.playArbiter = function(payload, callback) {
     setTimeout(() => {
       const roll = payload.detail.roll.toUpperCase();
       visual.innerHTML = `<span style="font-size:2rem;color:var(--bright-amber)">${roll}</span>`;
-      verdict.innerHTML = `<span class="winner">${payload.winner}</span> WINS :: +${payload.prize} CHIPS`;
-      if (window.showToast) showToast('+' + payload.prize + ' CHIPS', 'ARBITER RULING :: coin flip', 'arbiter');
+      verdict.innerHTML = `<span class="winner">${payload.winner}</span> WINS :: +${payload.prize} TICKETS`;
+      if (window.showToast) showToast('+' + payload.prize + ' TICKETS', 'ARBITER RULING :: coin flip', 'arbiter');
       if (callback) setTimeout(() => callback(payload), 1500);
     }, 900);
   } else {
@@ -41,8 +41,8 @@ window.playArbiter = function(payload, callback) {
         document.getElementById('rps-b').textContent = RPS_EMOJI[payload.detail.b];
         document.getElementById('rps-a').classList.add('chosen');
         document.getElementById('rps-b').classList.add('chosen');
-        verdict.innerHTML = `<span class="winner">${payload.winner}</span> WINS :: +${payload.prize} CHIPS`;
-        if (window.showToast) showToast('+' + payload.prize + ' CHIPS', 'ARBITER RULING :: rock paper scissors', 'arbiter');
+        verdict.innerHTML = `<span class="winner">${payload.winner}</span> WINS :: +${payload.prize} TICKETS`;
+        if (window.showToast) showToast('+' + payload.prize + ' TICKETS', 'ARBITER RULING :: rock paper scissors', 'arbiter');
         if (callback) setTimeout(() => callback(payload), 1500);
       }
     }, 130);

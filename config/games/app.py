@@ -80,6 +80,16 @@ import connect4_bp
 app.register_blueprint(connect4_bp.bp, url_prefix="/connect4")
 connect4_bp.register_sockets(socketio)
 
+import reaction_bp
+app.register_blueprint(reaction_bp.bp, url_prefix="/reaction")
+
+import duckrace_bp
+app.register_blueprint(duckrace_bp.bp, url_prefix="/duckrace")
+duckrace_bp.register_sockets(socketio)
+
+import yahtzee_bp
+app.register_blueprint(yahtzee_bp.bp, url_prefix="/yahtzee")
+
 if __name__ == "__main__":
     db.init_db()
     socketio.run(app, host="0.0.0.0", port=5001, debug=False, allow_unsafe_werkzeug=True)

@@ -1,0 +1,76 @@
+.dr-page { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.dr-track {
+  position: relative;
+  padding: 1rem 3rem 1rem 1rem;
+  background: linear-gradient(180deg, rgba(20,40,64,0.4), rgba(20,40,64,0.2));
+  border: 1px solid rgba(58,159,191,0.2);
+  min-height: 320px;
+  display: flex; flex-direction: column; gap: 0.6rem;
+}
+.dr-finish {
+  position: absolute;
+  top: 0; bottom: 0; right: 24px;
+  width: 4px;
+  background: repeating-linear-gradient(
+    0deg,
+    var(--bright-amber) 0 8px,
+    transparent 8px 16px
+  );
+  box-shadow: 0 0 12px rgba(251,191,96,0.5);
+}
+
+.dr-lane {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.75rem;
+  align-items: center;
+  height: 44px;
+  position: relative;
+}
+.dr-lane-name {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dr-lane-name .duck-num {
+  color: var(--bright-amber);
+  margin-right: 0.35rem;
+  font-weight: bold;
+}
+.dr-lane-name .duck-owner {
+  color: var(--bright-white);
+  margin-left: 0.35rem;
+  opacity: 0.7;
+  font-size: 0.6rem;
+}
+
+.dr-lane-strip {
+  position: relative;
+  height: 100%;
+  background: rgba(58,159,191,0.05);
+  border-top: 1px dashed rgba(58,159,191,0.15);
+  border-bottom: 1px dashed rgba(58,159,191,0.15);
+}
+.dr-duck {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  transition: left 0.2s linear;
+  filter: drop-shadow(0 0 4px rgba(251,191,96,0.5));
+}
+.dr-duck.winner {
+  animation: winner-pulse 0.5s infinite alternate;
+}
+@keyframes winner-pulse {
+  from { filter: drop-shadow(0 0 4px rgba(251,191,96,0.5)); }
+  to   { filter: drop-shadow(0 0 15px rgba(251,191,96,1)); }
+}
+
+.dr-controls {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}

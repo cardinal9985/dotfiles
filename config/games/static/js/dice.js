@@ -88,15 +88,15 @@ function finish(data) {
   if (win) {
     d1.classList.add('win'); d2.classList.add('win');
     banner.classList.add('win');
-    banner.textContent = 'TOTAL ' + data.total + ' :: +' + data.net + ' CHIPS';
-    if (window.showToast) showToast('+' + data.payout + ' CHIPS', 'TOTAL ' + data.total + ' :: net +' + data.net, 'chip-win');
+    banner.textContent = 'TOTAL ' + data.total + ' :: +' + data.net + ' TICKETS';
+    if (window.showToast) showToast('+' + data.payout + ' TICKETS', 'TOTAL ' + data.total + ' :: net +' + data.net, 'chip-win');
   } else if (data.net === 0) {
     banner.textContent = 'TOTAL ' + data.total + ' :: PUSH';
   } else {
     d1.classList.add('loss'); d2.classList.add('loss');
     banner.classList.add('loss');
-    banner.textContent = 'TOTAL ' + data.total + ' :: ' + data.net + ' CHIPS';
-    if (window.showToast) showToast(data.net + ' CHIPS', 'TOTAL ' + data.total + ' :: BET LOST', 'chip-loss');
+    banner.textContent = 'TOTAL ' + data.total + ' :: ' + data.net + ' TICKETS';
+    if (window.showToast) showToast(data.net + ' TICKETS', 'TOTAL ' + data.total + ' :: BET LOST', 'chip-loss');
   }
 }
 

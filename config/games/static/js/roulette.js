@@ -86,9 +86,9 @@ async function spin() {
     while (hist.children.length > 12) hist.lastChild.remove();
 
     if (data.net > 0) {
-      if (window.showToast) showToast('+' + data.payout + ' CHIPS', 'RESULT ' + data.result + ' :: net +' + data.net, 'chip-win');
+      if (window.showToast) showToast('+' + data.payout + ' TICKETS', 'RESULT ' + data.result + ' :: net +' + data.net, 'chip-win');
     } else if (data.net < 0) {
-      if (window.showToast) showToast(data.net + ' CHIPS', 'RESULT ' + data.result + ' :: bets lost', 'chip-loss');
+      if (window.showToast) showToast(data.net + ' TICKETS', 'RESULT ' + data.result + ' :: bets lost', 'chip-loss');
     }
     clearBets();
     _spinning = false;

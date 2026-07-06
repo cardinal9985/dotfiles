@@ -30,10 +30,10 @@
     </section>
 
     <section>
-      <h3 class="section-title">// CHIP LEADERS</h3>
+      <h3 class="section-title">// TICKET LEADERS</h3>
       {% if chip_lb %}
         <table class="data-table">
-          <thead><tr><th>CREW</th><th>CHIPS</th><th>LIFETIME WON</th></tr></thead>
+          <thead><tr><th>CREW</th><th>TICKETS</th><th>LIFETIME WON</th></tr></thead>
           <tbody>
           {% for p in chip_lb %}
             <tr {% if p.username == user %}class="highlight-row"{% endif %}>
@@ -69,7 +69,7 @@
     {% else %}
       <div class="arbiter-placeholder">
         <p class="empty">ARBITER OFFLINE :: AWAITING FIRST RULING</p>
-        <p class="arbiter-hint">The Arbiter is the ship's tiebreaker system. When two players are tied (chess draw, war card tie, poker chip-off, blackjack push on 21), the Arbiter rolls a coin flip or a round of Rock-Paper-Scissors at random. Winner gets +100 chips. Rulings are tallied here.</p>
+        <p class="arbiter-hint">The Arbiter is the ship's tiebreaker system. When two players are tied (chess draw, war card tie, poker ticket-off, blackjack push on 21), the Arbiter rolls a coin flip or a round of Rock-Paper-Scissors at random. Winner gets +100 tickets. Rulings are tallied here.</p>
       </div>
     {% endif %}
   </section>

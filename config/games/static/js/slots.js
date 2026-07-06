@@ -65,23 +65,23 @@ function finish(data) {
 
   if (data.combo.startsWith('triple_☾')) {
     banner.classList.add('jackpot');
-    banner.textContent = 'JACKPOT :: +' + data.payout + ' CHIPS';
+    banner.textContent = 'JACKPOT :: +' + data.payout + ' TICKETS';
     reels.forEach(r => r.classList.add('jackpot'));
-    if (window.showToast) showToast('+' + data.payout + ' CHIPS', 'JACKPOT :: TRIPLE CRESCENT', 'chip-win');
+    if (window.showToast) showToast('+' + data.payout + ' TICKETS', 'JACKPOT :: TRIPLE CRESCENT', 'chip-win');
   } else if (data.combo.startsWith('triple_')) {
     banner.classList.add('win');
-    banner.textContent = 'TRIPLE :: +' + data.payout + ' CHIPS';
+    banner.textContent = 'TRIPLE :: +' + data.payout + ' TICKETS';
     reels.forEach(r => r.classList.add('win'));
-    if (window.showToast) showToast('+' + data.payout + ' CHIPS', 'TRIPLE :: net +' + data.net, 'chip-win');
+    if (window.showToast) showToast('+' + data.payout + ' TICKETS', 'TRIPLE :: net +' + data.net, 'chip-win');
   } else if (data.payout > 0) {
     banner.classList.add('win');
-    banner.textContent = 'PAIR :: +' + data.payout + ' CHIPS';
-    if (window.showToast && data.net > 0) showToast('+' + data.payout + ' CHIPS', 'PAIR :: net +' + data.net, 'chip-win');
+    banner.textContent = 'PAIR :: +' + data.payout + ' TICKETS';
+    if (window.showToast && data.net > 0) showToast('+' + data.payout + ' TICKETS', 'PAIR :: net +' + data.net, 'chip-win');
     else if (window.showToast) showToast('BET RETURNED', 'PAIR :: no net change', '');
   } else {
     banner.classList.add('loss');
     banner.textContent = 'MISS';
-    if (window.showToast) showToast('-' + data.bet + ' CHIPS', 'NO MATCH', 'chip-loss');
+    if (window.showToast) showToast('-' + data.bet + ' TICKETS', 'NO MATCH', 'chip-loss');
   }
 }
 

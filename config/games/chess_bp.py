@@ -653,6 +653,50 @@ def rematch(game_id):
 
     return redirect(url_for("chess.game", game_id=new_game_id))
 
+@bp.route("/game/<game_id>/resign", methods=["POST"])
+def http_resign(game_id):
+    """HTTP fallback for resign when SocketIO is down or stuck."""
+    user = get_user()
+    with _games_lock:
+        g = _games.get(game_id)
+        if not g:
+            # Rehydrate from DB if evicted
+            with db.get_db() as conn:
+                row = conn.execute("SELECT * FROM games WHERE id=?", (game_id,)).fetchone()
+            if not row or row["status"] == "completed":
+                return jsonify({"error": "Game not active"}), 400
+            if user not in (row["white"], row["black"]):
+                return jsonify({"error": "Not a participant"}), 403
+            with db.get_db() as conn:
+                if row["status"] == "waiting":
+                    conn.execute("DELETE FROM games WHERE id=?", (game_id,))
+                    return jsonify({"ok": True, "cancelled": True})
+                result = "black_wins" if row["white"] == user else "white_wins"
+                conn.execute(
+                    "UPDATE games SET status='completed', result=?, completed_at=? WHERE id=?",
+                    (result, datetime.utcnow().isoformat(), game_id)
+                )
+                db.record_result(conn, game_id, result)
+            return jsonify({"ok": True, "result": result})
+        if user not in (g["white"], g["black"]):
+            return jsonify({"error": "Not a participant"}), 403
+        if g["status"] == "waiting":
+            _games.pop(game_id, None)
+            with db.get_db() as conn:
+                conn.execute("DELETE FROM games WHERE id=?", (game_id,))
+            return jsonify({"ok": True, "cancelled": True})
+        if g["status"] != "active":
+            return jsonify({"error": "Game not active"}), 400
+        result = "black_wins" if g["white"] == user else "white_wins"
+        g["status"] = "completed"
+    board = g["board"]
+    pgn = _board_to_pgn(board, game_id)
+    rc = _finish_game(game_id, result, pgn)
+    if _socketio:
+        _socketio.emit("game_over", {"result": result, "pgn": pgn, "resigned": user, "rating_change": rc},
+                       to=game_id, namespace="/chess")
+    return jsonify({"ok": True, "result": result, "rating_change": rc})
+
 @bp.route("/game/<game_id>/pgn")
 def game_pgn(game_id):
     with db.get_db() as conn:
@@ -946,6 +990,11 @@ def register_sockets(socketio):
         with _games_lock:
             g = _games.get(game_id)
             if not g or g["status"] != "active":
+                return
+            # Opponent is a bot - bots don't accept draws
+            opponent_is_ai = (g["white_is_ai"] if g["black"] == user else g["black_is_ai"])
+            if opponent_is_ai:
+                emit("draw_declined", {"by": g.get("bot_name") or "BOT", "reason": "The bot never accepts a draw"})
                 return
             g["draw_offered_by"] = user
         emit("draw_offered", {"by": user}, to=game_id)

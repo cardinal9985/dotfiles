@@ -142,16 +142,39 @@ function initGame(cfg) {
     }
   });
 
+  _socket.on('draw_declined', (data) => {
+    if (window.showToast) showToast('DRAW DECLINED', (data.by || 'OPPONENT') + ' : ' + (data.reason || 'refused'), 'chip-loss');
+    const btnDraw = document.getElementById('btn-draw');
+    if (btnDraw) { btnDraw.textContent = 'OFFER DRAW'; btnDraw.disabled = false; }
+  });
+
   _socket.on('error', (data) => {
     console.warn('Chess error:', data.message);
+    if (window.showToast) showToast('ERROR', data.message || 'Move rejected', 'chip-loss');
   });
 
   const btnResign = document.getElementById('btn-resign');
   if (btnResign) {
     btnResign.addEventListener('click', () => {
-      if (confirm('RESIGN THIS GAME?')) {
-        _socket.emit('resign', { game_id: cfg.gameId });
-      }
+      if (!confirm('RESIGN THIS GAME?')) return;
+      let socketAcked = false;
+      _socket.emit('resign', { game_id: cfg.gameId });
+      // If the socket path is dead (or the server-side game state is stuck),
+      // fall back to HTTP after 2s. The HTTP handler force-resigns and updates
+      // DB directly.
+      const settled = () => { socketAcked = true; };
+      _socket.once('game_over', settled);
+      setTimeout(() => {
+        if (!socketAcked) {
+          fetch(`/chess/game/${cfg.gameId}/resign`, { method: 'POST' })
+            .then(r => r.json())
+            .then(d => {
+              if (d.ok) window.location.href = '/chess/';
+              else if (window.showToast) showToast('RESIGN FAILED', d.error || 'unknown', 'chip-loss');
+            })
+            .catch(e => window.showToast && showToast('RESIGN FAILED', 'network error', 'chip-loss'));
+        }
+      }, 2000);
     });
   }
 

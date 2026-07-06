@@ -55,6 +55,9 @@ import chess_bp
 app.register_blueprint(chess_bp.bp, url_prefix="/chess")
 chess_bp.register_sockets(socketio)
 
+import blackjack_bp
+app.register_blueprint(blackjack_bp.bp, url_prefix="/blackjack")
+
 if __name__ == "__main__":
     db.init_db()
     socketio.run(app, host="0.0.0.0", port=5001, debug=False, allow_unsafe_werkzeug=True)

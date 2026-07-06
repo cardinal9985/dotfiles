@@ -50,6 +50,7 @@
   margin-top: 0.35rem;
 }
 .chess-tag  { border-color: var(--bright-amber); color: var(--bright-amber); }
+.bj-tag     { border-color: var(--bright-green); color: var(--bright-green); }
 .locked-tag { border-color: var(--surface-mid); color: var(--white); opacity: 0.5; }
 
 .game-tile-locked {

@@ -12,8 +12,8 @@ let
 
   app = pkgs.runCommand "ishimura-games" {} ''
     mkdir -p $out
-    cp -r ${src}/app.py ${src}/db.py ${src}/chess_bp.py ${src}/shared_auth.py \
-          ${src}/templates ${src}/static $out/
+    cp -r ${src}/app.py ${src}/db.py ${src}/chess_bp.py ${src}/blackjack_bp.py \
+          ${src}/shared_auth.py ${src}/templates ${src}/static $out/
   '';
 in
 {

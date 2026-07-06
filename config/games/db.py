@@ -55,6 +55,20 @@ CREATE TABLE IF NOT EXISTS chip_transactions (
     created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_chip_txn_user ON chip_transactions(username, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS blackjack_hands (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    username     TEXT    NOT NULL,
+    bet          INTEGER NOT NULL,
+    player_cards TEXT    NOT NULL,
+    dealer_cards TEXT    NOT NULL,
+    player_total INTEGER NOT NULL,
+    dealer_total INTEGER NOT NULL,
+    result       TEXT    NOT NULL,
+    payout       INTEGER NOT NULL,
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_bj_user ON blackjack_hands(username, created_at DESC);
 """
 
 @contextmanager

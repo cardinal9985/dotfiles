@@ -20,12 +20,12 @@
       <div class="game-tile-tag locked-tag">COMING SOON</div>
     </div>
 
-    <div class="game-tile game-tile-locked">
+    <a href="{{ url_for('blackjack.table') }}" class="game-tile game-tile-blackjack">
       <div class="game-tile-icon">♣</div>
       <div class="game-tile-name">BLACKJACK</div>
-      <div class="game-tile-desc">Player vs dealer - single deck, standard rules</div>
-      <div class="game-tile-tag locked-tag">COMING SOON</div>
-    </div>
+      <div class="game-tile-desc">Player vs dealer - 6-deck shoe, standard rules, blackjack pays 3:2</div>
+      <div class="game-tile-tag bj-tag">CHIP WAGER</div>
+    </a>
 
     <div class="game-tile game-tile-locked">
       <div class="game-tile-icon">⚄</div>

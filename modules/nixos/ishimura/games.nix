@@ -14,7 +14,8 @@ let
     mkdir -p $out
     cp -r ${src}/app.py ${src}/db.py ${src}/shared_auth.py ${src}/arbiter.py \
           ${src}/chess_bp.py ${src}/blackjack_bp.py ${src}/war_bp.py \
-          ${src}/slots_bp.py ${src}/baccarat_bp.py \
+          ${src}/slots_bp.py ${src}/baccarat_bp.py ${src}/dice_bp.py \
+          ${src}/roulette_bp.py ${src}/connect4_bp.py \
           ${src}/templates ${src}/static $out/
   '';
 in

@@ -60,9 +60,22 @@
   align-self: flex-start;
   margin-top: 0.35rem;
 }
-.chess-tag  { border-color: var(--bright-amber); color: var(--bright-amber); }
-.bj-tag     { border-color: var(--bright-green); color: var(--bright-green); }
+.live-tag   { border-color: var(--bright-green); color: var(--bright-green); }
 .locked-tag { border-color: var(--surface-mid); color: var(--white); opacity: 0.5; }
+
+.player-tag {
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  align-self: flex-start;
+  opacity: 0.75;
+}
+.tile-tags {
+  display: flex; gap: 0.35rem; flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
 
 .game-tile-locked {
   cursor: not-allowed;

@@ -23,13 +23,14 @@
   font-size: 0.7rem;
   letter-spacing: 0.2em;
   color: var(--cyan);
+  text-align: center;
 }
 .hand-total {
   color: var(--bright-amber);
   margin-left: 0.5rem;
   font-weight: bold;
 }
-.cards { display: flex; gap: 0.5rem; flex-wrap: wrap; min-height: 96px; }
+.cards { display: flex; gap: 0.5rem; flex-wrap: wrap; min-height: 96px; justify-content: center; }
 
 .card {
   width: 60px; height: 88px;

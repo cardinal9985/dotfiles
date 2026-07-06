@@ -20,7 +20,7 @@
       <nav>
         <a href="{{ url_for('hub') }}">HUB</a>
         <a href="{{ url_for('leaderboard') }}">RANKINGS</a>
-        <a href="{{ url_for('profile', username=user) }}">{{ user }}</a>
+        <a href="{{ url_for('profile', username=user) }}" title="{{ user }}">DOSSIER</a>
       </nav>
     </header>
     {% block content %}{% endblock %}

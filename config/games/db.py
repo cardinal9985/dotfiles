@@ -80,6 +80,45 @@ CREATE TABLE IF NOT EXISTS arbiter_calls (
 );
 CREATE INDEX IF NOT EXISTS idx_arbiter_winner ON arbiter_calls(winner, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS dice_rolls (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    bet_over   INTEGER NOT NULL DEFAULT 0,
+    bet_under  INTEGER NOT NULL DEFAULT 0,
+    bet_equal  INTEGER NOT NULL DEFAULT 0,
+    d1         INTEGER NOT NULL,
+    d2         INTEGER NOT NULL,
+    total      INTEGER NOT NULL,
+    payout     INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dice_user ON dice_rolls(username, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS roulette_spins (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    bets       TEXT    NOT NULL,
+    total_bet  INTEGER NOT NULL,
+    result     INTEGER NOT NULL,
+    color      TEXT    NOT NULL,
+    payout     INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_roulette_user ON roulette_spins(username, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS connect4_games (
+    id           TEXT PRIMARY KEY,
+    player_a     TEXT NOT NULL,
+    player_b     TEXT,
+    ante         INTEGER NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'waiting',
+    winner       TEXT,
+    board        TEXT NOT NULL DEFAULT '',
+    turn         TEXT NOT NULL DEFAULT 'a',
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS baccarat_hands (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     username      TEXT    NOT NULL,

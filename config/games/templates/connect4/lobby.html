@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}CONNECT 4 LOBBY // USG REC{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/connect4.css') }}">
+{% endblock %}
+{% block content %}
+
+<div class="lobby">
+  <section class="new-game-panel">
+    <h2 class="section-title">// NEW CONNECT 4 MATCH <span class="sub">1v1, ties trigger the Arbiter</span></h2>
+    <form method="post" action="{{ url_for('connect4.new_game') }}" class="new-game-form">
+      <div class="form-row">
+        <label>ANTE</label>
+        <input type="number" name="ante" min="{{ min_ante }}" max="{{ max_ante }}" value="100" step="10" class="chess-select" style="width:120px;text-align:right">
+        <span class="variant-desc">Both players ante this amount. Winner takes the pot.</span>
+      </div>
+      <div class="form-row">
+        <label></label>
+        <span class="variant-desc">CHIPS: {{ me.chips }}</span>
+      </div>
+      <button type="submit" class="btn-primary">OPEN TABLE</button>
+    </form>
+  </section>
+
+  <section class="active-games">
+    <h2 class="section-title">// OPEN MATCHES</h2>
+    {% if active %}
+      <table class="data-table">
+        <thead><tr><th>OPENER</th><th>OPPONENT</th><th>ANTE</th><th>STATUS</th><th></th></tr></thead>
+        <tbody>
+        {% for g in active %}
+          <tr>
+            <td class="player-white">{{ g.player_a }}</td>
+            <td class="player-black">{{ g.player_b or '···' }}</td>
+            <td class="stat-chip">{{ g.ante }}</td>
+            <td><span class="status-badge status-{{ g.status }}">{{ g.status.upper() }}</span></td>
+            <td><a href="{{ url_for('connect4.game', game_id=g.id) }}" class="btn-small">
+              {% if g.status == 'waiting' and g.player_a != user %}JOIN{% else %}VIEW{% endif %}
+            </a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">NO OPEN TABLES : OPEN ONE</p>
+    {% endif %}
+  </section>
+</div>
+
+{% endblock %}

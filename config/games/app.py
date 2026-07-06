@@ -70,6 +70,16 @@ app.register_blueprint(slots_bp.bp, url_prefix="/slots")
 import baccarat_bp
 app.register_blueprint(baccarat_bp.bp, url_prefix="/baccarat")
 
+import dice_bp
+app.register_blueprint(dice_bp.bp, url_prefix="/dice")
+
+import roulette_bp
+app.register_blueprint(roulette_bp.bp, url_prefix="/roulette")
+
+import connect4_bp
+app.register_blueprint(connect4_bp.bp, url_prefix="/connect4")
+connect4_bp.register_sockets(socketio)
+
 if __name__ == "__main__":
     db.init_db()
     socketio.run(app, host="0.0.0.0", port=5001, debug=False, allow_unsafe_werkzeug=True)

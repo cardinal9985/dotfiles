@@ -228,9 +228,10 @@ let
       version           = "1150";
       icon              = "☣";
       howTo = [
-        ''Easiest: click <a href="steam://connect/games.ishimura.lol:7777">steam://connect/games.ishimura.lol:7777</a> and Steam launches KF2 into the server''
-        "Or launch KF2, press <b>~</b> to open the console, and type <code>open games.ishimura.lol:7777</code>"
-        "Or via Steam server browser: View → Servers → Favorites → Add a Server → paste <code>games.ishimura.lol:7777</code> → connect from Favorites"
+        "Launch Killing Floor 2"
+        "Press <b>~</b> (tilde) in-game to open the console"
+        "Type <code>open games.ishimura.lol:7777</code> and hit Enter"
+        "When prompted for a password, enter the server password (blank if the server is open)"
       ];
     }
     {

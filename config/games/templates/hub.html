@@ -24,13 +24,26 @@
 
 <div class="hub">
   {% if me %}
+  {% if stipend_claimed %}
+    <p class="tip-confirm">✓ CLAIMED {{ stipend_claimed }} TICKETS - back next week</p>
+  {% endif %}
   <section class="my-stats hub-stats hub-stats-top">
-    <h2 class="section-title">// YOUR DOSSIER <span class="sub">{{ user }}</span></h2>
+    <h2 class="section-title">// YOUR DOSSIER <span class="sub">{{ user }} :: member since {{ me.created_at[:10] if me.created_at else '···' }}</span></h2>
     <div class="stat-row">
       <div class="stat-block"><span class="stat-val stat-rating">{{ me.rating }}</span><span class="stat-label">CHESS ELO</span></div>
       <div class="stat-block"><span class="stat-val stat-win">{{ me.wins }}</span><span class="stat-label">CHESS WINS</span></div>
       <div class="stat-block"><span class="stat-val stat-chip">{{ me.chips }}</span><span class="stat-label">TICKETS</span></div>
       <div class="stat-block"><span class="stat-val stat-chip-total">{{ me.chips_lifetime_won }}</span><span class="stat-label">TICKETS WON</span></div>
+    </div>
+    <div class="stipend-row">
+      {% if stipend_eligible %}
+        <form method="post" action="{{ url_for('claim_stipend') }}" class="stipend-form">
+          <span class="stipend-label">// WEEKLY STIPEND AVAILABLE</span>
+          <button type="submit" class="btn-primary">CLAIM +{{ stipend_amount }} TICKETS</button>
+        </form>
+      {% else %}
+        <span class="stipend-label stipend-cooldown">// WEEKLY STIPEND :: next in <span id="stipend-cd" data-seconds="{{ stipend_seconds }}">soon</span></span>
+      {% endif %}
     </div>
   </section>
   {% endif %}
@@ -183,4 +196,28 @@
 
 </div>
 
+{% endblock %}
+{% block scripts %}
+<script>
+  (function() {
+    const el = document.getElementById('stipend-cd');
+    if (!el) return;
+    let sec = parseInt(el.dataset.seconds, 10) || 0;
+    function fmt() {
+      if (sec <= 0) { el.textContent = 'available now'; return; }
+      const d = Math.floor(sec / 86400);
+      const h = Math.floor((sec % 86400) / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      const parts = [];
+      if (d > 0) parts.push(d + 'd');
+      if (h > 0 || d > 0) parts.push(h + 'h');
+      if (m > 0 || h > 0 || d > 0) parts.push(m + 'm');
+      parts.push(s + 's');
+      el.textContent = parts.join(' ');
+    }
+    fmt();
+    setInterval(() => { sec--; fmt(); if (sec <= 0) window.location.reload(); }, 1000);
+  })();
+</script>
 {% endblock %}

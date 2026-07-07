@@ -27,14 +27,45 @@ def health():
 
 @app.route("/")
 def hub():
+    from flask import request as _req
     user = get_user()
     with db.get_db() as conn:
         db.ensure_user(conn, user)
         me = conn.execute("SELECT * FROM users WHERE username=?", (user,)).fetchone()
-    return render_template("hub.html", user=user, me=me)
+    stipend_eligible, stipend_next, stipend_seconds = _stipend_state(user)
+    stipend_claimed = _req.args.get("stipend_claimed")
+    return render_template("hub.html", user=user, me=me,
+                           stipend_eligible=stipend_eligible,
+                           stipend_next=stipend_next,
+                           stipend_seconds=stipend_seconds,
+                           stipend_amount=STIPEND_AMOUNT,
+                           stipend_claimed=stipend_claimed)
 
 MIN_TIP = 1
 MAX_TIP = 10000
+
+STIPEND_AMOUNT   = 500
+STIPEND_INTERVAL_DAYS = 7
+
+def _stipend_state(username):
+    """Return (eligible: bool, next_at_iso: str_or_none, seconds_remaining: int)"""
+    from datetime import datetime, timedelta
+    with db.get_db() as conn:
+        row = conn.execute(
+            "SELECT last_stipend_at FROM users WHERE username=?", (username,)
+        ).fetchone()
+    last = row["last_stipend_at"] if row else None
+    if not last:
+        return True, None, 0
+    try:
+        last_dt = datetime.fromisoformat(last)
+    except Exception:
+        return True, None, 0
+    next_dt = last_dt + timedelta(days=STIPEND_INTERVAL_DAYS)
+    now = datetime.utcnow()
+    if now >= next_dt:
+        return True, None, 0
+    return False, next_dt.isoformat(), int((next_dt - now).total_seconds())
 
 @app.route("/profile/<username>")
 def profile(username):
@@ -51,6 +82,24 @@ def profile(username):
     return render_template("profile.html", user=user, subject=username, stats=stats,
                            games=games, my_chips=my_chips,
                            min_tip=MIN_TIP, max_tip=MAX_TIP, tipped=tipped)
+
+@app.route("/stipend/claim", methods=["POST"])
+def claim_stipend():
+    from datetime import datetime
+    user = get_user()
+    if not user:
+        abort(401)
+    eligible, next_at, _seconds = _stipend_state(user)
+    if not eligible:
+        return redirect(url_for("hub"))
+    with db.get_db() as conn:
+        db.ensure_user(conn, user)
+        db.adjust_chips(conn, user, STIPEND_AMOUNT, "weekly_stipend")
+        conn.execute(
+            "UPDATE users SET last_stipend_at=? WHERE username=?",
+            (datetime.utcnow().isoformat(), user)
+        )
+    return redirect(url_for("hub", stipend_claimed=STIPEND_AMOUNT))
 
 @app.route("/profile/<username>/tip", methods=["POST"])
 def tip(username):

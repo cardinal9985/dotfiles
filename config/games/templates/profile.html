@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="profile-page">
-  <h2 class="section-title">// CREW FILE: <span class="highlight-text">{{ subject }}</span></h2>
+  <h2 class="section-title">// CREW FILE: <span class="highlight-text">{{ subject }}</span> <span class="sub">member since {{ stats.created_at[:10] if stats.created_at else '···' }}</span></h2>
 
   {% if tipped %}
     <p class="tip-confirm">✓ TIPPED {{ tipped }} TICKETS TO {{ subject }}</p>

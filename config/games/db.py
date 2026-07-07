@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     rating      INTEGER NOT NULL DEFAULT 1200,
     chips       INTEGER NOT NULL DEFAULT 10000,
     chips_lifetime_won INTEGER NOT NULL DEFAULT 0,
+    last_stipend_at TEXT,
     created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -280,6 +281,7 @@ def init_db():
             ("rating",             "ALTER TABLE users ADD COLUMN rating INTEGER NOT NULL DEFAULT 1200"),
             ("chips",              "ALTER TABLE users ADD COLUMN chips INTEGER NOT NULL DEFAULT 10000"),
             ("chips_lifetime_won", "ALTER TABLE users ADD COLUMN chips_lifetime_won INTEGER NOT NULL DEFAULT 0"),
+            ("last_stipend_at",    "ALTER TABLE users ADD COLUMN last_stipend_at TEXT"),
         ]:
             if col not in ucols:
                 conn.execute(ddl)

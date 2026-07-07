@@ -306,7 +306,7 @@ def init_db():
         ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
         for col, ddl in [
             ("rating",             "ALTER TABLE users ADD COLUMN rating INTEGER NOT NULL DEFAULT 1200"),
-            ("chips",              "ALTER TABLE users ADD COLUMN chips INTEGER NOT NULL DEFAULT 10000"),
+            ("chips",              "ALTER TABLE users ADD COLUMN chips INTEGER NOT NULL DEFAULT 5000"),
             ("chips_lifetime_won",  "ALTER TABLE users ADD COLUMN chips_lifetime_won INTEGER NOT NULL DEFAULT 0"),
             ("last_stipend_at",     "ALTER TABLE users ADD COLUMN last_stipend_at TEXT"),
             ("last_wordle_date",    "ALTER TABLE users ADD COLUMN last_wordle_date TEXT"),
@@ -338,7 +338,7 @@ def elo_update(rating_a, rating_b, score_a, k=K_FACTOR):
     return new_a, new_b
 
 def ensure_user(conn, username):
-    conn.execute("INSERT OR IGNORE INTO users (username) VALUES (?)", (username,))
+    conn.execute("INSERT OR IGNORE INTO users (username, chips) VALUES (?, 5000)", (username,))
 
 def adjust_chips(conn, username, delta, reason, game_ref=None):
     """Apply a chip delta to a user's balance, log it in transactions."""

@@ -22,11 +22,11 @@ STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "stockfish")
 DISCORD_WEBHOOK = os.environ.get("CHESS_DISCORD_WEBHOOK", "")
 
 BOTS = {
-    "rookie":    {"name": "ROOKIE",    "level":  1, "elo": "~400",  "desc": "Fresh off the shuttle"},
-    "ensign":    {"name": "ENSIGN",    "level":  5, "elo": "~900",  "desc": "Deck crew, plays weekly"},
-    "officer":   {"name": "OFFICER",   "level": 10, "elo": "~1350", "desc": "Bridge crew, sharper tactics"},
-    "commander": {"name": "COMMANDER", "level": 15, "elo": "~1800", "desc": "Executive officer, tournament-level"},
-    "captain":   {"name": "CAPTAIN",   "level": 20, "elo": "~2200", "desc": "The Marker's chosen"},
+    "rookie":    {"name": "ROOKIE",    "level":  0, "skill": 0,    "uci_elo": None, "depth": 1, "movetime_ms":  60, "elo": "~600",  "desc": "Fresh off the shuttle"},
+    "ensign":    {"name": "ENSIGN",    "level":  3, "skill": 3,    "uci_elo": None, "depth": 4, "movetime_ms": 150, "elo": "~1000", "desc": "Deck crew, plays weekly"},
+    "officer":   {"name": "OFFICER",   "level": 10, "skill": None, "uci_elo": 1500, "depth": None, "movetime_ms": 300, "elo": "~1500", "desc": "Bridge crew, sharper tactics"},
+    "commander": {"name": "COMMANDER", "level": 15, "skill": None, "uci_elo": 1900, "depth": None, "movetime_ms": 700, "elo": "~1900", "desc": "Executive officer, tournament-level"},
+    "captain":   {"name": "CAPTAIN",   "level": 20, "skill": None, "uci_elo": 2600, "depth": None, "movetime_ms":1500, "elo": "~2600", "desc": "The Marker's chosen"},
 }
 
 VARIANTS = {
@@ -313,7 +313,15 @@ def _ai_move(game_id):
             return
         board = g["board"].copy()
         engine = g.get("engine")
+        bot_name = g.get("bot_name", "")
         level = g.get("ai_level", 5)
+        variant = g.get("variant", "standard")
+
+    # Look up full bot config by display name (rehydration + creation both work)
+    bot_cfg = next((b for b in BOTS.values() if b["name"] == bot_name), None)
+    if bot_cfg is None:
+        # Legacy fallback: pick the bot whose skill level matches ai_level
+        bot_cfg = next((b for b in BOTS.values() if b.get("level") == level), BOTS["officer"])
 
     if not engine:
         try:
@@ -329,13 +337,21 @@ def _ai_move(game_id):
             g["engine"] = engine
 
     try:
-        conf = {"Skill Level": level}
-        with _games_lock:
-            g = _games.get(game_id)
-            if g and g.get("variant") == "chess960":
-                conf["UCI_Chess960"] = True
+        conf = {}
+        if bot_cfg.get("uci_elo"):
+            conf["UCI_LimitStrength"] = True
+            conf["UCI_Elo"] = bot_cfg["uci_elo"]
+        else:
+            conf["UCI_LimitStrength"] = False
+            conf["Skill Level"] = bot_cfg.get("skill", level)
+        if variant == "chess960":
+            conf["UCI_Chess960"] = True
         engine.configure(conf)
-        result = engine.play(board, chess.engine.Limit(time=0.5))
+
+        limit_kwargs = {"time": bot_cfg.get("movetime_ms", 500) / 1000}
+        if bot_cfg.get("depth"):
+            limit_kwargs["depth"] = bot_cfg["depth"]
+        result = engine.play(board, chess.engine.Limit(**limit_kwargs))
         move = result.move
     except Exception:
         return

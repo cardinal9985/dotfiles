@@ -348,7 +348,10 @@ in
 
   system.activationScripts.homepage = ''
     mkdir -p /persist/pangolin/homepage/games-status
-    ${pkgs.rsync}/bin/rsync -a --delete \
+    # -c (checksum) is required: nix-store mtimes are all epoch, so rsync's
+    # default size+mtime fast-check silently skips files whose content
+    # changed but happen to be the same length (e.g. a port number swap).
+    ${pkgs.rsync}/bin/rsync -avc --delete \
       --exclude games-status \
       ${homepage}/ /persist/pangolin/homepage/
     chmod -R a+rX /persist/pangolin/homepage

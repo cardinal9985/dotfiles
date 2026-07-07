@@ -1,9 +1,11 @@
 { config, pkgs, ... }:
 
 let
-  # Existing Pelican-installed volume - stays owned by pelican:pelican so
-  # we can flip back to Wings-managed the day the attach bug is fixed.
-  volume       = "/var/lib/pelican/volumes/7ecd8608-d111-4bf5-aab0-965c6eb6c0b7";
+  # Migrated out of Pelican's volume path as part of the Hangar rollout
+  # (docs/superpowers/specs/2026-07-07-hangar-design.md). Owned by pelican
+  # user still since that's how the files were created; can rename the
+  # user later.
+  volume       = "/persist/gameservers/kf2";
   serverPort   = 7777;
   queryPort    = 27015;
   webAdminPort = 8380;  # 8080 collides with Wings' API port on nostromo
@@ -13,6 +15,17 @@ let
 in
 {
   # sops secret defined in ./sops.nix
+
+  # Ensure /persist/gameservers exists and is walkable by pelican user for
+  # any per-game module dropped in later (vintagestory.nix, tarkov-spt.nix).
+  systemd.tmpfiles.rules = [
+    "d /persist/gameservers 0755 root root -"
+  ];
+
+  environment.persistence."/persist".directories = [
+    { directory = "/persist/gameservers"; user = "root"; group = "root"; mode = "0755"; }
+  ];
+
   systemd.services.kf2 = {
     description = "Killing Floor 2 Dedicated Server";
     after       = [ "network-online.target" ];

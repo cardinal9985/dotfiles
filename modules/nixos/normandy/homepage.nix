@@ -228,10 +228,9 @@ let
       version           = "1150";
       icon              = "☣";
       howTo = [
-        "Open Killing Floor 2 in Steam and click 'Multiplayer'"
-        "Switch to the 'Server Browser' tab, then 'Favorites'"
-        "Click 'Add Server' and enter 'games.ishimura.lol:7777'"
-        "Double-click the added server to connect (or hit Refresh first if it doesn't appear right away)"
+        ''Easiest: click <a href="steam://connect/games.ishimura.lol:7777">steam://connect/games.ishimura.lol:7777</a> and Steam launches KF2 into the server''
+        "Or launch KF2, press <b>~</b> to open the console, and type <code>open games.ishimura.lol:7777</code>"
+        "Or via Steam server browser: View → Servers → Favorites → Add a Server → paste <code>games.ishimura.lol:7777</code> → connect from Favorites"
       ];
     }
     {

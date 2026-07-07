@@ -27,10 +27,13 @@ in
   users.groups.pelican = {};
 
   systemd.tmpfiles.rules = [
-    "d /etc/pelican             0755 root root -"
-    "d /var/lib/pelican         0700 root root -"
-    "d /var/lib/pelican/volumes 0700 root root -"
-    "d /var/lib/pelican/logs    0700 root root -"
+    "d /etc/pelican             0755 root root    -"
+    # Group-traversable so pelican-run services (e.g. kf2.service) can
+    # read into volume subdirs. Root still owns; per-volume perms
+    # inside are set by Wings.
+    "d /var/lib/pelican         0750 root pelican -"
+    "d /var/lib/pelican/volumes 0750 root pelican -"
+    "d /var/lib/pelican/logs    0700 root root    -"
   ];
 
   environment.persistence."/persist".directories = [

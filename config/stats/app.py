@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import urllib.error
+import urllib.request
 from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -40,10 +42,23 @@ scheduler.add_job(poll_booklore, "interval", minutes=1, id="poll_booklore",
 scheduler.start()
 
 WEBHOOK_SECRET = os.environ.get("STATS_WEBHOOK_SECRET", "")
+GAMES_INTERNAL_URL = os.environ.get("GAMES_INTERNAL_URL", "http://127.0.0.1:5001")
 
 
 def _get_user():
     return request.headers.get("Remote-User", "").lower()
+
+
+def _fetch_rec_dossier(username):
+    """Pull the user's Rec Deck dossier from the games hub. Best-effort - returns None on any failure."""
+    if not username:
+        return None
+    try:
+        url = f"{GAMES_INTERNAL_URL}/api/user/{username}/dossier"
+        with urllib.request.urlopen(url, timeout=2) as r:
+            return json.loads(r.read())
+    except Exception:
+        return None
 
 
 def _format_duration(secs):
@@ -115,10 +130,11 @@ def webhook_games():
 def dashboard():
     user = _get_user()
     if not user:
-        return render_template("dashboard.html", user=None, stats=None)
+        return render_template("dashboard.html", user=None, stats=None, rec_dossier=None)
     with db.get_db() as conn:
         stats = db.get_dashboard_stats(conn, user)
-    return render_template("dashboard.html", user=user, stats=stats)
+    rec_dossier = _fetch_rec_dossier(user)
+    return render_template("dashboard.html", user=user, stats=stats, rec_dossier=rec_dossier)
 
 
 @app.route("/recommend")

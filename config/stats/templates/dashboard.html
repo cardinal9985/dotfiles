@@ -10,6 +10,49 @@
   <div class="empty">Loading stats...</div>
 </div>
 {% else %}
+{% if rec_dossier %}
+<div class="box">
+  <div class="title">&gt; CREW DOSSIER
+    <span style="font-size:0.7rem;opacity:0.6;font-weight:normal">
+      {{ rec_dossier.username }} :: member since {{ rec_dossier.member_since or 'unknown' }}
+    </span>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card yellow">
+      <div class="value">{{ rec_dossier.chess_rating }}</div>
+      <div class="label">CHESS ELO</div>
+    </div>
+    <div class="stat-card green">
+      <div class="value">{{ rec_dossier.chess_wins }}</div>
+      <div class="label">CHESS WINS</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">{{ rec_dossier.chess_games_played }}</div>
+      <div class="label">CHESS GAMES</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="value">{{ rec_dossier.tickets }}</div>
+      <div class="label">TICKETS</div>
+    </div>
+    <div class="stat-card magenta">
+      <div class="value">{{ rec_dossier.tickets_lifetime_won }}</div>
+      <div class="label">TICKETS WON</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">{{ rec_dossier.blackjack_hands }}</div>
+      <div class="label">BJ HANDS</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">{{ rec_dossier.slot_spins }}</div>
+      <div class="label">SLOT SPINS</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="value">{{ rec_dossier.arbiter_wins }}</div>
+      <div class="label">ARBITER WINS</div>
+    </div>
+  </div>
+</div>
+{% endif %}
 <div class="box">
   <div class="title">&gt; OVERVIEW</div>
   <div class="stat-grid">

@@ -45,6 +45,7 @@ in
     content = ''
       STATS_DB_PATH=/persist/stats/stats.db
       STATS_WEBHOOK_SECRET=${config.sops.placeholder."stats/webhook_secret"}
+      GAMES_INTERNAL_URL=http://127.0.0.1:5001
       TMDB_TOKEN=${config.sops.placeholder."requests/tmdb_token"}
       LASTFM_API_KEY=${config.sops.placeholder."stats/lastfm_api_key"}
       TWITCH_CLIENT_ID=${config.sops.placeholder."stats/twitch_client_id"}

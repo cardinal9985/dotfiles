@@ -18,12 +18,52 @@ def require_auth():
     from flask import request
     if request.path == "/health":
         return None
+    if request.path.startswith("/api/user/") and request.remote_addr in ("127.0.0.1", "::1"):
+        return None
     if not get_user() and not app.debug:
         return "Unauthorized", 401
 
 @app.route("/health")
 def health():
     return "ok", 200
+
+@app.route("/api/user/<username>/dossier")
+def user_dossier(username):
+    from flask import jsonify
+    with db.get_db() as conn:
+        row = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        games_played = conn.execute(
+            "SELECT COUNT(*) as c FROM games WHERE (white=? OR black=?) AND status='completed'",
+            (username, username)
+        ).fetchone()["c"]
+        bj_hands = conn.execute(
+            "SELECT COUNT(*) as c FROM blackjack_hands WHERE username=?",
+            (username,)
+        ).fetchone()["c"]
+        slot_spins = conn.execute(
+            "SELECT COUNT(*) as c FROM slot_spins WHERE username=?",
+            (username,)
+        ).fetchone()["c"]
+        arbiter_calls = conn.execute(
+            "SELECT COUNT(*) as c FROM arbiter_calls WHERE winner=?",
+            (username,)
+        ).fetchone()["c"]
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({
+        "username":            row["username"],
+        "member_since":        (row["created_at"] or "")[:10],
+        "chess_rating":        row["rating"],
+        "chess_wins":          row["wins"],
+        "chess_losses":        row["losses"],
+        "chess_draws":         row["draws"],
+        "chess_games_played":  games_played,
+        "tickets":             row["chips"],
+        "tickets_lifetime_won": row["chips_lifetime_won"],
+        "blackjack_hands":     bj_hands,
+        "slot_spins":          slot_spins,
+        "arbiter_wins":        arbiter_calls,
+    })
 
 @app.route("/")
 def hub():

@@ -8,6 +8,7 @@
     ./ntfy.nix
     ./tdarr-node.nix
     ./wings.nix
+    ./kf2.nix
     ./boot.nix
     ./gpu.nix
     ./audio.nix

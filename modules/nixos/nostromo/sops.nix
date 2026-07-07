@@ -22,6 +22,12 @@
         group = "users";
         mode  = "0400";
       };
+      # KF2 dedicated server admin password (WebAdmin login + ?AdminPassword=)
+      "kf2/admin_password" = {
+        owner = "pelican";
+        group = "pelican";
+        mode  = "0400";
+      };
     };
   };
 }

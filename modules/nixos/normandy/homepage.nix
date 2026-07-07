@@ -142,6 +142,14 @@ let
       healthUrl   = "http://${ishimuraTailnetIP}:8801/up";
     }
     {
+      name        = "KF2 WebAdmin";
+      description = "Killing Floor 2";
+      url         = "http://nostromo:8080/ServerAdmin";
+      icon        = "☣";
+      statusPath  = "/health/kf2-webadmin";
+      healthUrl   = "http://nostromo:8080/ServerAdmin/";
+    }
+    {
       name        = "Refinery";
       description = "Media Intake";
       url         = "https://refinery.ishimura.lol";
@@ -210,6 +218,20 @@ let
         "Click 'Multiplayer'"
         "Click 'Server connect'"
         "Paste 'games.ishimura.lol:42420' into the address field"
+      ];
+    }
+    {
+      name              = "Killing Floor 2";
+      slug              = "killing-floor-2";
+      description       = "Wave-based co-op zed shooter. Bioticslab default, 6 slots";
+      address           = "games.ishimura.lol:7777";
+      version           = "1150";
+      icon              = "☣";
+      howTo = [
+        "Open Killing Floor 2 in Steam and click 'Multiplayer'"
+        "Switch to the 'Server Browser' tab, then 'Favorites'"
+        "Click 'Add Server' and enter 'games.ishimura.lol:7777'"
+        "Double-click the added server to connect (or hit Refresh first if it doesn't appear right away)"
       ];
     }
     {

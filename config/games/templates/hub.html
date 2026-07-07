@@ -35,6 +35,14 @@
   </section>
   {% endif %}
 
+  <h3 class="row-title">// DAILY <span class="sub">reset at midnight, streaks encouraged</span></h3>
+  <div class="game-tiles">
+    {{ tile("WORDLE", "🄦", "Guess the 5-letter word in 6 tries. Green/yellow/gray feedback. Streaks tracked", "SOLO") }}
+    {{ tile("DAILY CHESS PUZZLE", "♗", "One tactic per day (mate-in-2, endgame, forks). Reuses the chess board", "SOLO") }}
+    {{ tile("MINI CROSSWORD", "⊞", "Small crossword grid, timed solve. NYT Mini vibes", "SOLO") }}
+    {{ tile("DAILY TRIVIA", "❓", "One question, all-or-nothing streak. Fastest correct answer wins the pot", "SOLO") }}
+  </div>
+
   <h2 class="section-title">// GAMES CATALOG</h2>
 
   <h3 class="row-title">// SKILL - ELO RATED</h3>
@@ -99,6 +107,22 @@
     {{ tile("PRIZE CLAW", "🎁", "Move the claw, drop it, hope the grip holds. Classic gacha tension", "SOLO") }}
     {{ tile("COIN PUSHER", "🪙", "Drop tickets, push others off the edge. Endlessly satisfying ticket drain", "SOLO") }}
     {{ tile("DUCK HUNT", "🎯", "Click ducks flying past. Shooting gallery, ticket per hit", "SOLO") }}
+  </div>
+
+  <h3 class="row-title">// SHOWTIME - PARTY</h3>
+  <div class="game-tiles">
+    {{ tile("PICTIONARY", "✎", "Draw and guess with a word bank. Rotating drawer, live canvas", "4-8P") }}
+    {{ tile("WHEEL OF FORTUNE", "🎡", "Guess the phrase, spin the wheel between letters for chip payouts", "2-6P") }}
+    {{ tile("CODENAMES", "✉", "Team word association. Spymaster gives one-word clues linking multiple cards", "4P+") }}
+    {{ tile("WEREWOLF", "🐺", "Hidden roles, social deduction. Villagers vs wolves, one dies per night", "5P+") }}
+  </div>
+
+  <h3 class="row-title">// SHOWTIME - GAME SHOW</h3>
+  <div class="game-tiles">
+    {{ tile("MILLIONAIRE", "💰", "Ladder of escalating questions with lifelines and walk-away decisions", "SOLO") }}
+    {{ tile("DEAL OR NO DEAL", "💼", "Pick a case, take the banker's offer or gamble on your case's value", "SOLO") }}
+    {{ tile("FAMILY FEUD", "👥", "Top survey answers, teams compete, steal on a strike-out", "4P+") }}
+    {{ tile("PRESS YOUR LUCK", "ⓟ", "Stop the rotating prize board - avoid whammies for the big payout", "SOLO") }}
   </div>
 
 </div>

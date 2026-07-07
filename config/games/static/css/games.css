@@ -12,6 +12,32 @@
   text-transform: uppercase;
 }
 
+.catalog-divider {
+  height: 1px;
+  margin: 1.5rem 0 0.75rem;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(58,159,191,0.35) 20%,
+    rgba(251,191,96,0.5) 50%,
+    rgba(58,159,191,0.35) 80%,
+    transparent 100%);
+  position: relative;
+}
+.catalog-divider::before,
+.catalog-divider::after {
+  content: '⬦';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bright-amber);
+  font-size: 0.65rem;
+  opacity: 0.7;
+  background: var(--black);
+  padding: 0 0.5rem;
+}
+.catalog-divider::before { left: 0; }
+.catalog-divider::after  { right: 0; }
+
 .game-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

@@ -50,7 +50,7 @@
 
   <h3 class="row-title">// DAILY <span class="sub">reset at midnight, streaks encouraged</span></h3>
   <div class="game-tiles">
-    {{ tile("WORDLE", "🄦", "Guess the 5-letter word in 6 tries. Green/yellow/gray feedback. Streaks tracked", "SOLO") }}
+    {{ tile("WORDLE", "🄦", "Guess the 5-letter word in 6 tries. Green/yellow/gray feedback. Streaks tracked", "SOLO", url_for('wordle.table')) }}
     {{ tile("DAILY CHESS PUZZLE", "♗", "One tactic per day (mate-in-2, endgame, forks). Reuses the chess board", "SOLO") }}
     {{ tile("MINI CROSSWORD", "⊞", "Small crossword grid, timed solve. NYT Mini vibes", "SOLO") }}
     {{ tile("DAILY TRIVIA", "❓", "One question, all-or-nothing streak. Fastest correct answer wins the pot", "SOLO") }}

@@ -256,6 +256,20 @@ CREATE TABLE IF NOT EXISTS war_games (
     created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
     completed_at TEXT
 );
+
+CREATE TABLE IF NOT EXISTS wordle_attempts (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    username     TEXT    NOT NULL,
+    date         TEXT    NOT NULL,
+    guesses_json TEXT    NOT NULL DEFAULT '[]',
+    solved       INTEGER NOT NULL DEFAULT 0,
+    guess_count  INTEGER NOT NULL DEFAULT 0,
+    payout       INTEGER NOT NULL DEFAULT 0,
+    streak_after INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(username, date)
+);
+CREATE INDEX IF NOT EXISTS idx_wordle_user_date ON wordle_attempts(username, date DESC);
 """
 
 @contextmanager
@@ -280,8 +294,11 @@ def init_db():
         for col, ddl in [
             ("rating",             "ALTER TABLE users ADD COLUMN rating INTEGER NOT NULL DEFAULT 1200"),
             ("chips",              "ALTER TABLE users ADD COLUMN chips INTEGER NOT NULL DEFAULT 10000"),
-            ("chips_lifetime_won", "ALTER TABLE users ADD COLUMN chips_lifetime_won INTEGER NOT NULL DEFAULT 0"),
-            ("last_stipend_at",    "ALTER TABLE users ADD COLUMN last_stipend_at TEXT"),
+            ("chips_lifetime_won",  "ALTER TABLE users ADD COLUMN chips_lifetime_won INTEGER NOT NULL DEFAULT 0"),
+            ("last_stipend_at",     "ALTER TABLE users ADD COLUMN last_stipend_at TEXT"),
+            ("last_wordle_date",    "ALTER TABLE users ADD COLUMN last_wordle_date TEXT"),
+            ("wordle_streak",       "ALTER TABLE users ADD COLUMN wordle_streak INTEGER NOT NULL DEFAULT 0"),
+            ("wordle_best_streak",  "ALTER TABLE users ADD COLUMN wordle_best_streak INTEGER NOT NULL DEFAULT 0"),
         ]:
             if col not in ucols:
                 conn.execute(ddl)

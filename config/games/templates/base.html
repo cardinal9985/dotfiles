@@ -42,30 +42,8 @@
       }, 3200);
     };
 
-    (function() {
-      const c = document.getElementById('star-canvas');
-      const ctx = c.getContext('2d');
-      let stars = [];
-      function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
-      function init() {
-        stars = Array.from({length: 120}, () => ({
-          x: Math.random() * c.width, y: Math.random() * c.height,
-          r: Math.random() * 1.2, o: Math.random() * 0.5 + 0.1,
-        }));
-      }
-      function draw() {
-        ctx.clearRect(0, 0, c.width, c.height);
-        stars.forEach(s => {
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(110,200,230,${s.o})`;
-          ctx.fill();
-        });
-      }
-      resize(); init(); draw();
-      window.addEventListener('resize', () => { resize(); init(); draw(); });
-    })();
   </script>
+  <script src="{{ url_for('static', filename='js/starfield.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

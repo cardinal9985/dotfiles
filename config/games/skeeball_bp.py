@@ -38,7 +38,7 @@ def api_finish():
         score = int(request.json.get("score", 0))
     except Exception:
         return jsonify({"error": "Bad payload"}), 400
-    max_possible = BALLS_PER_ROUND * 100
+    max_possible = BALLS_PER_ROUND * 200   # 100 bullseye * 2x streak bonus cap
     if score < 0 or score > max_possible:
         return jsonify({"error": "Out of range"}), 400
 

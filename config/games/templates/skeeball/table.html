@@ -8,7 +8,7 @@
 <div class="sb-page">
 
   <div class="bj-header">
-    <h2 class="section-title">// SKEE-BALL <span class="sub">{{ balls_per_round }} balls : 1 ticket per {{ points_per_ticket }} score : entry {{ entry_fee }}</span></h2>
+    <h2 class="section-title">// SKEE-BALL <span class="sub">aim column + power row : bullseye 100 : entry {{ entry_fee }}</span></h2>
     <div class="bj-chips">
       <span class="stat-label">TICKETS</span>
       <span class="stat-val stat-chip" id="chip-balance">{{ me.chips }}</span>
@@ -18,34 +18,59 @@
   <div class="sb-hud">
     <div class="hud-item"><span class="hud-label">BALLS</span><span class="hud-val" id="sb-balls">0 / {{ balls_per_round }}</span></div>
     <div class="hud-item"><span class="hud-label">SCORE</span><span class="hud-val stat-rating" id="sb-score">0</span></div>
+    <div class="hud-item"><span class="hud-label">STREAK</span><span class="hud-val stat-win" id="sb-streak">0x</span></div>
     <div class="hud-item"><span class="hud-label">LAST</span><span class="hud-val stat-win" id="sb-last">-</span></div>
   </div>
 
   <div class="sb-arena">
-    <div class="sb-ramp">
-      <div class="sb-holes">
-        <div class="sb-hole sb-hole-10">10</div>
-        <div class="sb-hole sb-hole-20">20</div>
-        <div class="sb-hole sb-hole-30">30</div>
-        <div class="sb-hole sb-hole-50">50</div>
-        <div class="sb-hole sb-hole-100">100</div>
+    <div class="sb-ramp" id="sb-ramp">
+      <div class="sb-grid" id="sb-grid">
+        <div class="sb-row sb-row-far">
+          <div class="sb-hole sb-h-miss" data-row="2" data-col="0">-</div>
+          <div class="sb-hole sb-h-10"   data-row="2" data-col="1">10</div>
+          <div class="sb-hole sb-h-100"  data-row="2" data-col="2">100</div>
+          <div class="sb-hole sb-h-10"   data-row="2" data-col="3">10</div>
+          <div class="sb-hole sb-h-miss" data-row="2" data-col="4">-</div>
+        </div>
+        <div class="sb-row sb-row-mid">
+          <div class="sb-hole sb-h-20" data-row="1" data-col="0">20</div>
+          <div class="sb-hole sb-h-40" data-row="1" data-col="1">40</div>
+          <div class="sb-hole sb-h-50" data-row="1" data-col="2">50</div>
+          <div class="sb-hole sb-h-40" data-row="1" data-col="3">40</div>
+          <div class="sb-hole sb-h-20" data-row="1" data-col="4">20</div>
+        </div>
+        <div class="sb-row sb-row-near">
+          <div class="sb-hole sb-h-10" data-row="0" data-col="0">10</div>
+          <div class="sb-hole sb-h-20" data-row="0" data-col="1">20</div>
+          <div class="sb-hole sb-h-30" data-row="0" data-col="2">30</div>
+          <div class="sb-hole sb-h-20" data-row="0" data-col="3">20</div>
+          <div class="sb-hole sb-h-10" data-row="0" data-col="4">10</div>
+        </div>
+        <div class="sb-aim-col" id="sb-aim-col"></div>
       </div>
       <div class="sb-ball" id="sb-ball">●</div>
     </div>
 
-    <div class="sb-charge-wrap">
-      <div class="sb-charge-label">POWER <span class="sb-hint">- aim for the amber zone (bullseye)</span></div>
-      <div class="sb-charge-bar">
-        <div class="sb-charge-fill" id="sb-charge-fill"></div>
-        <div class="sb-charge-target"></div>
+    <div class="sb-meter">
+      <div class="sb-meter-label" id="sb-meter-label">AIM</div>
+      <div class="sb-meter-bar">
+        <div class="sb-meter-fill" id="sb-meter-fill"></div>
+        <div class="sb-power-zones" id="sb-power-zones" style="display:none">
+          <div class="sb-zone sb-zone-near">NEAR</div>
+          <div class="sb-zone sb-zone-mid">MID</div>
+          <div class="sb-zone sb-zone-far">FAR</div>
+        </div>
       </div>
+      <div class="sb-meter-hint" id="sb-meter-hint">click LOCK AIM when the column is on the hole you want</div>
     </div>
-    <div class="sb-result" id="sb-result">CLICK ROLL TO START</div>
+
+    <div class="sb-result" id="sb-result">CLICK NEW ROUND TO START</div>
   </div>
 
   <div class="sb-controls">
-    <button type="button" id="btn-new" class="btn-primary">NEW ROUND ({{ entry_fee }} TICKETS)</button>
-    <button type="button" id="btn-roll" class="btn-secondary" style="display:none">ROLL</button>
+    <button type="button" id="btn-new"  class="btn-primary">NEW ROUND ({{ entry_fee }} TICKETS)</button>
+    <button type="button" id="btn-lock" class="btn-secondary" style="display:none">LOCK AIM</button>
+    <button type="button" id="btn-fire" class="btn-danger"    style="display:none">RELEASE</button>
   </div>
 
   <div class="lobby-columns">

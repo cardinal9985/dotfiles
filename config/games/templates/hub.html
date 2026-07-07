@@ -86,6 +86,7 @@
   <div class="game-tiles">
     {{ tile("CONNECT 4", "●", "1v1, drop discs, four in a row wins, draws trigger the Arbiter", "1V1", url_for('connect4.lobby')) }}
     {{ tile("WAR", "⚡", "1v1 card duel, best of 5, ties trigger the Arbiter, winner takes the pot", "1V1", url_for('war.lobby')) }}
+    {{ tile("TIC-TAC-TOE", "✕", "Classic 3x3 vs bot. Easy / medium / minimax. Draw is the win on hard", "SOLO", url_for('tictactoe.table')) }}
     {{ tile("DUCK RACE", "🦆", "Pick a duck, watch it race, winner takes the pot", "1-6P", url_for('duckrace.lobby')) }}
     {{ tile("SLOTS", "▓", "Spin, hope, repeat. Rumored jackpot combo hides in the reels", "SOLO", url_for('slots.machine')) }}
   </div>

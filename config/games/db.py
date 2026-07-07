@@ -257,6 +257,19 @@ CREATE TABLE IF NOT EXISTS war_games (
     completed_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS tictactoe_games (
+    id           TEXT PRIMARY KEY,
+    username     TEXT    NOT NULL,
+    difficulty   TEXT    NOT NULL,
+    board_json   TEXT    NOT NULL DEFAULT '[null,null,null,null,null,null,null,null,null]',
+    status       TEXT    NOT NULL DEFAULT 'active',
+    entry_fee    INTEGER NOT NULL,
+    payout       INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+    completed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_ttt_user ON tictactoe_games(username, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS wordle_attempts (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     username     TEXT    NOT NULL,

@@ -20,6 +20,7 @@ let
           ${src}/duckrace_bp.py ${src}/yahtzee_bp.py ${src}/whack_bp.py \
           ${src}/snake_bp.py ${src}/highstriker_bp.py ${src}/ringtoss_bp.py \
           ${src}/balloonpop_bp.py ${src}/skeeball_bp.py ${src}/wordle_bp.py \
+          ${src}/tictactoe_bp.py \
           ${src}/templates ${src}/static ${src}/data $out/
   '';
 in

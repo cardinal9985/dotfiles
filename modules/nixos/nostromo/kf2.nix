@@ -33,7 +33,10 @@ in
     script = ''
       ADMIN_PW=$(cat ${config.sops.secrets."kf2/admin_password".path})
       cd ${volume}
-      exec ./Binaries/Win64/KFGameSteamServer.bin.x86_64 \
+      # KF2 is a generic Linux ELF that expects FHS paths (libcurl,
+      # libstdc++, glibc, steamclient.so, ...). steam-run provides the
+      # environment the Pelican Debian image gave it for free.
+      exec ${pkgs.steam-run}/bin/steam-run ./Binaries/Win64/KFGameSteamServer.bin.x86_64 \
         "${mapName}?Port=${toString serverPort}?QueryPort=${toString queryPort}?AdminPassword=$ADMIN_PW?Difficulty=${toString difficulty}?ServerName=${serverName}?bWebServer=true?WebAdminPort=${toString webAdminPort}"
     '';
 

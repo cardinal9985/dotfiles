@@ -6,7 +6,7 @@ let
   volume       = "/var/lib/pelican/volumes/7ecd8608-d111-4bf5-aab0-965c6eb6c0b7";
   serverPort   = 7777;
   queryPort    = 27015;
-  webAdminPort = 8080;
+  webAdminPort = 8380;  # 8080 collides with Wings' API port on nostromo
   mapName      = "kf-bioticslab";
   difficulty   = 0;  # 0 Normal, 1 Hard, 2 Suicidal, 3 Hell on Earth
   serverName   = "USG-ISHIMURA";  # spaces don't survive URL-encoded startup args

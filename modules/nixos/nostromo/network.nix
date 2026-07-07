@@ -34,7 +34,7 @@
         6969  # SPT.Server (Pelican container, exposed for direct game.ishimura.lol forward)
         25565 # Fika P2P (raid signaling)
         34123
-        8080  # KF2 WebAdmin (tailnet-only, not router-forwarded)
+        8380  # KF2 WebAdmin (tailnet-only, not router-forwarded)
       ];
       allowedUDPPorts = [
         25565 # Fika P2P (raid game traffic)

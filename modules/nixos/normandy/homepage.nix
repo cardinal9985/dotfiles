@@ -144,10 +144,10 @@ let
     {
       name        = "KF2 WebAdmin";
       description = "Killing Floor 2";
-      url         = "http://nostromo:8080/ServerAdmin";
+      url         = "http://nostromo:8380/ServerAdmin";
       icon        = "☣";
       statusPath  = "/health/kf2-webadmin";
-      healthUrl   = "http://nostromo:8080/ServerAdmin/";
+      healthUrl   = "http://nostromo:8380/ServerAdmin/";
     }
     {
       name        = "Refinery";

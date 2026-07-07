@@ -24,8 +24,8 @@
       };
       # KF2 dedicated server admin password (WebAdmin login + ?AdminPassword=)
       "kf2/admin_password" = {
-        owner = "pelican";
-        group = "pelican";
+        owner = "hangar";
+        group = "hangar";
         mode  = "0400";
       };
     };

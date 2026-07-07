@@ -1,10 +1,8 @@
 { config, pkgs, ... }:
 
 let
-  # Migrated out of Pelican's volume path as part of the Hangar rollout
-  # (docs/superpowers/specs/2026-07-07-hangar-design.md). Owned by pelican
-  # user still since that's how the files were created; can rename the
-  # user later.
+  # Hangar rollout (docs/superpowers/specs/2026-07-07-hangar-design.md).
+  # Volume + service now owned by the hangar user, no Pelican dependency.
   volume       = "/persist/gameservers/kf2";
   serverPort   = 7777;
   queryPort    = 27015;
@@ -16,14 +14,28 @@ in
 {
   # sops secret defined in ./sops.nix
 
-  # Ensure /persist/gameservers exists and is walkable by pelican user for
-  # any per-game module dropped in later (vintagestory.nix, tarkov-spt.nix).
+  # The single user that owns Hangar-managed game server volumes + runs
+  # the systemd services. Consolidated here for now; will move to a
+  # shared modules/nixos/nostromo/hangar-users.nix when a second game
+  # module lands (VS, SPT).
+  users.users.hangar = {
+    isSystemUser = true;
+    group        = "hangar";
+    home         = "/persist/gameservers";
+    description  = "Hangar game-server runtime user";
+  };
+  users.groups.hangar = {};
+
+  # /persist/gameservers is the root under which every game module drops
+  # a subdirectory owned by hangar. Group-traversable so future tooling
+  # (backup timer, hangar Flask panel) can read as its own user.
   systemd.tmpfiles.rules = [
-    "d /persist/gameservers 0755 root root -"
+    "d /persist/gameservers      0755 hangar hangar -"
+    "d /persist/gameservers/kf2  0755 hangar hangar -"
   ];
 
   environment.persistence."/persist".directories = [
-    { directory = "/persist/gameservers"; user = "root"; group = "root"; mode = "0755"; }
+    { directory = "/persist/gameservers"; user = "hangar"; group = "hangar"; mode = "0755"; }
   ];
 
   systemd.services.kf2 = {
@@ -56,8 +68,8 @@ in
 
     serviceConfig = {
       Type            = "simple";
-      User            = "pelican";
-      Group           = "pelican";
+      User            = "hangar";
+      Group           = "hangar";
       Restart         = "on-failure";
       RestartSec      = "10s";
       LimitNOFILE     = 1048576;

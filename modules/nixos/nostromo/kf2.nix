@@ -19,13 +19,13 @@ in
     wants       = [ "network-online.target" ];
     wantedBy    = [ "multi-user.target" ];
 
-    # Ensure WebAdmin is enabled and on the right port every start. First
-    # boot generates the ini with bEnabled=false; second boot picks it up.
+    # Ensure WebAdmin is enabled and on the right port every start. Case
+    # matters here - KF2 writes bEnabled=False (capital F).
     preStart = ''
       set -eu
-      CFG="${volume}/KFGame/Config/LinuxServer-KFWeb.ini"
+      CFG="${volume}/KFGame/Config/KFWeb.ini"
       if [ -f "$CFG" ]; then
-        ${pkgs.gnused}/bin/sed -i 's/^bEnabled=.*/bEnabled=true/' "$CFG"
+        ${pkgs.gnused}/bin/sed -i 's/^bEnabled=.*/bEnabled=True/'                 "$CFG"
         ${pkgs.gnused}/bin/sed -i "s/^ListenPort=.*/ListenPort=${toString webAdminPort}/" "$CFG"
       fi
     '';
@@ -36,8 +36,9 @@ in
       # KF2 is a generic Linux ELF that expects FHS paths (libcurl,
       # libstdc++, glibc, steamclient.so, ...). steam-run provides the
       # environment the Pelican Debian image gave it for free.
+      # WebAdmin toggle + port live in KFWeb.ini (see preStart), not URL args.
       exec ${pkgs.steam-run}/bin/steam-run ./Binaries/Win64/KFGameSteamServer.bin.x86_64 \
-        "${mapName}?Port=${toString serverPort}?QueryPort=${toString queryPort}?AdminPassword=$ADMIN_PW?Difficulty=${toString difficulty}?ServerName=${serverName}?bWebServer=true?WebAdminPort=${toString webAdminPort}"
+        "${mapName}?Port=${toString serverPort}?QueryPort=${toString queryPort}?AdminPassword=$ADMIN_PW?Difficulty=${toString difficulty}?ServerName=${serverName}"
     '';
 
     serviceConfig = {

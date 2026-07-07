@@ -30,6 +30,7 @@ function spawnBalloon() {
   el.dataset.speed = (isGold ? 0.9 : 1.3 + Math.random() * 0.8).toString();
 
   el.addEventListener('click', () => {
+    if (!_playing) return;
     if (el.classList.contains('popped')) return;
     el.classList.add('popped');
     _pops++;
@@ -88,6 +89,11 @@ async function finishRound() {
   if (_timerId) { clearInterval(_timerId); _timerId = null; }
   if (_spawnId) { clearTimeout(_spawnId); _spawnId = null; }
   if (_riseId) { clearInterval(_riseId); _riseId = null; }
+  // Fade out any remaining balloons so they can't be interacted with
+  document.querySelectorAll('#bp-arena .balloon:not(.popped)').forEach(el => {
+    el.classList.add('popped');
+    setTimeout(() => el.remove(), 250);
+  });
   document.getElementById('bp-status').textContent = 'SUBMITTING...';
 
   try {

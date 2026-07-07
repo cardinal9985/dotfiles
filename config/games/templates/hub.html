@@ -87,10 +87,10 @@
 
   <h3 class="row-title">// CARNIVAL - AIM & TIMING</h3>
   <div class="game-tiles">
-    {{ tile("HIGH STRIKER", "⇧", "Test your strength, hit the bell for the jackpot", "SOLO") }}
-    {{ tile("RING TOSS", "◎", "Aim + release, land rings on the pegs for ticket payouts", "SOLO") }}
-    {{ tile("BALLOON POP", "🎈", "Click balloons as they float up, ticket per pop, race the timer", "SOLO") }}
-    {{ tile("SKEE-BALL", "⊛", "Roll balls up the ramp into the scoring holes", "SOLO") }}
+    {{ tile("HIGH STRIKER", "⇧", "Test your strength, hit the bell for the jackpot", "SOLO", url_for('highstriker.table')) }}
+    {{ tile("RING TOSS", "◎", "Aim + release, land rings on the pegs for ticket payouts", "SOLO", url_for('ringtoss.table')) }}
+    {{ tile("BALLOON POP", "🎈", "Click balloons as they float up, ticket per pop, race the timer", "SOLO", url_for('balloonpop.table')) }}
+    {{ tile("SKEE-BALL", "⊛", "Roll balls up the ramp into the scoring holes", "SOLO", url_for('skeeball.table')) }}
   </div>
 
   <h3 class="row-title">// CARNIVAL - MIDWAY PRIZE</h3>

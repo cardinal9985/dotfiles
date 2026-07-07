@@ -1,0 +1,89 @@
+.rt-page { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.rt-arena {
+  display: flex; flex-direction: column; gap: 0.75rem;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(20,26,42,0.7), rgba(20,26,42,0.3));
+  border: 1px solid rgba(58,159,191,0.2);
+}
+
+.rt-board {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  background: rgba(58,159,191,0.05);
+  border: 1px solid var(--surface-mid);
+  overflow: hidden;
+}
+
+.rt-peg {
+  position: absolute;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.35rem;
+}
+.rt-peg-marker {
+  width: 100%; height: 40px;
+  background: var(--bright-cyan);
+  box-shadow: 0 0 12px rgba(110,200,230,0.5);
+  border-radius: 4px 4px 0 0;
+  border: 1px solid var(--bright-white);
+}
+.rt-peg-value {
+  color: var(--bright-amber);
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+}
+
+.rt-reticle {
+  position: absolute;
+  top: 8px; bottom: 8px;
+  left: 0;
+  width: 2px;
+  background: var(--bright-amber);
+  box-shadow: 0 0 10px rgba(251,191,96,0.7);
+  transition: left 0.03s linear;
+  z-index: 5;
+}
+.rt-reticle::before,
+.rt-reticle::after {
+  content: '▼';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--bright-amber);
+  font-size: 0.7rem;
+}
+.rt-reticle::before { top: -2px; }
+.rt-reticle::after  { bottom: -2px; transform: translateX(-50%) rotate(180deg); }
+
+.rt-ring {
+  position: absolute;
+  font-size: 2.5rem;
+  color: var(--bright-white);
+  text-shadow: 0 0 8px rgba(220,228,240,0.7);
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  transition: top 0.6s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.rt-result {
+  font-size: 0.9rem;
+  letter-spacing: 0.15em;
+  color: var(--bright-white);
+  min-height: 1.4rem;
+  text-align: center;
+}
+.rt-result.win  { color: var(--bright-green); text-shadow: 0 0 10px rgba(94,234,212,0.5); }
+.rt-result.miss { color: var(--bright-red);   opacity: 0.85; }
+
+.rt-controls { display: flex; justify-content: center; }
+
+.rt-best {
+  font-size: 1.6rem;
+  color: var(--bright-amber);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 12px rgba(251,191,96,0.4);
+}

@@ -18,7 +18,8 @@ let
           ${src}/slots_bp.py ${src}/baccarat_bp.py ${src}/dice_bp.py \
           ${src}/roulette_bp.py ${src}/connect4_bp.py ${src}/reaction_bp.py \
           ${src}/duckrace_bp.py ${src}/yahtzee_bp.py ${src}/whack_bp.py \
-          ${src}/snake_bp.py \
+          ${src}/snake_bp.py ${src}/highstriker_bp.py ${src}/ringtoss_bp.py \
+          ${src}/balloonpop_bp.py ${src}/skeeball_bp.py \
           ${src}/templates ${src}/static $out/
   '';
 in

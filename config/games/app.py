@@ -128,6 +128,18 @@ app.register_blueprint(whack_bp.bp, url_prefix="/whack")
 import snake_bp
 app.register_blueprint(snake_bp.bp, url_prefix="/snake")
 
+import highstriker_bp
+app.register_blueprint(highstriker_bp.bp, url_prefix="/highstriker")
+
+import ringtoss_bp
+app.register_blueprint(ringtoss_bp.bp, url_prefix="/ringtoss")
+
+import balloonpop_bp
+app.register_blueprint(balloonpop_bp.bp, url_prefix="/balloonpop")
+
+import skeeball_bp
+app.register_blueprint(skeeball_bp.bp, url_prefix="/skeeball")
+
 if __name__ == "__main__":
     db.init_db()
     socketio.run(app, host="0.0.0.0", port=5001, debug=False, allow_unsafe_werkzeug=True)

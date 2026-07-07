@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}BALLOON POP // USG REC{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/balloonpop.css') }}">
+{% endblock %}
+{% block content %}
+
+<div class="bp-page">
+
+  <div class="bj-header">
+    <h2 class="section-title">// BALLOON POP <span class="sub">30s round : {{ points_per_pop }} per pop : gold balloons +{{ gold_bonus }}</span></h2>
+    <div class="bj-chips">
+      <span class="stat-label">TICKETS</span>
+      <span class="stat-val stat-chip" id="chip-balance">{{ me.chips }}</span>
+    </div>
+  </div>
+
+  <div class="bp-hud">
+    <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-val" id="bp-timer">30</span></div>
+    <div class="hud-item"><span class="hud-label">POPS</span><span class="hud-val stat-win" id="bp-pops">0</span></div>
+    <div class="hud-item"><span class="hud-label">GOLD</span><span class="hud-val stat-rating" id="bp-gold">0</span></div>
+  </div>
+
+  <div class="bp-arena" id="bp-arena"></div>
+
+  <div class="bp-controls">
+    <button type="button" id="btn-start" class="btn-primary">START ROUND ({{ entry_fee }} TICKETS)</button>
+    <span id="bp-status" class="variant-desc"></span>
+  </div>
+
+  <div class="lobby-columns">
+    <section>
+      <h3 class="section-title">// PERSONAL BEST</h3>
+      {% if best %}
+        <p class="bp-best">{{ best }} POPS</p>
+      {% else %}
+        <p class="empty">NO ROUNDS YET</p>
+      {% endif %}
+    </section>
+    <section>
+      <h3 class="section-title">// LEADERBOARD</h3>
+      {% if leaderboard %}
+        <table class="data-table">
+          <thead><tr><th>CREW</th><th>BEST POPS</th><th>GOLD</th></tr></thead>
+          <tbody>
+          {% for p in leaderboard %}
+            <tr {% if p.username == user %}class="highlight-row"{% endif %}>
+              <td>{{ p.username }}</td>
+              <td class="stat-rating">{{ p.best_pops }}</td>
+              <td class="stat-win">{{ p.golds }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">NO ROUNDS YET</p>
+      {% endif %}
+    </section>
+  </div>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  window.BP_CFG = {{ {"points_per_pop": points_per_pop, "gold_bonus": gold_bonus, "round_secs": 30}|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/balloonpop.js') }}"></script>
+{% endblock %}

@@ -119,6 +119,48 @@ CREATE TABLE IF NOT EXISTS connect4_games (
     completed_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS highstriker_attempts (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    power      INTEGER NOT NULL,
+    entry_fee  INTEGER NOT NULL,
+    payout     INTEGER NOT NULL,
+    rang_bell  INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_hs_user ON highstriker_attempts(username, power DESC);
+
+CREATE TABLE IF NOT EXISTS ringtoss_rounds (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    rings_won  INTEGER NOT NULL,
+    entry_fee  INTEGER NOT NULL,
+    payout     INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_rt_user ON ringtoss_rounds(username, rings_won DESC);
+
+CREATE TABLE IF NOT EXISTS balloonpop_rounds (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    pops       INTEGER NOT NULL,
+    gold_pops  INTEGER NOT NULL DEFAULT 0,
+    entry_fee  INTEGER NOT NULL,
+    payout     INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_bp_user ON balloonpop_rounds(username, pops DESC);
+
+CREATE TABLE IF NOT EXISTS skeeball_rounds (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    score      INTEGER NOT NULL,
+    entry_fee  INTEGER NOT NULL,
+    payout     INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_sb_user ON skeeball_rounds(username, score DESC);
+
 CREATE TABLE IF NOT EXISTS whack_rounds (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     username   TEXT    NOT NULL,

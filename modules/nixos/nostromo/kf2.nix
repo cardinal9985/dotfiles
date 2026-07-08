@@ -13,18 +13,7 @@ let
 in
 {
   # sops secret defined in ./sops.nix
-
-  # The single user that owns Hangar-managed game server volumes + runs
-  # the systemd services. Consolidated here for now; will move to a
-  # shared modules/nixos/nostromo/hangar-users.nix when a second game
-  # module lands (VS, SPT).
-  users.users.hangar = {
-    isSystemUser = true;
-    group        = "hangar";
-    home         = "/persist/gameservers";
-    description  = "Hangar game-server runtime user";
-  };
-  users.groups.hangar = {};
+  # hangar user/group live in ./hangar.nix (canonical owner).
 
   # /persist/gameservers is the root under which every game module drops
   # a subdirectory owned by hangar. Group-traversable so future tooling

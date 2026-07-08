@@ -134,22 +134,6 @@ let
       icon        = "⬡";
     }
     {
-      name        = "Pelican";
-      description = "Game Servers";
-      url         = "https://pelican.ishimura.lol";
-      icon        = "◆";
-      statusPath  = "/health/pelican";
-      healthUrl   = "http://${ishimuraTailnetIP}:8801/up";
-    }
-    {
-      name        = "KF2 WebAdmin";
-      description = "Killing Floor 2";
-      url         = "http://nostromo:8380/ServerAdmin";
-      icon        = "☣";
-      statusPath  = "/health/kf2-webadmin";
-      healthUrl   = "http://nostromo:8380/ServerAdmin/";
-    }
-    {
       name        = "Hangar";
       description = "Game Servers";
       url         = "https://hangar.ishimura.lol";
@@ -337,7 +321,7 @@ in
   '';
 
   systemd.services.game-status-poller = {
-    description = "Poll Pelican Panel for game-server states";
+    description = "Poll Hangar for game-server states";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     serviceConfig = {
@@ -347,7 +331,7 @@ in
   };
 
   systemd.timers.game-status-poller = {
-    description = "Run the Pelican game-status poller every 30s";
+    description = "Run the Hangar game-status poller every 30s";
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "1m";

@@ -7,7 +7,6 @@
     ./nfs.nix
     ./ntfy.nix
     ./tdarr-node.nix
-    ./wings.nix
     ./kf2.nix
     ./vintagestory.nix
     ./tarkov-spt.nix

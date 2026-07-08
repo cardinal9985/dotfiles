@@ -177,9 +177,6 @@ let
           stripPrefix:
             prefixes:
               - "/mods"
-        rewrite-pelican-health:
-          replacePath:
-            path: "/up"
         rewrite-slskd-health:
           replacePath:
             path: "/api/v0/application"
@@ -469,21 +466,6 @@ let
           middlewares:
             - noindex-headers
             - rewrite-grafana-health
-        homepage-health-pelican-router:
-          rule: "Host(`${domain}`) && Path(`/health/pelican`)"
-          service: pelican-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: porkbun
-            domains:
-              - main: "${domain}"
-                sans:
-                  - "*.${domain}"
-          priority: 50
-          middlewares:
-            - noindex-headers
-            - rewrite-pelican-health
         homepage-health-prometheus-router:
           rule: "Host(`${domain}`) && Path(`/health/prometheus`)"
           service: prometheus-service
@@ -889,34 +871,6 @@ let
           priority: 10
           middlewares:
             - noindex-headers
-        pelican-router:
-          rule: "Host(`pelican.${domain}`)"
-          service: pelican-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: porkbun
-            domains:
-              - main: "${domain}"
-                sans:
-                  - "*.${domain}"
-          priority: 10
-          middlewares:
-            - noindex-headers
-        wings-router:
-          rule: "Host(`wings.${domain}`)"
-          service: wings-service
-          entryPoints:
-            - websecure
-          tls:
-            certResolver: porkbun
-            domains:
-              - main: "${domain}"
-                sans:
-                  - "*.${domain}"
-          priority: 10
-          middlewares:
-            - noindex-headers
         # FileBrowser Quantum admin UI on ishimura. Double-gated: tailnet-only
         # at the proxy + FileBrowser's own admin user. Only used to manage
         # files in /mnt/storage from the browser instead of scp.
@@ -1254,14 +1208,6 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:8096"
-        pelican-service:
-          loadBalancer:
-            servers:
-              - url: "http://100.92.76.121:8801"
-        wings-service:
-          loadBalancer:
-            servers:
-              - url: "http://100.107.103.76:8080"
         scrutiny-service:
           loadBalancer:
             servers:

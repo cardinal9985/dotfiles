@@ -17,7 +17,6 @@
     ./jellyfin.nix
     ./mods-server.nix
     ./navidrome.nix
-    ./pelican.nix
     ./refinery.nix
     ./requests.nix
     ./romm.nix

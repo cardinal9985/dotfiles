@@ -42,9 +42,6 @@
       "porkbun/secret_api_key" = {
         mode = "0400";
       };
-      "pelican/application_api_key" = {
-        mode = "0400";
-      };
       "searxng/secret_key" = {
         mode = "0400";
       };

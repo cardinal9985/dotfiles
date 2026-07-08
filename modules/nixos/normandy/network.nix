@@ -27,7 +27,7 @@
         51820 # Pangolin / Gerbil (WireGuard, primary)
         21820 # Pangolin / Gerbil (WireGuard, secondary)
         6790  # Fika game traffic (Pangolin raw resource > nostromo tailnet:6790)
-        42420 # Vintage Story (Pelican raw resource > nostromo tailnet:42420)
+        42420 # Vintage Story (Pangolin raw resource > nostromo tailnet:42420)
       ];
       interfaces.tailscale0.allowedTCPPorts = [
         3890 # voidauth LDAP (tailnet-only, jellyfin-plugin-ldap connects here)

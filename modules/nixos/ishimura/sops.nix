@@ -19,9 +19,6 @@
       "crowdsec/ishimura_firewall_bouncer_api_key" = {
         mode = "0400";
       };
-      "pelican/app_key" = {
-        mode = "0400";
-      };
       "booklore/db_password" = {
         mode = "0400";
       };

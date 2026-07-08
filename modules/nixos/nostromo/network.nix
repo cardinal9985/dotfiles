@@ -31,7 +31,7 @@
       enable = true;
       allowedTCPPorts = [
         36475 # SSH
-        6969  # SPT.Server (Pelican container, exposed for direct game.ishimura.lol forward)
+        6969  # SPT.Server HTTP + WebSocket (Fika co-op relay)
         25565 # Fika P2P (raid signaling)
         34123
         8380  # KF2 WebAdmin (tailnet-only, not router-forwarded)

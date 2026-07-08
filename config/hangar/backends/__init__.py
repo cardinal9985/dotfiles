@@ -1,10 +1,12 @@
 from .base import Backend, NullBackend
 from .kf2_webadmin import KF2WebAdminBackend
 from .vs_stdin import VintageStoryStdinBackend
+from .spt_journal import SPTJournalBackend
 
 _REGISTRY = {
     "kf2_webadmin": KF2WebAdminBackend,
     "vs_stdin":     VintageStoryStdinBackend,
+    "spt_journal":  SPTJournalBackend,
 }
 
 

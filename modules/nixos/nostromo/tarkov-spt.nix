@@ -100,8 +100,9 @@ in
     volume           = volume;
     game_type        = "tarkov-spt";
     connect_address  = "https://games.ishimura.lol:${toString gamePort}";
-    # Backend intentionally omitted (NullBackend): SPT has no admin API
-    # worth wrapping today. Adding a journal-based player tracker later
-    # would slot in as `console_backend = "spt_journal"`.
+    console_backend  = "spt_journal";
+    console_backend_config = {
+      systemd_unit = "tarkov-spt.service";
+    };
   };
 }

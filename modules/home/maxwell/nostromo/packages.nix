@@ -77,6 +77,9 @@
     bitwarden-desktop # Password Manager
     rbw               # CLI Bitwarden
     proton-vpn        # VPN
+    kdePackages.kleopatra # GPG Key Manager
+    cakewallet        # Multi-Currency Crypto Wallet
+    feather           # Monero Wallet
 
     # ─── [ Audio Engineering ] ──────────────────────────────────────────
 

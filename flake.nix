@@ -91,6 +91,7 @@
       {
         nixpkgs.overlays = [
           (import ./overlays/deskmat.nix)
+          (import ./overlays/cakewallet.nix)
           rocksmith-nix.overlays.default
         ];
       }

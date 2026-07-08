@@ -124,25 +124,35 @@ fetch('services.json')
   });
 
 /* ── Game servers ── */
-function setGameStatus(spanEl, status) {
-  var s = (status || 'unknown').toLowerCase();
+function setGameStatus(spanEl, info) {
+  var status = (info && info.status) || 'unknown';
+  var s = status.toLowerCase();
   spanEl.className = 'game-status game-status-' + s;
-  spanEl.innerHTML = '<span class="game-status-dot"></span>' + s.toUpperCase();
+  var label = s.toUpperCase();
+  // Append player count when known - Hangar poller writes it for games
+  // whose backend supports player_count (currently KF2).
+  if (info && typeof info.player_count === 'number' && s === 'online') {
+    label += ' · ' + info.player_count + 'P';
+  }
+  spanEl.innerHTML = '<span class="game-status-dot"></span>' + label;
 }
 
 async function fetchGameStatus(slug) {
-  if (!slug) return 'unknown';
+  if (!slug) return { status: 'unknown' };
   try {
     var ctrl = new AbortController();
     var timer = setTimeout(function () { ctrl.abort(); }, 4000);
     var res = await fetch('games-status/' + slug + '.json',
       { cache: 'no-store', signal: ctrl.signal });
     clearTimeout(timer);
-    if (!res.ok) return 'unknown';
+    if (!res.ok) return { status: 'unknown' };
     var j = await res.json();
-    return j.status || 'unknown';
+    return {
+      status:       j.status || 'unknown',
+      player_count: typeof j.player_count === 'number' ? j.player_count : null,
+    };
   } catch (_) {
-    return 'unknown';
+    return { status: 'unknown' };
   }
 }
 

@@ -188,49 +188,158 @@ class KF2WebAdminBackend:
                     self._log(f"POST {path} retry exception: {e}")
             return None
 
-    # -- players -----------------------------------------------------------
+    def _extract_form_fields(self, form):
+        """Turn a BeautifulSoup form into a dict of {field: default value}.
 
-    def _parse_players(self, html):
-        """WebAdmin players table has columns: Name, Ping, Score, Admin, Actions.
-        Rows have hidden inputs carrying the player id for the action forms.
+        Preserves every input / select / textarea's current state so we can
+        submit the whole form back with only our overrides changed. This
+        matches how UE3 WebAdmin forms want to be POSTed.
         """
-        soup = BeautifulSoup(html, "html.parser")
-        players = []
-        table = soup.find("table", class_="players")
-        if not table:
-            # Fallback: any table under the current+players page
-            table = soup.find("table")
-        if not table:
-            return players
-        for row in table.find_all("tr"):
-            cells = row.find_all("td")
-            if len(cells) < 2:
-                continue
-            name  = cells[0].get_text(strip=True)
+        data = {}
+        for inp in form.find_all("input"):
+            name = inp.get("name")
             if not name:
                 continue
-            ping  = cells[1].get_text(strip=True) if len(cells) > 1 else ""
-            score = cells[2].get_text(strip=True) if len(cells) > 2 else ""
-            # Try to find a player id in any input inside the row
+            typ = (inp.get("type") or "text").lower()
+            if typ in ("submit", "button", "reset", "image", "file"):
+                continue
+            if typ in ("checkbox", "radio"):
+                if inp.has_attr("checked"):
+                    data[name] = inp.get("value", "on")
+                continue
+            data[name] = inp.get("value", "")
+        for sel in form.find_all("select"):
+            name = sel.get("name")
+            if not name:
+                continue
+            opt = sel.find("option", attrs={"selected": True})
+            if not opt:
+                opt = sel.find("option")
+            data[name] = opt.get("value", "") if opt else ""
+        for ta in form.find_all("textarea"):
+            name = ta.get("name")
+            if not name:
+                continue
+            data[name] = ta.get_text() or ""
+        return data
+
+    def _post_form(self, path, overrides, form_id=None, extra_submit=None):
+        """Fetch the target URL, extract its form, override + POST all fields.
+
+        `form_id` picks a specific form when a page has several; otherwise
+        the first form is used. `extra_submit` lets callers include a submit
+        button name/value (some WebAdmin actions require this to route
+        server-side handlers).
+        """
+        with self._lock:
+            if not self._logged_in and not self._login():
+                return None
+            try:
+                r = self.session.get(f"{self.base_url}{path}", timeout=8,
+                                     allow_redirects=True)
+            except requests.RequestException as e:
+                self._log(f"form GET {path} exception: {e}")
+                return None
+            if self._has_login_form(r.text):
+                self._log(f"form GET {path} landed on login, re-authing")
+                if not self._login():
+                    return None
+                try:
+                    r = self.session.get(f"{self.base_url}{path}", timeout=8)
+                except requests.RequestException:
+                    return None
+            soup = BeautifulSoup(r.text, "html.parser")
+            form = soup.find("form", id=form_id) if form_id else None
+            if not form:
+                form = soup.find("form")
+            if not form:
+                self._log(f"form POST {path}: no form on page")
+                return None
+            data = self._extract_form_fields(form)
+            data.update(overrides)
+            if extra_submit:
+                data.update(extra_submit)
+            action = form.get("action") or path
+            action_url = action if action.startswith("http") else (self.base_url + action)
+            try:
+                r = self.session.post(action_url, data=data, timeout=8,
+                                      allow_redirects=True)
+                self._log(f"form POST {action_url} overrides={list(overrides.keys())} status={r.status_code}")
+                if r.status_code == 200 and not self._has_login_form(r.text):
+                    return r
+            except requests.RequestException as e:
+                self._log(f"form POST exception: {e}")
+            return None
+
+    # -- players -----------------------------------------------------------
+
+    def _find_players_table(self, soup):
+        """Locate the players table. KF2 uses class="grid" everywhere; older
+        WebAdmin skins used class="players" or "playerstable". Pick any table
+        whose header row includes "name" / "player" / "ping"."""
+        candidates = list(soup.find_all("table", class_="grid"))
+        candidates += list(soup.find_all("table", class_="players"))
+        candidates += list(soup.find_all("table", class_="playerstable"))
+        # Include all remaining tables as last resort
+        for t in soup.find_all("table"):
+            if t not in candidates:
+                candidates.append(t)
+        for cand in candidates:
+            headers = [th.get_text(strip=True).lower() for th in cand.find_all("th")]
+            joined = " ".join(headers)
+            if any(w in joined for w in ("name", "player", "ping", "score")):
+                return cand
+        return None
+
+    def _parse_players(self, html):
+        soup = BeautifulSoup(html, "html.parser")
+        table = self._find_players_table(soup)
+        if not table:
+            return []
+        players = []
+        # Map column index -> header so we can pull cells generically
+        headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+        def col(cells, key):
+            for i, h in enumerate(headers):
+                if key in h and i < len(cells):
+                    return cells[i].get_text(strip=True)
+            return ""
+        tbody = table.find("tbody") or table
+        for row in tbody.find_all("tr"):
+            cells = row.find_all("td")
+            if not cells:
+                continue
+            if any(td.get("colspan") for td in cells):
+                continue
+            text_lower = row.get_text(strip=True).lower()
+            if not text_lower or "no players" in text_lower:
+                continue
+            name  = col(cells, "name")  or col(cells, "player") or cells[0].get_text(strip=True)
+            ping  = col(cells, "ping")
+            score = col(cells, "score") or col(cells, "kill")
+            if not name:
+                continue
             pid = ""
             for inp in row.find_all("input"):
                 nm = (inp.get("name") or "").lower()
                 if nm in ("playerid", "playerkey", "playername"):
                     pid = inp.get("value", "")
                     break
-            players.append({
-                "id":    pid or name,
-                "name":  name,
-                "ping":  ping,
-                "score": score,
-            })
+            players.append({"id": pid or name, "name": name, "ping": ping, "score": score})
         return players
 
     def player_list(self):
-        r = self._get("/ServerAdmin/current/players")
-        if not r:
-            return None
-        return self._parse_players(r.text)
+        # Some KF2 minor versions use `+` instead of `/` between segments.
+        for path in ("/ServerAdmin/current/players",
+                     "/ServerAdmin/current+players"):
+            r = self._get(path)
+            if r is None:
+                self._log(f"player_list: {path} unreachable")
+                continue
+            players = self._parse_players(r.text)
+            self._log(f"player_list via {path}: {len(players)} players ({len(r.text)} bytes)")
+            return players
+        return None
 
     def player_count(self):
         pl = self.player_list()
@@ -432,10 +541,11 @@ class KF2WebAdminBackend:
         if kind not in ("game", "admin"):
             return False
         field = "GamePassword" if kind == "game" else "AdminPassword"
-        # WebAdmin uses double-entry confirmation on the settings form.
-        r = self._post("/ServerAdmin/settings/general", {
-            field:                password,
-            f"{field}_confirm":   password,
+        # UE3 WebAdmin needs the full settings form re-submitted, not just
+        # the changed fields, or it silently keeps the old values.
+        r = self._post_form("/ServerAdmin/settings/general", {
+            field:              password,
+            f"{field}_confirm": password,
         })
         return r is not None
 
@@ -472,10 +582,10 @@ class KF2WebAdminBackend:
         return {"banner": banner, "boxes": boxes}
 
     def set_welcome(self, banner, boxes):
-        # POST the payload back. Field names mirror what get_welcome inspects.
-        data = {"BannerImage": banner or ""}
+        # Full-form POST so we don't wipe every other MOTD field to blank.
+        overrides = {"BannerImage": banner or ""}
         for i, box in enumerate((boxes or [])[:4]):
-            data[f"MessageTitle{i}"] = box.get("title", "")
-            data[f"MessageBody{i}"]  = box.get("body",  "")
-        r = self._post(self._WELCOME_URL, data)
+            overrides[f"MessageTitle{i}"] = box.get("title", "")
+            overrides[f"MessageBody{i}"]  = box.get("body",  "")
+        r = self._post_form(self._WELCOME_URL, overrides)
         return r is not None

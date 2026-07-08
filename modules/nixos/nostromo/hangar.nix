@@ -24,6 +24,7 @@ in
   users.users.hangar = {
     isSystemUser = true;
     group        = "hangar";
+    extraGroups  = [ "systemd-journal" ];  # journalctl -u <unit> for log tailing
     home         = "/persist/gameservers";
     description  = "Hangar game-server control panel + runtime user";
   };

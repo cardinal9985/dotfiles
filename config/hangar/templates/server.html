@@ -25,7 +25,30 @@
       <button type="submit" name="action" value="start"   {% if active %}disabled{% endif %} class="btn btn-start">START</button>
       <button type="submit" name="action" value="restart" class="btn btn-restart">RESTART</button>
       <button type="submit" name="action" value="stop"    {% if not active %}disabled{% endif %} class="btn btn-stop">STOP</button>
+      {% if s.webadmin_url %}
+        <a class="btn btn-webadmin" href="{{ s.webadmin_url }}" target="_blank" rel="noopener">
+          OPEN WEBADMIN <span class="ext">↗</span>
+        </a>
+      {% endif %}
     </form>
+  </div>
+
+  <div class="log-panel"
+       data-log-url="{{ url_for('server_log', slug=s.slug) }}"
+       data-unit="{{ s.systemd_unit }}">
+    <div class="log-head">
+      <span class="log-label">// LIVE LOG :: {{ s.systemd_unit }}</span>
+      <div class="log-controls">
+        <label class="log-follow">
+          <input type="checkbox" id="log-follow" checked>
+          <span>FOLLOW</span>
+        </label>
+        <button type="button" id="log-pause" class="btn-mini">PAUSE</button>
+        <button type="button" id="log-clear" class="btn-mini">CLEAR</button>
+        <span id="log-status" class="log-status log-status-connecting">CONNECTING</span>
+      </div>
+    </div>
+    <pre id="log-tail" class="log-tail"></pre>
   </div>
 
   <p class="back"><a href="{{ url_for('index') }}">[&lt; back to fleet]</a></p>

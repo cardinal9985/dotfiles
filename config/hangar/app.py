@@ -4,13 +4,15 @@ import re
 import subprocess
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
+from flask import Flask, Response, abort, jsonify, redirect, render_template, request, stream_with_context, url_for
 
 from shared_auth import get_user, is_admin
 
 DISCOVERY_DIR = Path(os.environ.get("HANGAR_DISCOVERY_DIR", "/etc/hangar/servers.d"))
 SYSTEMCTL     = os.environ.get("HANGAR_SYSTEMCTL", "/run/current-system/sw/bin/systemctl")
+JOURNALCTL    = os.environ.get("HANGAR_JOURNALCTL", "/run/current-system/sw/bin/journalctl")
 ALLOWED_POWER = {"start", "stop", "restart"}
+LOG_TAIL_LINES = 200
 UNIT_RE       = re.compile(r"^[a-zA-Z0-9@._-]+\.service$")
 
 app = Flask(__name__)
@@ -128,6 +130,50 @@ def server_power(slug):
     return redirect(url_for("server_detail", slug=slug))
 
 
+@app.route("/server/<slug>/log")
+def server_log(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    unit = meta["systemd_unit"]
+    if not UNIT_RE.match(unit):
+        abort(400)
+
+    def generate():
+        # -o cat = message only, --no-pager, -f = follow, -n = pre-load tail
+        proc = subprocess.Popen(
+            [JOURNALCTL, "-u", unit, "-f", "-n", str(LOG_TAIL_LINES),
+             "-o", "cat", "--no-pager"],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
+        )
+        try:
+            # SSE tells the browser about retry timing; 3s is snappy.
+            yield "retry: 3000\n\n"
+            for line in iter(proc.stdout.readline, ""):
+                if not line:
+                    break
+                # Guard against embedded newlines splitting the SSE frame.
+                for subline in line.rstrip("\n").splitlines() or [""]:
+                    yield f"data: {subline}\n\n"
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control":     "no-cache",
+            "X-Accel-Buffering": "no",   # tell nginx/traefik to not buffer
+            "Connection":        "keep-alive",
+        },
+    )
+
+
 @app.route("/api/servers")
 def api_servers():
     servers = load_servers()
@@ -157,4 +203,6 @@ def api_server_status(slug):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("HANGAR_PORT", "5010")))
+    # threaded=True so SSE stream doesn't block other requests.
+    app.run(host="0.0.0.0", port=int(os.environ.get("HANGAR_PORT", "5010")),
+            threaded=True)

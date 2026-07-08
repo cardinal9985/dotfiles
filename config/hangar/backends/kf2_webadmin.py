@@ -414,34 +414,67 @@ class KF2WebAdminBackend:
         return out, selected
 
     def _current_difficulty_length(self):
-        """Return (difficulty, length) as strings "0".."3" / "0".."2" by
-        scraping the current-game overview at /ServerAdmin/current.
+        """Return (difficulty, length) as strings "0".."3" / "0".."2".
 
-        Difficulty comes from the rules table text. Length is inferred from
-        the max wave count (4=Short, 7=Medium, 10=Long).
+        Difficulty comes from `settings_GameDifficulty_raw` on the general
+        settings page (float `1.000000` -> "1"). Length is trickier since
+        it doesn't live in general settings on all KF2 versions; try
+        `/settings/gametypes` first, then fall back to inferring from the
+        running game's max-wave count (4=Short, 7=Medium, 10=Long).
         """
-        r = self._get("/ServerAdmin/current")
-        if not r:
-            return "", ""
-        soup = BeautifulSoup(r.text, "html.parser")
-        # Rules: <dl class="gs_details"> holds a mix of dt/dd for map/players/wave.
-        text = soup.get_text(" ", strip=True).lower()
         diff = ""
-        if "hell on earth" in text: diff = "3"
-        elif "suicidal"     in text: diff = "2"
-        elif "hard"         in text: diff = "1"
-        elif "normal"       in text: diff = "0"
-        # Length inference via wave count: look for e.g. "3/7"
-        length = ""
-        wave_dd = soup.find(attrs={"class": "gs_wave"})
-        if wave_dd:
-            wave_text = wave_dd.get_text(strip=True)
-            if "/" in wave_text:
+        # 1. Difficulty from settings_GameDifficulty_raw.
+        r = self._get("/ServerAdmin/settings/general")
+        if r:
+            soup = BeautifulSoup(r.text, "html.parser")
+            for name in ("settings_GameDifficulty_raw", "settings_GameDifficulty"):
+                el = soup.find("input", attrs={"name": name})
+                if not el:
+                    continue
+                raw = el.get("value", "")
                 try:
-                    max_wave = int(wave_text.split("/")[-1])
-                    length = {4: "0", 7: "1", 10: "2"}.get(max_wave, "")
-                except ValueError:
+                    diff = str(int(float(raw)))
+                    break
+                except (TypeError, ValueError):
                     pass
+
+        length = ""
+        # 2. Length: probe likely field names on gametypes settings.
+        r = self._get("/ServerAdmin/settings/gametypes")
+        if r:
+            soup = BeautifulSoup(r.text, "html.parser")
+            for name in ("settings_GameLength_raw", "settings_GameLength",
+                         "settings_KFGameLength", "GameLength"):
+                el = (soup.find("input", attrs={"name": name})
+                      or soup.find("select", attrs={"name": name}))
+                if not el:
+                    continue
+                raw = el.get("value", "") if el.name == "input" else ""
+                if el.name == "select":
+                    opt = el.find("option", attrs={"selected": True})
+                    if opt:
+                        raw = opt.get("value", "")
+                try:
+                    length = str(int(float(raw)))
+                    self._log(f"length from gametypes.{name} = {length}")
+                    break
+                except (TypeError, ValueError):
+                    pass
+
+        # 3. Fallback: infer length from max wave count on /current.
+        if not length:
+            r = self._get("/ServerAdmin/current")
+            if r:
+                soup = BeautifulSoup(r.text, "html.parser")
+                wave_dd = soup.find(attrs={"class": "gs_wave"})
+                if wave_dd and "/" in wave_dd.get_text():
+                    try:
+                        max_wave = int(wave_dd.get_text(strip=True).split("/")[-1])
+                        length = {4: "0", 7: "1", 10: "2"}.get(max_wave, "")
+                    except ValueError:
+                        pass
+
+        self._log(f"current_diff_length: difficulty={diff!r} length={length!r}")
         return diff, length
 
     def get_change_options(self):

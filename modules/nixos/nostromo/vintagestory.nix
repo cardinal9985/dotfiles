@@ -82,23 +82,35 @@ in
     requires    = [ "vintagestory-migrate.service" ];
     wantedBy    = [ "multi-user.target" ];
 
+    # Redirect VS's stdin to a named pipe so Hangar's backend can inject
+    # console commands (VS has no first-party HTTP admin API). A backgrounded
+    # `sleep infinity > FIFO` keeps the write end open so the reader (VS)
+    # doesn't see EOF and shut down.
     script = ''
+      FIFO=/run/vintagestory/stdin
+      ${pkgs.coreutils}/bin/rm -f "$FIFO"
+      ${pkgs.coreutils}/bin/mkfifo -m 600 "$FIFO"
+      ${pkgs.coreutils}/bin/sleep infinity > "$FIFO" &
       cd ${volume}
       exec ${vsServer} \
         --dataPath ${volume} \
         --port ${toString gamePort} \
-        --maxclients ${toString maxClients}
+        --maxclients ${toString maxClients} \
+        < "$FIFO"
     '';
 
     serviceConfig = {
-      Type            = "simple";
-      User            = "hangar";
-      Group           = "hangar";
-      WorkingDirectory = volume;
-      Restart         = "on-failure";
-      RestartSec      = "10s";
-      LimitNOFILE     = 1048576;
-      NoNewPrivileges = true;
+      Type              = "simple";
+      User              = "hangar";
+      Group             = "hangar";
+      WorkingDirectory  = volume;
+      RuntimeDirectory  = "vintagestory";
+      RuntimeDirectoryMode = "0755";
+      Restart           = "on-failure";
+      RestartSec        = "10s";
+      LimitNOFILE       = 1048576;
+      NoNewPrivileges   = true;
+      # KillMode default (control-group) cleans up the sleeper on stop.
     };
 
     unitConfig = {
@@ -117,6 +129,10 @@ in
     game_type        = "vintagestory";
     connect_address  = "games.ishimura.lol:${toString gamePort}";
     config_files     = [ "serverconfig.json" ];
-    # console_backend to be added in Stage 5b (stdin FIFO + log tailing).
+    console_backend  = "vs_stdin";
+    console_backend_config = {
+      fifo         = "/run/vintagestory/stdin";
+      systemd_unit = "vintagestory.service";
+    };
   };
 }

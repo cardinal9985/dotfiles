@@ -418,3 +418,90 @@ nav .who { color: var(--amber); font-size: 0.7rem; opacity: 0.75; }
   vertical-align: middle;
 }
 .player-badge.zero { border-color: rgba(58,159,191,0.35); color: var(--cyan); opacity: 0.7; }
+
+.cheatsheet {
+  border-top: 1px solid var(--border);
+  background: rgba(58,159,191,0.03);
+}
+.cheatsheet-head {
+  padding: 0.55rem 0.9rem;
+  color: var(--bright-cyan);
+  letter-spacing: 0.15em;
+  font-size: 0.72rem;
+  border-bottom: 1px solid var(--border);
+}
+.cheatsheet-head .log-hint { margin-left: 0.6rem; }
+.cheatsheet-body {
+  padding: 0.6rem 0.9rem;
+  max-height: 18rem;
+  overflow-y: auto;
+  font-size: 0.72rem;
+}
+.cheat-category {
+  margin-bottom: 0.6rem;
+}
+.cheat-category-name {
+  color: var(--amber);
+  letter-spacing: 0.15em;
+  font-size: 0.7rem;
+  margin-bottom: 0.25rem;
+}
+.cheat-row {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
+  cursor: pointer;
+  border-radius: 2px;
+  align-items: center;
+}
+.cheat-row:hover  { background: rgba(58,159,191,0.08); }
+.cheat-name {
+  color: var(--bright-cyan);
+  font-family: "JetBrains Mono", monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cheat-name .args { color: var(--white); opacity: 0.6; margin-left: 0.4rem; }
+.cheat-desc { color: var(--white); opacity: 0.8; }
+
+.settings-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.settings-form {
+  padding: 1rem 1.2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+}
+.settings-label { color: var(--cyan); text-transform: uppercase; }
+.settings-field select {
+  padding: 0.5rem 0.6rem;
+  background: #030608;
+  color: var(--bright-white);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  outline: none;
+}
+.settings-field select:focus { border-color: var(--bright-cyan); }
+.settings-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  margin-top: 0.25rem;
+}

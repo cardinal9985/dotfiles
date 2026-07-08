@@ -7,7 +7,9 @@
          data-console-supported="{{ 'true' if 'console' in caps else 'false' }}"
          data-players-supported="{{ 'true' if 'players' in caps else 'false' }}"
          data-kick-supported="{{ 'true' if 'kick' in caps else 'false' }}"
-         data-ban-supported="{{ 'true' if 'ban' in caps else 'false' }}">
+         data-ban-supported="{{ 'true' if 'ban' in caps else 'false' }}"
+         data-cheatsheet-supported="{{ 'true' if 'cheatsheet' in caps else 'false' }}"
+         data-change-supported="{{ 'true' if 'change_game' in caps else 'false' }}">
   <h2 class="section-title">// BAY :: {{ s.name }}
     <span class="sub">{{ s.systemd_unit }}</span>
   </h2>
@@ -45,6 +47,9 @@
     {% endif %}
     {% if 'players' in caps %}
       <button type="button" class="tab-btn" data-tab="players">PLAYERS</button>
+    {% endif %}
+    {% if 'change_game' in caps %}
+      <button type="button" class="tab-btn" data-tab="settings">SETTINGS</button>
     {% endif %}
   </div>
 
@@ -84,6 +89,46 @@
           <button type="submit" class="btn-mini">SEND</button>
         </form>
         <div id="console-history" class="console-history"></div>
+        {% if 'cheatsheet' in caps %}
+          <div id="cheatsheet" class="cheatsheet">
+            <div class="cheatsheet-head">// REFERENCE <span class="log-hint">click to insert</span></div>
+            <div id="cheatsheet-body" class="cheatsheet-body">loading&hellip;</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if 'change_game' in caps %}
+    <div class="tab-pane" data-tab-pane="settings">
+      <div class="settings-panel">
+        <div class="log-head">
+          <span class="log-label">// SETTINGS</span>
+          <span id="settings-status" class="log-status log-status-connecting">LOADING</span>
+        </div>
+        <form id="settings-form" class="settings-form">
+          <label class="settings-field">
+            <span class="settings-label">MAP</span>
+            <select id="setting-map" name="map"></select>
+          </label>
+          <label class="settings-field">
+            <span class="settings-label">GAMETYPE</span>
+            <select id="setting-gametype" name="gametype"></select>
+          </label>
+          <label class="settings-field">
+            <span class="settings-label">DIFFICULTY</span>
+            <select id="setting-difficulty" name="difficulty"></select>
+          </label>
+          <label class="settings-field">
+            <span class="settings-label">LENGTH</span>
+            <select id="setting-length" name="length"></select>
+          </label>
+          <div class="settings-actions">
+            <button type="submit" class="btn btn-restart">APPLY CHANGE</button>
+            <button type="button" id="settings-restart" class="btn btn-start">RESTART CURRENT</button>
+            <span class="log-hint">applying kicks any active players</span>
+          </div>
+        </form>
       </div>
     </div>
     {% endif %}

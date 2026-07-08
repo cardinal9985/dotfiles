@@ -195,6 +195,53 @@ def server_ban(slug, player_id):
     return jsonify({"ok": ok})
 
 
+@app.route("/server/<slug>/cheatsheet")
+def server_cheatsheet(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("cheatsheet"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    return jsonify({"ok": True, "categories": backend.commands() or []})
+
+
+@app.route("/server/<slug>/change/options")
+def server_change_options(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("change_game"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    opts = backend.get_change_options()
+    if opts is None:
+        return jsonify({"ok": False, "error": "backend unavailable"}), 502
+    return jsonify({"ok": True, **opts})
+
+
+@app.route("/server/<slug>/change", methods=["POST"])
+def server_change(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("change_game"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    payload = request.get_json(silent=True) or {}
+    ok = backend.change_game(
+        map_name   = payload.get("map"),
+        gametype   = payload.get("gametype"),
+        difficulty = payload.get("difficulty"),
+        length     = payload.get("length"),
+        restart    = bool(payload.get("restart")),
+    )
+    return jsonify({"ok": ok})
+
+
 @app.route("/server/<slug>/power", methods=["POST"])
 def server_power(slug):
     servers = load_servers()

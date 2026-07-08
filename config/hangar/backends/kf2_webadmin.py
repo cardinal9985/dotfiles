@@ -19,7 +19,53 @@ from bs4 import BeautifulSoup
 
 class KF2WebAdminBackend:
 
-    capabilities = frozenset({"console", "players", "kick", "ban", "player_count"})
+    capabilities = frozenset({
+        "console", "players", "kick", "ban", "player_count",
+        "cheatsheet", "change_game",
+    })
+
+    # Static KF2 admin command reference. WebAdmin console accepts these
+    # via `SendText` on /ServerAdmin/current/console.
+    CHEATSHEET = [
+        {"category": "Chat", "commands": [
+            {"cmd": "Say",           "args": "<message>", "desc": "Chat as admin"},
+            {"cmd": "AdminSay",      "args": "<message>", "desc": "Server-wide banner message"},
+            {"cmd": "AdminSayNext",  "args": "<message>", "desc": "Message shown on next map load"},
+        ]},
+        {"category": "Server", "commands": [
+            {"cmd": "RestartMap",       "args": "",                  "desc": "Restart the current map"},
+            {"cmd": "SwitchLevel",      "args": "<KF-MapName>",      "desc": "Change to another map"},
+            {"cmd": "SetGamePassword",  "args": "<password>",        "desc": "Set (or clear with \"\") the server password"},
+        ]},
+        {"category": "Game", "commands": [
+            {"cmd": "SetGameLength",     "args": "0|1|2",           "desc": "Short / Medium / Long"},
+            {"cmd": "SetGameDifficulty", "args": "0|1|2|3",         "desc": "Normal / Hard / Suicidal / Hell on Earth"},
+            {"cmd": "SetGameType",       "args": "<class>",          "desc": "e.g. KFGameContent.KFGameInfo_Survival"},
+            {"cmd": "AdminForceNextMap", "args": "",                  "desc": "Skip to the next voted/scheduled map"},
+        ]},
+        {"category": "Player", "commands": [
+            {"cmd": "Kick",         "args": "<name-or-id>", "desc": "Kick a player (use Players tab for buttons)"},
+            {"cmd": "KickBan",      "args": "<name-or-id>", "desc": "Kick + ban a player"},
+        ]},
+        {"category": "Debug", "commands": [
+            {"cmd": "WriteToLog",   "args": "<message>",     "desc": "Write a marker line to the server log"},
+            {"cmd": "GetAll",       "args": "<class> <prop>","desc": "Dump a property across all instances (verbose)"},
+        ]},
+    ]
+
+    # Vanilla KF2 length + difficulty options. Games' difficulty numbering is
+    # 0-3 and length is 0-2 across all versions.
+    DIFFICULTIES = [
+        {"value": "0", "label": "Normal"},
+        {"value": "1", "label": "Hard"},
+        {"value": "2", "label": "Suicidal"},
+        {"value": "3", "label": "Hell on Earth"},
+    ]
+    LENGTHS = [
+        {"value": "0", "label": "Short (4 waves)"},
+        {"value": "1", "label": "Medium (7 waves)"},
+        {"value": "2", "label": "Long (10 waves)"},
+    ]
 
     def __init__(self, config):
         self.config   = config or {}
@@ -185,4 +231,70 @@ class KF2WebAdminBackend:
     def ban(self, player_id, reason=""):
         r = self._post("/ServerAdmin/current/players/action",
                        {"action": "sessionban", "playerkey": player_id})
+        return r is not None
+
+    # -- cheatsheet --------------------------------------------------------
+
+    def commands(self):
+        return self.CHEATSHEET
+
+    # -- change map / mode / difficulty ------------------------------------
+
+    def _parse_options(self, select_el):
+        """Turn a <select> into a list of {value, label} dicts, tracking selected."""
+        out = []
+        selected = None
+        if not select_el:
+            return out, selected
+        for opt in select_el.find_all("option"):
+            val = opt.get("value", "")
+            if not val:
+                continue
+            label = opt.get_text(strip=True) or val
+            out.append({"value": val, "label": label})
+            if opt.get("selected") is not None:
+                selected = val
+        return out, selected
+
+    def get_change_options(self):
+        r = self._get("/ServerAdmin/current/change")
+        if not r:
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+        maps, cur_map    = self._parse_options(soup.find("select", attrs={"name": "map"}))
+        gts,  cur_gt     = self._parse_options(soup.find("select", attrs={"name": "gametype"}))
+        return {
+            "current": {
+                "map":        cur_map or "",
+                "gametype":   cur_gt or "",
+                "difficulty": "",
+                "length":     "",
+            },
+            "maps":         maps,
+            "gametypes":    gts,
+            "difficulties": self.DIFFICULTIES,
+            "lengths":      self.LENGTHS,
+        }
+
+    def change_game(self, map_name=None, gametype=None, difficulty=None,
+                    length=None, restart=False, **_):
+        """POST /ServerAdmin/current/change with a change or restart action.
+
+        Difficulty + length are pushed via urlextra query args since KF2's
+        change form only exposes map + gametype natively.
+        """
+        extras = []
+        if difficulty not in (None, ""):
+            extras.append(f"Difficulty={difficulty}")
+        if length not in (None, ""):
+            extras.append(f"GameLength={length}")
+        urlextra = "?" + "?".join(extras) if extras else ""
+        data = {
+            "action":            "restart" if restart else "change",
+            "mutatorGroupCount": "0",
+            "urlextra":          urlextra,
+        }
+        if map_name: data["map"]      = map_name
+        if gametype: data["gametype"] = gametype
+        r = self._post("/ServerAdmin/current/change", data)
         return r is not None

@@ -27,6 +27,28 @@ class Backend:
     def ban(self, player_id, reason=""):
         return False
 
+    def commands(self):
+        """Optional command cheatsheet.
+
+        Return a list of {"category": str, "commands": [{"cmd", "args", "desc"}]}.
+        """
+        return None
+
+    def get_change_options(self):
+        """Optional current settings + available choices for map/mode change.
+
+        Return dict:
+            current: { map, gametype, difficulty, length }
+            maps:      [ { value, label } ]
+            gametypes: [ { value, label } ]
+            difficulties: [ { value, label } ]
+            lengths:      [ { value, label } ]
+        """
+        return None
+
+    def change_game(self, **kwargs):
+        return False
+
     def has(self, cap):
         return cap in self.capabilities
 

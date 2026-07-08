@@ -119,6 +119,137 @@
   });
 })();
 
+// Cheatsheet - fetched once on load, click-to-insert into console input.
+(function() {
+  const page = document.querySelector('.server-page');
+  if (!page || page.dataset.cheatsheetSupported !== 'true') return;
+  const body  = document.getElementById('cheatsheet-body');
+  const input = document.getElementById('console-input');
+  const slug  = page.dataset.slug;
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+      { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+    ));
+  }
+
+  fetch(`/server/${slug}/cheatsheet`, { headers: { 'Accept': 'application/json' } })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data || !data.categories) {
+        body.textContent = 'unavailable';
+        return;
+      }
+      body.innerHTML = data.categories.map(cat => `
+        <div class="cheat-category">
+          <div class="cheat-category-name">${esc(cat.category)}</div>
+          ${cat.commands.map(c => `
+            <div class="cheat-row" data-insert="${esc(c.cmd + (c.args ? ' ' + c.args : ''))}">
+              <div class="cheat-name">${esc(c.cmd)}${c.args ? '<span class="args">' + esc(c.args) + '</span>' : ''}</div>
+              <div class="cheat-desc">${esc(c.desc)}</div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    })
+    .catch(() => { body.textContent = 'unavailable'; });
+
+  body.addEventListener('click', (e) => {
+    const row = e.target.closest('.cheat-row');
+    if (!row || !input) return;
+    input.value = row.dataset.insert;
+    input.focus();
+    // If there's a placeholder like <message>, select it so the user can type-over.
+    const m = input.value.match(/<[^>]+>/);
+    if (m) {
+      const start = input.value.indexOf(m[0]);
+      input.setSelectionRange(start, start + m[0].length);
+    }
+  });
+})();
+
+// Settings tab - load current + available options, POST /server/<slug>/change on apply.
+(function() {
+  const page = document.querySelector('.server-page');
+  if (!page || page.dataset.changeSupported !== 'true') return;
+  const slug     = page.dataset.slug;
+  const status   = document.getElementById('settings-status');
+  const form     = document.getElementById('settings-form');
+  const selMap   = document.getElementById('setting-map');
+  const selGT    = document.getElementById('setting-gametype');
+  const selDiff  = document.getElementById('setting-difficulty');
+  const selLen   = document.getElementById('setting-length');
+  const restart  = document.getElementById('settings-restart');
+
+  function fill(sel, options, currentValue) {
+    sel.innerHTML = options.map(o =>
+      `<option value="${o.value}"${o.value === currentValue ? ' selected' : ''}>${o.label}</option>`
+    ).join('');
+  }
+
+  function setStatus(kind, text) {
+    status.className = 'log-status log-status-' + kind;
+    status.textContent = text;
+  }
+
+  async function load() {
+    setStatus('connecting', 'LOADING');
+    try {
+      const r = await fetch(`/server/${slug}/change/options`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      if (!r.ok) throw new Error('bad status');
+      const data = await r.json();
+      fill(selMap,  data.maps      || [], data.current?.map      || '');
+      fill(selGT,   data.gametypes || [], data.current?.gametype || '');
+      fill(selDiff, data.difficulties || [], data.current?.difficulty || '0');
+      fill(selLen,  data.lengths || [], data.current?.length || '0');
+      setStatus('live', 'READY');
+    } catch (e) {
+      setStatus('lost', 'UNAVAILABLE');
+    }
+  }
+
+  async function apply(restartOnly) {
+    setStatus('connecting', restartOnly ? 'RESTARTING' : 'APPLYING');
+    try {
+      const body = restartOnly
+        ? { restart: true }
+        : {
+            map:        selMap.value,
+            gametype:   selGT.value,
+            difficulty: selDiff.value,
+            length:     selLen.value,
+          };
+      const r = await fetch(`/server/${slug}/change`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (data.ok) setStatus('live', restartOnly ? 'RESTARTED' : 'APPLIED');
+      else         setStatus('lost', 'FAILED');
+    } catch (e) {
+      setStatus('lost', 'ERROR');
+    }
+  }
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); apply(false); });
+  restart.addEventListener('click', () => {
+    if (confirm('Restart current map? Any active players will reconnect.')) apply(true);
+  });
+
+  // Load only when the tab is first shown so we don't hammer WebAdmin on page load.
+  let loaded = false;
+  document.querySelector('.tab-strip').addEventListener('click', (e) => {
+    const btn = e.target.closest('.tab-btn');
+    if (btn && btn.dataset.tab === 'settings' && !loaded) {
+      loaded = true;
+      load();
+    }
+  });
+})();
+
 // Console command form - POST to /server/<slug>/console, echo to history pane.
 (function() {
   const form = document.getElementById('console-form');

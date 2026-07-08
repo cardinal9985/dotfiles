@@ -378,15 +378,18 @@ def _stage_movie(file_path, parsed, folder):
     }
 
     with db.get_db() as conn:
-        cur = conn.execute(
-            """INSERT OR REPLACE INTO items
-                 (media_type, status, source_path, subtype,
-                  title, year, genre, cover_local, meta_json, processed_at)
-               VALUES ('video', 'ready', ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
-            (str(file_path), subtype, title, year, genre, poster_local,
-             json.dumps(meta)),
+        item_id = db.upsert_item(conn,
+            media_type   = "video",
+            status       = "ready",
+            source_path  = str(file_path),
+            subtype      = subtype,
+            title        = title,
+            year         = year,
+            genre        = genre,
+            cover_local  = poster_local,
+            meta_json    = json.dumps(meta),
+            processed_at = db.now_utc(),
         )
-        item_id = cur.lastrowid
     log.info("Staged movie id=%d: %s (%s) [%s]",
              item_id, title, year or "?", subtype)
     return item_id
@@ -469,15 +472,18 @@ def _stage_season(files_parsed, folder):
     source_key = f"{folder}#s{season_no:02d}#{show_slug}"
 
     with db.get_db() as conn:
-        cur = conn.execute(
-            """INSERT OR REPLACE INTO items
-                 (media_type, status, source_path, subtype,
-                  title, year, genre, cover_local, meta_json, processed_at)
-               VALUES ('video', 'ready', ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
-            (source_key, subtype, display_title, show_year, genre,
-             poster_local, json.dumps(meta)),
+        item_id = db.upsert_item(conn,
+            media_type   = "video",
+            status       = "ready",
+            source_path  = source_key,
+            subtype      = subtype,
+            title        = display_title,
+            year         = show_year,
+            genre        = genre,
+            cover_local  = poster_local,
+            meta_json    = json.dumps(meta),
+            processed_at = db.now_utc(),
         )
-        item_id = cur.lastrowid
         conn.execute("DELETE FROM tracks WHERE item_id = ?", (item_id,))
         for fp, parsed in sorted(files_parsed,
                                  key=lambda x: x[1].get("episode") or 0):

@@ -268,16 +268,18 @@ def process_book_file(path, source_path=None):
     # source_path uniquely identifies items - use the file path itself so the
     # already-seen check works per book file.
     with db.get_db() as conn:
-        cur = conn.execute(
-            """INSERT OR REPLACE INTO items
-                 (media_type, status, source_path, title, artist, year, genre,
-                  cover_local, meta_json, processed_at)
-               VALUES ('book', 'ready', ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
-            (str(path), final_title, final_author,
-             int(final_year) if str(final_year or "").isdigit() else None,
-             final_genre, cover_local, json.dumps(meta)),
+        item_id = db.upsert_item(conn,
+            media_type   = "book",
+            status       = "ready",
+            source_path  = str(path),
+            title        = final_title,
+            artist       = final_author,
+            year         = int(final_year) if str(final_year or "").isdigit() else None,
+            genre        = final_genre,
+            cover_local  = cover_local,
+            meta_json    = json.dumps(meta),
+            processed_at = db.now_utc(),
         )
-        item_id = cur.lastrowid
 
     log.info("Staged book id=%d: %s - %s", item_id, final_author, final_title)
     return item_id

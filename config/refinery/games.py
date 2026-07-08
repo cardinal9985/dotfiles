@@ -504,16 +504,19 @@ def _stage_rom(rom_path, platform):
                     igdb["cover_id"], GAME_COVER_DIR)
 
     with db.get_db() as conn:
-        cur = conn.execute(
-            """INSERT OR REPLACE INTO items
-                 (media_type, status, source_path, subtype,
-                  title, artist, year, genre, cover_local,
-                  meta_json, processed_at)
-               VALUES ('game', 'ready', ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
-            (str(rom_path), platform, title, developer, year, genre,
-             cover_local, json.dumps(meta)),
+        item_id = db.upsert_item(conn,
+            media_type   = "game",
+            status       = "ready",
+            source_path  = str(rom_path),
+            subtype      = platform,
+            title        = title,
+            artist       = developer,
+            year         = year,
+            genre        = genre,
+            cover_local  = cover_local,
+            meta_json    = json.dumps(meta),
+            processed_at = db.now_utc(),
         )
-        item_id = cur.lastrowid
     log.info("staged game id=%d: %s [%s] verified=%s",
              item_id, title, platform, verified)
     return item_id
@@ -526,13 +529,13 @@ def process_game(folder):
     platform = classify(folder)
     if not platform:
         with db.get_db() as conn:
-            conn.execute(
-                """INSERT OR REPLACE INTO items
-                     (media_type, status, source_path, error, processed_at)
-                   VALUES ('game', 'failed', ?, ?, datetime('now'))""",
-                (folder,
-                 "could not determine platform - rename the folder with "
-                 "a hint like (PSX), [NES], SNES, GBA, etc."),
+            db.upsert_item(conn,
+                media_type   = "game",
+                status       = "failed",
+                source_path  = folder,
+                error        = ("could not determine platform - rename the folder with "
+                                "a hint like (PSX), [NES], SNES, GBA, etc."),
+                processed_at = db.now_utc(),
             )
         log.warning("game classify failed: %s", folder)
         return None
@@ -544,12 +547,13 @@ def process_game(folder):
     if not rom_files:
         log.warning("no ROM files in %s for platform %s", folder, platform)
         with db.get_db() as conn:
-            conn.execute(
-                """INSERT OR REPLACE INTO items
-                     (media_type, status, source_path, subtype,
-                      error, processed_at)
-                   VALUES ('game', 'failed', ?, ?, ?, datetime('now'))""",
-                (folder, platform, "no ROM files matched platform extensions"),
+            db.upsert_item(conn,
+                media_type   = "game",
+                status       = "failed",
+                source_path  = folder,
+                subtype      = platform,
+                error        = "no ROM files matched platform extensions",
+                processed_at = db.now_utc(),
             )
         return None
 
@@ -569,13 +573,13 @@ def process_game_file(path):
     platform = _classify_single_file(p)
     if not platform:
         with db.get_db() as conn:
-            conn.execute(
-                """INSERT OR REPLACE INTO items
-                     (media_type, status, source_path, error, processed_at)
-                   VALUES ('game', 'failed', ?, ?, datetime('now'))""",
-                (str(p),
-                 "could not determine platform for single ROM - rename "
-                 "the file with a platform hint like (PSX), [NES], etc."),
+            db.upsert_item(conn,
+                media_type   = "game",
+                status       = "failed",
+                source_path  = str(p),
+                error        = ("could not determine platform for single ROM - rename "
+                                "the file with a platform hint like (PSX), [NES], etc."),
+                processed_at = db.now_utc(),
             )
         return None
     return _stage_rom(str(p), platform)

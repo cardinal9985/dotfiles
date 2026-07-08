@@ -120,11 +120,11 @@ def _process_one(full):
         log.info("New %s detected: %s", kind, work)
         # Mark as processing so the UI can show in-flight items.
         with db.get_db() as conn:
-            conn.execute(
-                """INSERT OR REPLACE INTO items
-                     (media_type, status, source_path, processed_at)
-                   VALUES (?, 'processing', ?, datetime('now'))""",
-                (kind, work),
+            db.upsert_item(conn,
+                media_type   = kind,
+                status       = "processing",
+                source_path  = work,
+                processed_at = db.now_utc(),
             )
         if kind == "music":
             music.process_album(work)
@@ -143,11 +143,12 @@ def _process_one(full):
     except Exception as e:
         log.exception("processing failed for %s", full)
         with db.get_db() as conn:
-            conn.execute(
-                """INSERT OR REPLACE INTO items
-                     (media_type, status, source_path, error, processed_at)
-                   VALUES (?, 'failed', ?, ?, datetime('now'))""",
-                (kind or "unknown", full, str(e)[:500]),
+            db.upsert_item(conn,
+                media_type   = kind or "unknown",
+                status       = "failed",
+                source_path  = full,
+                error        = str(e)[:500],
+                processed_at = db.now_utc(),
             )
     finally:
         # The book processor writes per-file rows at source_path=file, so the

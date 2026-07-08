@@ -700,10 +700,6 @@ def reanalyze_game(item_id):
     if not platform or platform not in game_plats.PLATFORMS:
         return "no valid platform", 400
 
-    # Restage in place. _stage_rom does the whole hash + DAT + IGDB pipeline
-    # against the given platform and INSERT OR REPLACEs the same row (keyed
-    # by source_path). SQLite implements REPLACE as delete+insert so the row
-    # id changes; look up the new id by source_path for the redirect.
     src = item["source_path"]
     try:
         new_id = games._stage_rom(src, platform)

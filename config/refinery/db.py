@@ -1,6 +1,13 @@
 import os
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime
+
+
+def now_utc():
+    """Same format SQLite's `datetime('now')` returns, so mixing them in
+    other queries stays sortable."""
+    return datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
 DB_PATH = os.environ.get("REFINERY_DB_PATH", "/persist/refinery/refinery.db")
 
@@ -87,3 +94,29 @@ def init_db():
         if "subtype" not in item_cols:
             conn.execute("ALTER TABLE items ADD COLUMN subtype TEXT")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_items_subtype ON items(subtype)")
+
+
+def upsert_item(conn, **fields):
+    """INSERT into items or UPDATE if source_path already exists.
+
+    SQLite's INSERT OR REPLACE is delete-then-insert, so the row id
+    rotates on every rescan, breaking any /item/<id> URL bookmarked in
+    the user's queue tab. This upsert preserves the id.
+
+    Only the columns you pass get written. Unlisted columns keep their
+    existing value on conflict (not nulled out like REPLACE would do).
+    """
+    if "source_path" not in fields:
+        raise ValueError("upsert_item requires source_path")
+    cols    = list(fields.keys())
+    values  = [fields[c] for c in cols]
+    updates = [f"{c} = excluded.{c}" for c in cols if c != "source_path"]
+    sql = (
+        f"INSERT INTO items ({', '.join(cols)}) "
+        f"VALUES ({', '.join(['?'] * len(cols))}) "
+        f"ON CONFLICT(source_path) DO UPDATE SET "
+        f"{', '.join(updates)} "
+        f"RETURNING id"
+    )
+    row = conn.execute(sql, values).fetchone()
+    return row["id"] if row else None

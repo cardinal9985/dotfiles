@@ -724,19 +724,21 @@ def process_album(folder):
     }
 
     with db.get_db() as conn:
-        cur = conn.execute(
-            """INSERT OR REPLACE INTO items
-                 (media_type, status, source_path, title, artist, year, genre,
-                  cover_url, cover_local, spectrogram_local,
-                  artist_photo_local, meta_json, processed_at)
-               VALUES ('music', 'ready', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       datetime('now'))""",
-            (str(folder), album, artist,
-             int(final_year) if str(final_year).isdigit() else None,
-             genre, cover_url, cover_local, spec_local,
-             artist_photo_local, json.dumps(meta)),
+        item_id = db.upsert_item(conn,
+            media_type        = "music",
+            status            = "ready",
+            source_path       = str(folder),
+            title             = album,
+            artist            = artist,
+            year              = int(final_year) if str(final_year).isdigit() else None,
+            genre             = genre,
+            cover_url         = cover_url,
+            cover_local       = cover_local,
+            spectrogram_local = spec_local,
+            artist_photo_local= artist_photo_local,
+            meta_json         = json.dumps(meta),
+            processed_at      = db.now_utc(),
         )
-        item_id = cur.lastrowid
         # Clear any old tracks for this item (re-process case)
         conn.execute("DELETE FROM tracks WHERE item_id = ?", (item_id,))
         for t in tracks:

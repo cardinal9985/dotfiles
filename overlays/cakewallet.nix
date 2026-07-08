@@ -53,7 +53,8 @@ in
       cp -r . $out/opt/cakewallet/
       chmod +x $out/opt/cakewallet/cake_wallet
 
-      makeWrapper $out/opt/cakewallet/cake_wallet $out/bin/cakewallet
+      makeWrapper $out/opt/cakewallet/cake_wallet $out/bin/cakewallet \
+        --prefix LD_LIBRARY_PATH : $out/opt/cakewallet/lib
 
       runHook postInstall
     '';

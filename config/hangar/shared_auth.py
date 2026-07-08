@@ -8,4 +8,4 @@ def get_groups():
     return [g.strip() for g in raw.split(",") if g.strip()]
 
 def is_admin():
-    return "admin" in get_groups()
+    return "admins" in get_groups()

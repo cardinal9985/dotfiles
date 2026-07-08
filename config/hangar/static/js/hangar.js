@@ -239,6 +239,27 @@
     if (confirm('Restart current map? Any active players will reconnect.')) apply(true);
   });
 
+  const live = document.getElementById('settings-live');
+  if (live) {
+    live.addEventListener('click', async () => {
+      setStatus('connecting', 'APPLYING LIVE');
+      try {
+        const r = await fetch(`/server/${slug}/change/live`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            difficulty: selDiff.value,
+            length:     selLen.value,
+          }),
+        });
+        const data = await r.json().catch(() => ({}));
+        setStatus(data.ok ? 'live' : 'lost', data.ok ? 'LIVE APPLIED' : 'FAILED');
+      } catch (e) {
+        setStatus('lost', 'ERROR');
+      }
+    });
+  }
+
   // Load only when the tab is first shown so we don't hammer WebAdmin on page load.
   let loaded = false;
   document.querySelector('.tab-strip').addEventListener('click', (e) => {

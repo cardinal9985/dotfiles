@@ -358,6 +358,23 @@ def server_change(slug):
     return jsonify({"ok": ok})
 
 
+@app.route("/server/<slug>/change/live", methods=["POST"])
+def server_change_live(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("change_live"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    payload = request.get_json(silent=True) or {}
+    ok = backend.change_live(
+        difficulty = payload.get("difficulty"),
+        length     = payload.get("length"),
+    )
+    return jsonify({"ok": ok})
+
+
 @app.route("/server/<slug>/power", methods=["POST"])
 def server_power(slug):
     servers = load_servers()

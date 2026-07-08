@@ -247,9 +247,14 @@
           </label>
           <div class="settings-actions">
             <button type="submit" class="btn btn-restart">APPLY CHANGE</button>
+            <button type="button" id="settings-live" class="btn btn-start">APPLY LIVE (diff+length)</button>
             <button type="button" id="settings-restart" class="btn btn-start">RESTART CURRENT</button>
-            <span class="log-hint">applying kicks any active players</span>
           </div>
+          <p class="log-hint" style="padding:0 1.2rem 1rem">
+            <b>APPLY CHANGE</b> loads the new map/gametype - engine limitation kicks all players.
+            <b>APPLY LIVE</b> uses console commands to change difficulty + length without a reload
+            (difficulty takes effect next wave).
+          </p>
         </form>
       </div>
     </div>

@@ -22,7 +22,7 @@ class KF2WebAdminBackend:
 
     capabilities = frozenset({
         "console", "players", "kick", "ban", "player_count",
-        "cheatsheet", "change_game",
+        "cheatsheet", "change_game", "change_live",
         "bans", "passwords", "welcome",
     })
 
@@ -413,6 +413,37 @@ class KF2WebAdminBackend:
                 selected = val
         return out, selected
 
+    def _current_difficulty_length(self):
+        """Return (difficulty, length) as strings "0".."3" / "0".."2" by
+        scraping the current-game overview at /ServerAdmin/current.
+
+        Difficulty comes from the rules table text. Length is inferred from
+        the max wave count (4=Short, 7=Medium, 10=Long).
+        """
+        r = self._get("/ServerAdmin/current")
+        if not r:
+            return "", ""
+        soup = BeautifulSoup(r.text, "html.parser")
+        # Rules: <dl class="gs_details"> holds a mix of dt/dd for map/players/wave.
+        text = soup.get_text(" ", strip=True).lower()
+        diff = ""
+        if "hell on earth" in text: diff = "3"
+        elif "suicidal"     in text: diff = "2"
+        elif "hard"         in text: diff = "1"
+        elif "normal"       in text: diff = "0"
+        # Length inference via wave count: look for e.g. "3/7"
+        length = ""
+        wave_dd = soup.find(attrs={"class": "gs_wave"})
+        if wave_dd:
+            wave_text = wave_dd.get_text(strip=True)
+            if "/" in wave_text:
+                try:
+                    max_wave = int(wave_text.split("/")[-1])
+                    length = {4: "0", 7: "1", 10: "2"}.get(max_wave, "")
+                except ValueError:
+                    pass
+        return diff, length
+
     def get_change_options(self):
         r = self._get("/ServerAdmin/current/change")
         if not r:
@@ -420,12 +451,13 @@ class KF2WebAdminBackend:
         soup = BeautifulSoup(r.text, "html.parser")
         maps, cur_map    = self._parse_options(soup.find("select", attrs={"name": "map"}))
         gts,  cur_gt     = self._parse_options(soup.find("select", attrs={"name": "gametype"}))
+        cur_diff, cur_len = self._current_difficulty_length()
         return {
             "current": {
                 "map":        cur_map or "",
                 "gametype":   cur_gt or "",
-                "difficulty": "",
-                "length":     "",
+                "difficulty": cur_diff,
+                "length":     cur_len,
             },
             "maps":         maps,
             "gametypes":    gts,
@@ -455,6 +487,20 @@ class KF2WebAdminBackend:
         if gametype: data["gametype"] = gametype
         r = self._post("/ServerAdmin/current/change", data)
         return r is not None
+
+    def change_live(self, difficulty=None, length=None, **_):
+        """Change difficulty and/or length via console commands so live
+        players don't get kicked. Takes effect on the next wave for
+        difficulty; length adjusts the current game.
+        """
+        ok = True
+        if difficulty not in (None, ""):
+            if self.send_command(f"SetGameDifficulty {difficulty}") is None:
+                ok = False
+        if length not in (None, ""):
+            if self.send_command(f"SetGameLength {length}") is None:
+                ok = False
+        return ok
 
     # -- bans --------------------------------------------------------------
     # KF2 WebAdmin's Access Policy page lays out three tables and their

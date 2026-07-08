@@ -49,6 +49,10 @@ class Backend:
     def change_game(self, **kwargs):
         return False
 
+    def change_live(self, **kwargs):
+        """Live-change difficulty/length without a map reload."""
+        return False
+
     def get_bans(self):
         """Return {"session": [...], "id": [...], "ip": [...]} or None.
 

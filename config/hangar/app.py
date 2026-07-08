@@ -18,6 +18,10 @@ JOURNALCTL    = os.environ.get("HANGAR_JOURNALCTL", "/run/current-system/sw/bin/
 ALLOWED_POWER = {"start", "stop", "restart"}
 LOG_TAIL_LINES = 200
 UNIT_RE       = re.compile(r"^[a-zA-Z0-9@._-]+\.service$")
+# Colored-terminal control sequences (CSI + OSC) that services like SPT
+# emit for pretty console output. Browsers render them as placeholder
+# glyphs, so strip before piping to the log SSE stream.
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*(?:\x07|\x1b\\)")
 
 app = Flask(__name__)
 
@@ -516,7 +520,7 @@ def server_log(slug):
                     break
                 # Guard against embedded newlines splitting the SSE frame.
                 for subline in line.rstrip("\n").splitlines() or [""]:
-                    yield f"data: {subline}\n\n"
+                    yield f"data: {ANSI_ESCAPE_RE.sub('', subline)}\n\n"
         finally:
             proc.terminate()
             try:

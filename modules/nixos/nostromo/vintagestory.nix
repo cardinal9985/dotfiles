@@ -23,11 +23,12 @@ in
     { directory = volume; user = "hangar"; group = "hangar"; mode = "0755"; }
   ];
 
-  # One-shot: copy VS files out of the Pelican volume on first boot after
-  # this module lands. Skipped if the destination already has a config
-  # (idempotent, safe to leave enabled forever).
+  # One-shot: migrate the Pelican volume if we haven't yet AND apply
+  # Hangar-managed defaults on first launch only. The marker file at
+  # `.hangar-initial-config` guards the config-writing step so future
+  # `/serverconfig ...` changes from the in-game console persist.
   systemd.services.vintagestory-migrate = {
-    description = "Migrate VS files from Pelican volume (one-time)";
+    description = "Migrate VS files + apply one-time defaults";
     wantedBy    = [ "vintagestory.service" ];
     before      = [ "vintagestory.service" ];
     serviceConfig = {
@@ -36,29 +37,41 @@ in
     };
     script = ''
       set -euo pipefail
-      if [ -f ${volume}/serverconfig.json ]; then
-        echo "VS volume already populated - skipping migration"
-        exit 0
-      fi
-      # Find the Pelican volume by looking for a directory that has a
-      # VS-shaped serverconfig.json. `head -1` picks the first match.
-      src=""
-      shopt -s nullglob
-      for dir in /var/lib/pelican/volumes/*/; do
-        if [ -f "$dir/serverconfig.json" ] && ${pkgs.gnugrep}/bin/grep -qi "vintage\|worldname\|serverport" "$dir/serverconfig.json" 2>/dev/null; then
-          src="$dir"
-          break
+
+      # 1. Import old Pelican volume if we haven't yet.
+      if [ ! -f ${volume}/serverconfig.json ]; then
+        src=""
+        shopt -s nullglob
+        for dir in /var/lib/pelican/volumes/*/; do
+          if [ -f "$dir/serverconfig.json" ] && ${pkgs.gnugrep}/bin/grep -qi "vintage\|worldname\|serverport" "$dir/serverconfig.json" 2>/dev/null; then
+            src="$dir"
+            break
+          fi
+        done
+        if [ -n "$src" ]; then
+          echo "Migrating VS files from $src -> ${volume}"
+          ${pkgs.rsync}/bin/rsync -a "$src"/ ${volume}/
+        else
+          echo "No Pelican VS volume found; starting fresh"
         fi
-      done
-      if [ -z "$src" ]; then
-        echo "No Pelican VS volume found; starting with a fresh dataPath"
-        ${pkgs.coreutils}/bin/chown -R hangar:hangar ${volume}
-        exit 0
       fi
-      echo "Migrating VS files from $src -> ${volume}"
-      ${pkgs.rsync}/bin/rsync -a "$src"/ ${volume}/
+
+      # 2. Apply first-launch defaults (idempotent via marker file).
+      #    Both off: server open to anyone with the address, but not
+      #    listed in the public server browser. Anyone with the
+      #    games.ishimura.lol:42420 URL can join.
+      #    Once the marker exists these are never re-applied, so admin
+      #    can flip either via console/config later.
+      marker=${volume}/.hangar-initial-config
+      if [ ! -f "$marker" ]; then
+        echo "Applying Hangar-managed VS defaults (one-time)"
+        ${vsServer} --dataPath ${volume} \
+          --setconfig="{ WhitelistMode: false, AdvertiseServer: false }" \
+          || echo "warn: --setconfig exited non-zero, continuing"
+        touch "$marker"
+      fi
+
       ${pkgs.coreutils}/bin/chown -R hangar:hangar ${volume}
-      echo "Migration complete"
     '';
   };
 

@@ -1125,6 +1125,23 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        # Public banner + other assets that KF2 clients fetch when loading
+        # the welcome screen. No voidauth - they arrive without cookies.
+        # Higher priority than the main hangar router so this matches first.
+        hangar-public-router:
+          rule: "Host(`hangar.${domain}`) && PathPrefix(`/public/`)"
+          service: hangar-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 20
+          middlewares:
+            - noindex-headers
         synctube-router:
           rule: "Host(`watch.${domain}`)"
           service: synctube-service

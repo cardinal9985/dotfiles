@@ -276,8 +276,7 @@ let
     cp ${gamesJson}                                $out/games.json
     cp ${src}/admin/index.html                     $out/admin/index.html
     cp ${adminServicesJson}                        $out/admin/services.json
-    cp ${../../../config/resources/ishimura-favicon.png} $out/ishimura-favicon.png
-    cp ${src}/kf2-motd-banner.png                  $out/kf2-motd-banner.png
+    cp ${../../../config/resources/ishimura-favicon.png}  $out/ishimura-favicon.png
   '';
 
   gameStatusPoller = pkgs.writeShellScript "game-status-poller" ''

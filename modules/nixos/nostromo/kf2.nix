@@ -39,6 +39,11 @@ in
     webadmin_url     = "http://100.107.103.76:${toString webAdminPort}";
     config_files     = [ "KFGame/Config/KFWeb.ini" "KFGame/Config/PCServer-KFGame.ini" ];
     console_backend  = "kf2_webadmin";
+    console_backend_config = {
+      url           = "http://127.0.0.1:${toString webAdminPort}";
+      username      = "admin";
+      password_file = config.sops.secrets."kf2/admin_password".path;
+    };
     mod_backend      = "kf2_workshop";
   };
 

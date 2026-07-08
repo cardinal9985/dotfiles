@@ -16,6 +16,11 @@
           <span class="status-dot {{ 'dot-up' if active else 'dot-down' }}"></span>
           <span class="bay-name">{{ s.name }}</span>
           <span class="bay-state">{{ s.status.active|upper }}</span>
+          {% if s.player_count is not none %}
+            <span class="player-badge{{ ' zero' if s.player_count == 0 else '' }}">
+              {{ s.player_count }} PLAYER{% if s.player_count != 1 %}S{% endif %}
+            </span>
+          {% endif %}
         </div>
         <div class="bay-meta">
           <span class="bay-game">{{ s.game or '---' }}</span>

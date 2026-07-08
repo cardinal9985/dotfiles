@@ -102,25 +102,182 @@
   connect();
 })();
 
+// Tab switching on server detail page.
+(function() {
+  const strip = document.querySelector('.tab-strip');
+  if (!strip) return;
+  strip.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b =>
+      b.classList.toggle('is-active', b === btn));
+    document.querySelectorAll('.tab-pane').forEach(p =>
+      p.classList.toggle('is-active', p.dataset.tabPane === target));
+    // Refresh players when the tab is opened.
+    if (target === 'players' && window.hangarPlayers) window.hangarPlayers.refresh();
+  });
+})();
+
+// Console command form - POST to /server/<slug>/console, echo to history pane.
+(function() {
+  const form = document.getElementById('console-form');
+  if (!form) return;
+  const page = document.querySelector('.server-page');
+  const slug = page.dataset.slug;
+  const input = document.getElementById('console-input');
+  const history = document.getElementById('console-history');
+
+  function append(cls, text) {
+    const div = document.createElement('div');
+    div.className = cls;
+    div.textContent = text;
+    history.appendChild(div);
+    history.scrollTop = history.scrollHeight;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const cmd = input.value.trim();
+    if (!cmd) return;
+    append('cmd-echo', '> ' + cmd);
+    input.value = '';
+    input.disabled = true;
+    try {
+      const r = await fetch(`/server/${slug}/console`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ command: cmd }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (data.ok) append('cmd-ok',  data.result || 'sent');
+      else         append('cmd-err', data.error || 'send failed');
+    } catch (err) {
+      append('cmd-err', 'network error');
+    } finally {
+      input.disabled = false;
+      input.focus();
+    }
+  });
+})();
+
+// Players table - polls /server/<slug>/players. Exposed as hangarPlayers so
+// the tab click can trigger a refresh on demand.
+(function() {
+  const panel = document.querySelector('.players-panel');
+  if (!panel) return;
+  const page = document.querySelector('.server-page');
+  const slug = page.dataset.slug;
+  const kickOK = page.dataset.kickSupported === 'true';
+  const banOK  = page.dataset.banSupported  === 'true';
+  const body   = document.getElementById('players-body');
+  const count  = document.getElementById('players-count');
+  const refresh = document.getElementById('players-refresh');
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  function actionCell(p) {
+    if (!kickOK && !banOK) return '<td class="actions-cell">---</td>';
+    const buttons = [];
+    if (kickOK) buttons.push(`<button type="button" class="btn-mini btn-kick" data-act="kick" data-pid="${esc(p.id)}">KICK</button>`);
+    if (banOK)  buttons.push(`<button type="button" class="btn-mini btn-ban"  data-act="ban"  data-pid="${esc(p.id)}">BAN</button>`);
+    return `<td class="actions-cell">${buttons.join(' ')}</td>`;
+  }
+
+  function render(players) {
+    count.textContent = players.length + (players.length === 1 ? ' player' : ' players');
+    count.className = 'log-status ' + (players.length ? 'log-status-live' : 'log-status-connecting');
+    if (!players.length) {
+      body.innerHTML = '<tr class="empty-row"><td colspan="4">no players</td></tr>';
+      return;
+    }
+    body.innerHTML = players.map(p => `
+      <tr>
+        <td class="name-cell">${esc(p.name)}</td>
+        <td>${esc(p.ping)}</td>
+        <td>${esc(p.score)}</td>
+        ${actionCell(p)}
+      </tr>
+    `).join('');
+  }
+
+  async function refreshOnce() {
+    count.textContent = 'polling';
+    count.className = 'log-status log-status-connecting';
+    try {
+      const r = await fetch(`/server/${slug}/players`, { headers: { 'Accept': 'application/json' } });
+      const data = await r.json().catch(() => ({}));
+      render(data.players || []);
+    } catch (e) {
+      count.textContent = 'error';
+      count.className = 'log-status log-status-lost';
+    }
+  }
+
+  body.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const act = btn.dataset.act;
+    const pid = btn.dataset.pid;
+    if (act === 'ban' && !confirm(`Ban ${pid}? This session-bans them from the server.`)) return;
+    btn.disabled = true;
+    try {
+      const r = await fetch(`/server/${slug}/players/${encodeURIComponent(pid)}/${act}`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!data.ok) alert(`${act} failed`);
+    } finally {
+      setTimeout(refreshOnce, 500);
+    }
+  });
+
+  refresh.addEventListener('click', refreshOnce);
+  window.hangarPlayers = { refresh: refreshOnce };
+  refreshOnce();
+})();
+
 // Auto-refresh status on server list every 10s.
 (function() {
   if (!document.querySelector('.bay-grid')) return;
-  setInterval(async () => {
-    try {
-      const r = await fetch('/api/servers', { headers: { 'Accept': 'application/json' } });
-      if (!r.ok) return;
-      const list = await r.json();
-      for (const s of list) {
-        const el = document.querySelector(`.bay[href$="/server/${s.slug}"]`);
-        if (!el) continue;
-        const active = s.active === 'active';
-        el.classList.toggle('bay-up',   active);
-        el.classList.toggle('bay-down', !active);
-        const dot = el.querySelector('.status-dot');
-        if (dot) { dot.classList.toggle('dot-up', active); dot.classList.toggle('dot-down', !active); }
-        const state = el.querySelector('.bay-state');
-        if (state) state.textContent = (s.active || 'unknown').toUpperCase();
-      }
-    } catch (e) { /* ignore */ }
-  }, 10000);
+  function tick() {
+    fetch('/api/servers', { headers: { 'Accept': 'application/json' } })
+      .then(r => r.ok ? r.json() : null)
+      .then(list => {
+        if (!list) return;
+        for (const s of list) {
+          const el = document.querySelector(`.bay[href$="/server/${s.slug}"]`);
+          if (!el) continue;
+          const active = s.active === 'active';
+          el.classList.toggle('bay-up',   active);
+          el.classList.toggle('bay-down', !active);
+          const dot = el.querySelector('.status-dot');
+          if (dot) { dot.classList.toggle('dot-up', active); dot.classList.toggle('dot-down', !active); }
+          const state = el.querySelector('.bay-state');
+          if (state) state.textContent = (s.active || 'unknown').toUpperCase();
+          const pcSlot = el.querySelector('.player-badge');
+          if (pcSlot) {
+            if (s.player_count === null || s.player_count === undefined) {
+              pcSlot.remove();
+            } else {
+              pcSlot.textContent = s.player_count + ' PLAYER' + (s.player_count === 1 ? '' : 'S');
+              pcSlot.classList.toggle('zero', s.player_count === 0);
+            }
+          } else if (typeof s.player_count === 'number') {
+            const nb = document.createElement('span');
+            nb.className = 'player-badge' + (s.player_count === 0 ? ' zero' : '');
+            nb.textContent = s.player_count + ' PLAYER' + (s.player_count === 1 ? '' : 'S');
+            const head = el.querySelector('.bay-head');
+            if (head) head.appendChild(nb);
+          }
+        }
+      })
+      .catch(() => {});
+  }
+  setInterval(tick, 10000);
 })();

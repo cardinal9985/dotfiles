@@ -3,12 +3,16 @@
 let
   src = ../../../config/hangar;
 
-  pythonEnv = pkgs.python3.withPackages (ps: with ps; [ flask ]);
+  pythonEnv = pkgs.python3.withPackages (ps: with ps; [
+    flask
+    requests
+    beautifulsoup4
+  ]);
 
   app = pkgs.runCommand "hangar" {} ''
     mkdir -p $out
     cp ${src}/app.py ${src}/shared_auth.py $out/
-    cp -r ${src}/templates ${src}/static $out/
+    cp -r ${src}/backends ${src}/templates ${src}/static $out/
   '';
 
   # Whitelist of systemd units Hangar may power-cycle. Every game module

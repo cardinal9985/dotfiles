@@ -291,3 +291,130 @@ nav .who { color: var(--amber); font-size: 0.7rem; opacity: 0.75; }
 .log-tail::-webkit-scrollbar        { width: 6px; }
 .log-tail::-webkit-scrollbar-track  { background: transparent; }
 .log-tail::-webkit-scrollbar-thumb  { background: rgba(58,159,191,0.35); border-radius: 3px; }
+
+.log-hint {
+  color: var(--white); opacity: 0.55;
+  font-size: 0.68rem; letter-spacing: 0.1em;
+}
+
+.tab-strip {
+  display: flex;
+  gap: 0.35rem;
+  margin: 1.5rem 0 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  color: var(--cyan);
+  font-family: inherit;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  border-radius: 2px 2px 0 0;
+  position: relative;
+  top: 1px;
+}
+.tab-btn:hover     { color: var(--bright-cyan); }
+.tab-btn.is-active {
+  color: var(--bright-amber);
+  border-color: var(--border-hot);
+  background: var(--bg-panel);
+}
+.tab-pane { display: none; }
+.tab-pane.is-active { display: block; }
+
+.console-panel,
+.players-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.console-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  background: #030608;
+}
+.console-prompt {
+  color: var(--bright-amber);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+}
+.console-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--bright-white);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  outline: none;
+  padding: 0.15rem 0;
+}
+.console-input::placeholder { color: var(--cyan); opacity: 0.5; }
+
+.console-history {
+  padding: 0.5rem 0.9rem;
+  min-height: 6rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+}
+.console-history .cmd-echo {
+  color: var(--bright-amber);
+  padding: 0.15rem 0;
+}
+.console-history .cmd-ok    { color: var(--green);  padding-left: 1rem; }
+.console-history .cmd-err   { color: var(--red);    padding-left: 1rem; }
+
+.players-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.players-table th,
+.players-table td {
+  padding: 0.55rem 0.9rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(58,159,191,0.15);
+}
+.players-table th {
+  color: var(--cyan);
+  font-weight: normal;
+  letter-spacing: 0.15em;
+  font-size: 0.68rem;
+  background: rgba(58,159,191,0.05);
+  text-transform: uppercase;
+}
+.players-table td { color: var(--white); }
+.players-table td.name-cell { color: var(--bright-white); font-weight: bold; }
+.players-table .actions-col { width: 12rem; text-align: right; }
+.players-table .actions-cell { text-align: right; white-space: nowrap; }
+.players-table .empty-row td {
+  color: var(--white); opacity: 0.5;
+  text-align: center; padding: 1.25rem;
+}
+.btn-kick { border-color: rgba(251,191,96,0.55); color: var(--bright-amber); }
+.btn-ban  { border-color: rgba(217,85,85,0.55);  color: var(--red); }
+.btn-kick:hover { background: rgba(251,191,96,0.12); }
+.btn-ban:hover  { background: rgba(217,85,85,0.12); }
+
+.player-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid rgba(111,191,96,0.55);
+  color: var(--green);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+.player-badge.zero { border-color: rgba(58,159,191,0.35); color: var(--cyan); opacity: 0.7; }

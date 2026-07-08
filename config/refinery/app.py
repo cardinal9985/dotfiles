@@ -444,7 +444,7 @@ def approve(item_id):
     with db.get_db() as conn:
         conn.execute(
             "UPDATE items SET status='approved', decided_at=datetime('now'), "
-            "source_path=? WHERE id=?",
+            "source_path=?, error=NULL WHERE id=?",
             (result["dest"], item_id),
         )
         for tid, new_path in (result.get("track_paths") or {}).items():

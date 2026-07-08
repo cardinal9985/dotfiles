@@ -612,6 +612,29 @@ CHDMAN_CD_PLATFORMS  = {"ps1", "scd", "saturn", "pcecd", "3do", "dc"}
 CHDMAN_DVD_PLATFORMS = {"ps2", "gc", "wii", "xbox"}
 
 
+def _validate_cue(cue_path):
+    """Return None if the cue looks usable, or an error string. chdman spins
+    forever (99% CPU, zero syscalls) when handed a zero-byte or malformed
+    cue - guard before spawning it."""
+    try:
+        st = os.stat(cue_path)
+    except OSError as e:
+        return f"cue stat failed: {e}"
+    if st.st_size == 0:
+        return "cue file is empty"
+    if st.st_size > 100_000:
+        return f"cue file suspiciously large ({st.st_size} bytes)"
+    try:
+        text = Path(cue_path).read_text(encoding="utf-8", errors="ignore")
+    except Exception as e:
+        return f"cue read failed: {e}"
+    if not re.search(r"^\s*FILE\b", text, re.M | re.I):
+        return "cue has no FILE directive"
+    if not re.search(r"^\s*TRACK\b", text, re.M | re.I):
+        return "cue has no TRACK directive"
+    return None
+
+
 def _chdman_convert(src_path, platform):
     """Convert a disc image to CHD via chdman. Handles BIN/CUE (createcd)
     and ISO (createdvd) depending on the platform. Returns Path of the
@@ -627,21 +650,36 @@ def _chdman_convert(src_path, platform):
 
     if platform in CHDMAN_CD_PLATFORMS and src.suffix.lower() == ".cue":
         sub = "createcd"
+        bad = _validate_cue(src)
+        if bad:
+            log.warning("chdman skip %s: %s", src.name, bad)
+            return None
     elif platform in CHDMAN_DVD_PLATFORMS and src.suffix.lower() == ".iso":
         sub = "createdvd"
     else:
         return None
 
+    # 10 min hard cap for the CD path (typical redump BIN is ~700MB and
+    # chdman is <60s on modern CPUs), 60 min for DVD (Wii ISO can hit
+    # 8 GB, and chdman is single-threaded).
+    hard_timeout = 600 if sub == "createcd" else 3600
     cmd = ["chdman", sub, "-i", str(src), "-o", str(out), "-f"]
     try:
-        r = subprocess.run(cmd, capture_output=True, timeout=3600)
+        r = subprocess.run(cmd, capture_output=True, timeout=hard_timeout)
         if r.returncode == 0 and out.exists() and out.stat().st_size > 0:
             log.info("chdman: %s -> %s", src.name, out.name)
             return out
         log.warning("chdman failed (rc=%d): %s",
                     r.returncode, r.stderr.decode("utf-8", "ignore")[:400])
     except subprocess.TimeoutExpired:
-        log.warning("chdman timeout: %s", src)
+        log.warning("chdman timeout after %ds: %s", hard_timeout, src)
+        # Kill leaves the partial .chd on disk; remove it so the scanner
+        # doesn't pick it up as a new game next tick.
+        try:
+            if out.exists():
+                out.unlink()
+        except Exception:
+            pass
     except Exception as e:
         log.warning("chdman error: %s", e)
     return None
@@ -707,6 +745,15 @@ def write_and_move(item, target_root, convert_chd=False):
     dest  = library_path_for(target_root, platform, title, src_ext)
     dest.parent.mkdir(parents=True, exist_ok=True)
 
+    # Discover companion tracks BEFORE we move the primary - _cue_files
+    # reads the cue's FILE lines which need to still exist at the source
+    # location. Only relevant when we didn't convert to CHD (chdman folds
+    # them in). Empty for cartridges / already-CHD sources.
+    disc_companions = []
+    if disc_based and src_ext == ".cue" and chd_source is None:
+        disc_companions = [p for p in _cue_files(src)
+                           if p.suffix.lower() != ".cue" and p.exists()]
+
     # Sidecar cover.jpg (RomM picks these up).
     if item.get("cover_local") and os.path.exists(item["cover_local"]):
         try:
@@ -716,6 +763,7 @@ def write_and_move(item, target_root, convert_chd=False):
         except Exception as e:
             log.warning("copy game cover failed: %s", e)
 
+    orig_stem = src.stem  # captured pre-move for companion rename below
     try:
         src.replace(dest)
     except Exception as e:
@@ -730,6 +778,32 @@ def write_and_move(item, target_root, convert_chd=False):
                 c.unlink()
         except Exception as e:
             log.warning("companion cleanup failed %s: %s", c, e)
+
+    # Non-CHD disc path: move the companion tracks over alongside the cue
+    # so the destination has a working set. Rename with the new stem so
+    # a title edit ("Game (USA)" -> "Game") stays consistent, and rewrite
+    # the cue's FILE lines to point at the new names.
+    if disc_companions:
+        for c in disc_companions:
+            try:
+                new_name = c.name.replace(orig_stem, dest.stem, 1) \
+                    if orig_stem != dest.stem else c.name
+                new_path = dest.parent / new_name
+                c.replace(new_path)
+            except Exception as e:
+                log.warning("companion move failed %s: %s", c, e)
+        if orig_stem != dest.stem:
+            try:
+                text = dest.read_text(errors="replace")
+                text = re.sub(
+                    rf'(FILE\s+"?)({re.escape(orig_stem)})(\.\w+"?)',
+                    rf'\1{dest.stem}\3',
+                    text,
+                    flags=re.IGNORECASE,
+                )
+                dest.write_text(text)
+            except Exception as e:
+                log.warning("cue rewrite failed %s: %s", dest, e)
 
     # Clean up the (now empty) source folder if it was a one-ROM bundle
     try:

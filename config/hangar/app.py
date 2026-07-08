@@ -1,7 +1,9 @@
 import json
 import os
 import re
+import socket
 import subprocess
+import urllib.request
 from pathlib import Path
 
 from flask import Flask, Response, abort, jsonify, redirect, render_template, request, send_from_directory, stream_with_context, url_for
@@ -21,7 +23,12 @@ app = Flask(__name__)
 
 
 def load_servers():
-    """Read every *.json under DISCOVERY_DIR, keyed by slug. Bad files are skipped."""
+    """Read every *.json under DISCOVERY_DIR, keyed by slug. Bad files are skipped.
+
+    An entry needs a slug and *either* a valid systemd_unit (for locally-
+    managed servers) or a status_probe (for pre-migration games still
+    running elsewhere - Pelican containers, external boxes, etc).
+    """
     out = {}
     if not DISCOVERY_DIR.is_dir():
         return out
@@ -31,8 +38,13 @@ def load_servers():
         except (OSError, json.JSONDecodeError):
             continue
         slug = data.get("slug")
-        unit = data.get("systemd_unit", "")
-        if not slug or not UNIT_RE.match(unit):
+        if not slug:
+            continue
+        unit  = data.get("systemd_unit", "")
+        probe = data.get("status_probe")
+        if unit and not UNIT_RE.match(unit):
+            continue
+        if not unit and not probe:
             continue
         out[slug] = data
     return out
@@ -76,6 +88,70 @@ def unit_status(unit):
     }
 
 
+def _probe_active(probe):
+    """Return "active" if the probe succeeds, else "inactive".
+
+    Supported probe types:
+      tcp     - socket connect to (host, port)
+      http    - urlopen; treat 2xx/3xx/4xx as active (anything but conn-refused)
+      process - pgrep -f <pattern>
+    """
+    t       = probe.get("type", "tcp")
+    host    = probe.get("host", "127.0.0.1")
+    port    = probe.get("port")
+    timeout = float(probe.get("timeout", 3))
+    try:
+        if t == "tcp":
+            with socket.create_connection((host, int(port)), timeout=timeout):
+                return "active"
+        if t == "http":
+            url = probe.get("url") or f"http://{host}:{port}{probe.get('path', '/')}"
+            req = urllib.request.Request(url, method="GET")
+            try:
+                urllib.request.urlopen(req, timeout=timeout).read(1)
+                return "active"
+            except urllib.error.HTTPError:
+                # Any HTTP response means the service is up (even 401/404).
+                return "active"
+        if t == "process":
+            pat = probe.get("pattern", "")
+            if not pat:
+                return "inactive"
+            proc = subprocess.run(
+                ["/run/current-system/sw/bin/pgrep", "-f", pat],
+                capture_output=True, timeout=timeout,
+            )
+            return "active" if proc.returncode == 0 else "inactive"
+    except (socket.error, OSError, subprocess.TimeoutExpired, ValueError,
+            urllib.error.URLError):
+        pass
+    return "inactive"
+
+
+def get_server_status(meta):
+    """Return a status dict for either a systemd-managed or probe-based server."""
+    unit = meta.get("systemd_unit")
+    if unit and UNIT_RE.match(unit):
+        return unit_status(unit)
+    probe = meta.get("status_probe")
+    if probe:
+        active = _probe_active(probe)
+        return {
+            "active":   active,
+            "sub":      "probed",
+            "loaded":   "external",
+            "since":    "",
+            "main_pid": "0",
+        }
+    return {
+        "active":   "unknown",
+        "sub":      "",
+        "loaded":   "",
+        "since":    "",
+        "main_pid": "0",
+    }
+
+
 def power(unit, action):
     if action not in ALLOWED_POWER:
         raise ValueError(f"disallowed action: {action}")
@@ -112,12 +188,36 @@ def public_asset(filename):
     return send_from_directory(str(PUBLIC_DIR), filename)
 
 
+@app.route("/public/status")
+def public_status():
+    """Lightweight per-server status feed consumed by normandy's homepage
+    poller. No auth - the same up/down info is already shown on the public
+    homepage. Uses `homepage_slug` from discovery when set so the JSON keys
+    match the homepage's tile slugs directly.
+    """
+    servers = load_servers()
+    out = []
+    for slug, meta in servers.items():
+        status = get_server_status(meta)
+        pc = None
+        backend = get_backend(slug, meta)
+        if status["active"] == "active" and backend.has("player_count"):
+            pc = backend.player_count()
+        out.append({
+            "slug":         meta.get("homepage_slug") or slug,
+            "hangar_slug":  slug,
+            "active":       status["active"],
+            "player_count": pc,
+        })
+    return jsonify(out)
+
+
 @app.route("/")
 def index():
     servers = load_servers()
     rows = []
     for slug, meta in servers.items():
-        status = unit_status(meta["systemd_unit"])
+        status = get_server_status(meta)
         backend = get_backend(slug, meta)
         pc = None
         if status["active"] == "active" and backend.has("player_count"):
@@ -139,7 +239,7 @@ def server_detail(slug):
     meta = servers.get(slug)
     if not meta:
         abort(404)
-    status = unit_status(meta["systemd_unit"])
+    status = get_server_status(meta)
     backend = get_backend(slug, meta)
     caps = sorted(backend.capabilities)
     return render_template("server.html", user=get_user(), s=meta, status=status,
@@ -455,7 +555,7 @@ def api_servers():
     servers = load_servers()
     out = []
     for slug, meta in servers.items():
-        status = unit_status(meta["systemd_unit"])
+        status = get_server_status(meta)
         out.append(_server_summary(slug, meta, status))
     return jsonify(out)
 
@@ -466,7 +566,7 @@ def api_server_status(slug):
     meta = servers.get(slug)
     if not meta:
         abort(404)
-    status = unit_status(meta["systemd_unit"])
+    status = get_server_status(meta)
     summary = _server_summary(slug, meta, status)
     summary["status"] = status
     return jsonify(summary)

@@ -31,6 +31,7 @@ in
   # panel picks up KF2 without any per-game code in Hangar itself.
   environment.etc."hangar/servers.d/kf2.json".text = builtins.toJSON {
     slug             = "kf2";
+    homepage_slug    = "killing-floor-2";
     name             = "Killing Floor 2";
     systemd_unit     = "kf2.service";
     volume           = volume;

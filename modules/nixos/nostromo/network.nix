@@ -39,6 +39,7 @@
       ];
       allowedUDPPorts = [
         25565 # Fika P2P (raid game traffic)
+        6790  # Fika NAT-punch server (Pangolin raw resource > nostromo:6790)
         42420 # Vintage Story
         7777  # KF2 game
         27015 # KF2 Steam query

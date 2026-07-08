@@ -524,15 +524,18 @@
   }
 })();
 
-// MOTD tab - welcome screen editor.
+// MOTD tab - welcome screen editor (banner + clan motto + server MOTD).
 (function() {
   const page = document.querySelector('.server-page');
   if (!page || page.dataset.welcomeSupported !== 'true') return;
-  const slug   = page.dataset.slug;
-  const form   = document.getElementById('motd-form');
-  const status = document.getElementById('motd-status');
-  const banner = document.getElementById('motd-banner');
-  const boxes  = document.querySelectorAll('.motd-box');
+  const slug        = page.dataset.slug;
+  const form        = document.getElementById('motd-form');
+  const status      = document.getElementById('motd-status');
+  const banner      = document.getElementById('motd-banner');
+  const motto       = document.getElementById('motd-motto');
+  const mottoColor  = document.getElementById('motd-motto-color');
+  const motd        = document.getElementById('motd-motd');
+  const motdColor   = document.getElementById('motd-motd-color');
 
   function setStatus(kind, text) {
     status.className = 'log-status log-status-' + kind;
@@ -545,12 +548,11 @@
       const r = await fetch(`/server/${slug}/welcome`, { headers: { 'Accept': 'application/json' } });
       const data = await r.json().catch(() => ({}));
       if (!data.ok) throw new Error();
-      banner.value = data.banner || '';
-      const src = data.boxes || [];
-      boxes.forEach((el, i) => {
-        el.querySelector('.motd-title').value = (src[i] && src[i].title) || '';
-        el.querySelector('.motd-body').value  = (src[i] && src[i].body)  || '';
-      });
+      banner.value     = data.banner       || '';
+      motto.value      = data.motto        || '';
+      mottoColor.value = data.motto_color  || '#FEFEFE';
+      motd.value       = data.motd         || '';
+      motdColor.value  = data.motd_color   || '#FEFEFE';
       setStatus('live', 'READY');
     } catch (e) {
       setStatus('lost', 'UNAVAILABLE');
@@ -561,11 +563,11 @@
     e.preventDefault();
     setStatus('connecting', 'SAVING');
     const payload = {
-      banner: banner.value,
-      boxes:  Array.from(boxes).map(el => ({
-        title: el.querySelector('.motd-title').value,
-        body:  el.querySelector('.motd-body').value,
-      })),
+      banner:      banner.value,
+      motto:       motto.value,
+      motto_color: mottoColor.value,
+      motd:        motd.value,
+      motd_color:  motdColor.value,
     };
     try {
       const r = await fetch(`/server/${slug}/welcome`, {

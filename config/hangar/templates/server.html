@@ -182,18 +182,37 @@
         </div>
         <form id="motd-form" class="motd-form">
           <label class="settings-field motd-banner">
-            <span class="settings-label">BANNER IMAGE URL</span>
-            <input type="text" id="motd-banner" name="banner" placeholder="https://... (optional)">
+            <span class="settings-label">BANNER LINK</span>
+            <input type="text" id="motd-banner" name="banner"
+                   placeholder="https://hangar.ishimura.lol/public/kf2-motd-banner.png">
           </label>
-          <div class="motd-boxes">
-            {% for i in range(4) %}
-              <div class="motd-box" data-idx="{{ i }}">
-                <div class="motd-box-num">BOX {{ i + 1 }}</div>
-                <input type="text" class="motd-title" placeholder="title" maxlength="120">
-                <textarea class="motd-body" rows="3" placeholder="body"></textarea>
-              </div>
-            {% endfor %}
+
+          <div class="motd-section">
+            <div class="motd-section-head">
+              <span class="settings-label">CLAN MOTTO</span>
+              <label class="motd-color-inline">
+                <span>COLOR</span>
+                <input type="text" id="motd-motto-color" name="motto_color"
+                       value="#FEFEFE" maxlength="7" size="7">
+              </label>
+            </div>
+            <textarea id="motd-motto" class="motd-body" rows="4"
+                      placeholder="short banner text under the image"></textarea>
           </div>
+
+          <div class="motd-section">
+            <div class="motd-section-head">
+              <span class="settings-label">SERVER MOTD</span>
+              <label class="motd-color-inline">
+                <span>COLOR</span>
+                <input type="text" id="motd-motd-color" name="motd_color"
+                       value="#FEFEFE" maxlength="7" size="7">
+              </label>
+            </div>
+            <textarea id="motd-motd" class="motd-body" rows="6"
+                      placeholder="main welcome text shown to joining players (\n for newline)"></textarea>
+          </div>
+
           <div class="settings-actions">
             <button type="submit" class="btn btn-restart">SAVE WELCOME SCREEN</button>
           </div>

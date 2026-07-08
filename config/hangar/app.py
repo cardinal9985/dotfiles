@@ -328,7 +328,13 @@ def server_welcome_set(slug):
     if not backend.has("welcome"):
         return jsonify({"ok": False, "error": "unsupported"}), 400
     p = request.get_json(silent=True) or {}
-    ok = backend.set_welcome(p.get("banner", ""), p.get("boxes") or [])
+    ok = backend.set_welcome(
+        banner      = p.get("banner"),
+        motto       = p.get("motto"),
+        motto_color = p.get("motto_color"),
+        motd        = p.get("motd"),
+        motd_color  = p.get("motd_color"),
+    )
     return jsonify({"ok": ok})
 
 

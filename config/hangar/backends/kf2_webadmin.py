@@ -256,6 +256,12 @@ class KF2WebAdminBackend:
                 self._log(f"form POST {path}: no form on page")
                 return None
             data = self._extract_form_fields(form)
+            missing = [k for k in overrides if k not in data]
+            if missing:
+                # KF2 versions differ on field naming; log what actually
+                # exists so we can iterate the override names.
+                avail = list(data.keys())
+                self._log(f"form {path}: overrides {missing} not in form; available={avail[:30]}")
             data.update(overrides)
             if extra_submit:
                 data.update(extra_submit)
@@ -537,20 +543,33 @@ class KF2WebAdminBackend:
     # KF2's server + admin passwords live on the general settings page.
     # We only ever POST new values; WebAdmin never returns them in cleartext.
 
+    # Passwords live on /policy/passwords, NOT in general settings, despite
+    # the WebAdmin nav grouping. Field names TBD by version; the missing-
+    # field log in _post_form tells us the actual names on first attempt.
+    _PASSWORDS_URL = "/ServerAdmin/policy/passwords"
+
     def set_password(self, kind, password):
         if kind not in ("game", "admin"):
             return False
-        field = "GamePassword" if kind == "game" else "AdminPassword"
-        # UE3 WebAdmin needs the full settings form re-submitted, not just
-        # the changed fields, or it silently keeps the old values.
-        r = self._post_form("/ServerAdmin/settings/general", {
-            field:              password,
-            f"{field}_confirm": password,
-        })
+        # Try the most common KF2/UE3 field naming; _post_form will log if
+        # the form doesn't have these so we can adjust.
+        if kind == "game":
+            overrides = {
+                "GamePassword":        password,
+                "GamePassword_confirm": password,
+            }
+        else:
+            overrides = {
+                "AdminPassword":        password,
+                "AdminPassword_confirm": password,
+            }
+        r = self._post_form(self._PASSWORDS_URL, overrides)
         return r is not None
 
     # -- welcome screen (MOTD) --------------------------------------------
-
+    # KF2's welcome screen is banner + clan motto (with color) + server MOTD
+    # (with color). Field names: BannerLink, ClanMotto, ClanMottoColor,
+    # ServerMOTD, ServerMOTDColor.
     _WELCOME_URL = "/ServerAdmin/settings/welcome"
 
     def get_welcome(self):
@@ -558,34 +577,29 @@ class KF2WebAdminBackend:
         if not r:
             return None
         soup = BeautifulSoup(r.text, "html.parser")
-        banner = ""
-        el = soup.find("input", attrs={"name": lambda n: n and "banner" in n.lower()})
-        if el:
-            banner = el.get("value", "")
-        # Boxes: WebAdmin numbers them 0..3 (or 1..4). Look for any input/
-        # textarea whose name contains "message" or "line" and group by index.
-        boxes = []
-        for i in range(4):
-            title_el = (
-                soup.find("input",    attrs={"name": lambda n, i=i: n and f"messagetitle{i}"  in n.lower()}) or
-                soup.find("input",    attrs={"name": lambda n, i=i: n and f"messageline{i}"   in n.lower()})
-            )
-            body_el = (
-                soup.find("textarea", attrs={"name": lambda n, i=i: n and f"messagebody{i}"   in n.lower()}) or
-                soup.find("textarea", attrs={"name": lambda n, i=i: n and f"messagetext{i}"   in n.lower()}) or
-                soup.find("textarea", attrs={"name": lambda n, i=i: n and str(i) in n.lower() and "message" in n.lower()})
-            )
-            boxes.append({
-                "title": title_el.get("value", "") if title_el else "",
-                "body":  body_el.get_text() if body_el else "",
-            })
-        return {"banner": banner, "boxes": boxes}
+        def input_val(name):
+            el = soup.find("input", attrs={"name": name})
+            return el.get("value", "") if el else ""
+        def textarea_val(name):
+            el = soup.find("textarea", attrs={"name": name})
+            return el.get_text() if el else ""
+        return {
+            "banner":       input_val("BannerLink"),
+            "motto":        textarea_val("ClanMotto"),
+            "motto_color":  input_val("ClanMottoColor") or "#FEFEFE",
+            "motd":         textarea_val("ServerMOTD"),
+            "motd_color":   input_val("ServerMOTDColor") or "#FEFEFE",
+        }
 
-    def set_welcome(self, banner, boxes):
-        # Full-form POST so we don't wipe every other MOTD field to blank.
-        overrides = {"BannerImage": banner or ""}
-        for i, box in enumerate((boxes or [])[:4]):
-            overrides[f"MessageTitle{i}"] = box.get("title", "")
-            overrides[f"MessageBody{i}"]  = box.get("body",  "")
+    def set_welcome(self, banner=None, motto=None, motto_color=None,
+                    motd=None, motd_color=None, **_):
+        # Only include fields the caller actually provided so partial edits
+        # (e.g. just the banner) don't wipe motto/motd to empty.
+        overrides = {}
+        if banner      is not None: overrides["BannerLink"]      = banner
+        if motto       is not None: overrides["ClanMotto"]       = motto
+        if motto_color is not None: overrides["ClanMottoColor"]  = motto_color
+        if motd        is not None: overrides["ServerMOTD"]      = motd
+        if motd_color  is not None: overrides["ServerMOTDColor"] = motd_color
         r = self._post_form(self._WELCOME_URL, overrides)
         return r is not None

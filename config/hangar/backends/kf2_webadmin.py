@@ -11,6 +11,7 @@ Config schema:
                     (comes from sops via kf2/admin_password)
 """
 
+import sys
 import threading
 
 import requests
@@ -80,6 +81,11 @@ class KF2WebAdminBackend:
     def has(self, cap):
         return cap in self.capabilities
 
+    def _log(self, msg):
+        # Prefix so journalctl -u hangar filtering is easy.
+        sys.stderr.write(f"[kf2] {msg}\n")
+        sys.stderr.flush()
+
     # -- auth --------------------------------------------------------------
 
     def _password(self):
@@ -88,62 +94,74 @@ class KF2WebAdminBackend:
         try:
             with open(self._pw_file, "r") as fh:
                 return fh.read().strip()
-        except OSError:
+        except OSError as e:
+            self._log(f"password file read failed: {e}")
             return ""
 
-    def _extract_token(self, html):
-        """Login form has a hidden CSRF token. Grab it if present."""
-        soup = BeautifulSoup(html, "html.parser")
-        el = soup.find("input", attrs={"name": "token"})
-        return el.get("value", "") if el else ""
+    def _has_login_form(self, html):
+        # KF2 login form has id="loginform" and a username input.
+        return 'id="loginform"' in html or 'name="username"' in html
 
     def _login(self):
-        """Establish a fresh session cookie. Returns True on success."""
+        """Establish a session by fetching /ServerAdmin/current and POSTing
+        credentials back to whatever URL WebAdmin's login form points at.
+        """
         try:
-            r = self.session.get(f"{self.base_url}/ServerAdmin/", timeout=8)
+            landing = f"{self.base_url}/ServerAdmin/current"
+            r = self.session.get(landing, timeout=8, allow_redirects=True)
+            self._log(f"login GET {landing} -> {r.status_code} final={r.url}")
             if r.status_code != 200:
                 return False
-            token = self._extract_token(r.text)
-            r = self.session.post(
-                f"{self.base_url}/ServerAdmin/",
-                data={
-                    "token":         token,
-                    "password_hash": "",
-                    "username":      self.username,
-                    "password":      self._password(),
-                    "remember":      "-1",
-                },
-                allow_redirects=True,
-                timeout=8,
-            )
-            # Successful login lands on a page that no longer contains the
-            # username field. A retained login form means the credentials
-            # were rejected.
-            self._logged_in = ("name=\"username\"" not in r.text)
+            # If no login form, we're already authenticated.
+            soup = BeautifulSoup(r.text, "html.parser")
+            form = soup.find("form", id="loginform")
+            if not form:
+                self._logged_in = True
+                self._log("already logged in")
+                return True
+            action = form.get("action") or "/ServerAdmin/"
+            token_el = form.find("input", attrs={"name": "token"})
+            token = token_el.get("value", "") if token_el else ""
+            login_url = action if action.startswith("http") else (self.base_url + action)
+            self._log(f"login POST {login_url} token='{token}'")
+            r = self.session.post(login_url, data={
+                "token":         token,
+                "password_hash": "",
+                "username":      self.username,
+                "password":      self._password(),
+                "remember":      "-1",
+            }, allow_redirects=True, timeout=8)
+            has_form = self._has_login_form(r.text)
+            self._log(f"login result status={r.status_code} still_has_form={has_form}")
+            self._logged_in = not has_form
             return self._logged_in
-        except requests.RequestException:
+        except requests.RequestException as e:
+            self._log(f"login exception: {e}")
             self._logged_in = False
             return False
 
     def _get(self, path):
-        """GET behind auth; re-login on 401/redirect back to login page."""
+        """GET behind auth; re-login on redirect back to login page."""
         with self._lock:
             if not self._logged_in and not self._login():
                 return None
             try:
                 r = self.session.get(f"{self.base_url}{path}", timeout=8,
                                      allow_redirects=True)
-            except requests.RequestException:
+            except requests.RequestException as e:
+                self._log(f"GET {path} exception: {e}")
                 return None
-            if r.status_code == 200 and "name=\"username\"" not in r.text:
+            if r.status_code == 200 and not self._has_login_form(r.text):
                 return r
-            # Session expired - try one re-login and one retry.
+            self._log(f"GET {path} needs re-login (status={r.status_code})")
             if self._login():
                 try:
                     r = self.session.get(f"{self.base_url}{path}", timeout=8)
-                    return r if r.status_code == 200 else None
-                except requests.RequestException:
-                    return None
+                    if r.status_code == 200 and not self._has_login_form(r.text):
+                        return r
+                    self._log(f"GET {path} still failing after re-login (status={r.status_code})")
+                except requests.RequestException as e:
+                    self._log(f"GET {path} retry exception: {e}")
             return None
 
     def _post(self, path, data):
@@ -153,17 +171,21 @@ class KF2WebAdminBackend:
             try:
                 r = self.session.post(f"{self.base_url}{path}", data=data,
                                       timeout=8, allow_redirects=True)
-            except requests.RequestException:
+            except requests.RequestException as e:
+                self._log(f"POST {path} exception: {e}")
                 return None
-            if r.status_code == 200 and "name=\"username\"" not in r.text:
+            if r.status_code == 200 and not self._has_login_form(r.text):
                 return r
+            self._log(f"POST {path} needs re-login (status={r.status_code})")
             if self._login():
                 try:
                     r = self.session.post(f"{self.base_url}{path}", data=data,
                                           timeout=8)
-                    return r if r.status_code == 200 else None
-                except requests.RequestException:
-                    return None
+                    if r.status_code == 200 and not self._has_login_form(r.text):
+                        return r
+                    self._log(f"POST {path} still failing after re-login (status={r.status_code})")
+                except requests.RequestException as e:
+                    self._log(f"POST {path} retry exception: {e}")
             return None
 
     # -- players -----------------------------------------------------------
@@ -217,10 +239,20 @@ class KF2WebAdminBackend:
     # -- console -----------------------------------------------------------
 
     def send_command(self, command):
-        """Fire and forget - output shows up in the journalctl SSE stream."""
-        r = self._post("/ServerAdmin/current/console",
-                       {"SendText": command, "command": command})
-        return "sent" if r is not None else None
+        """Fire and forget - output shows up in the journalctl SSE stream.
+
+        KF2 WebAdmin's console page URL varies across versions - try the
+        top-level `/console` first, fall back to `/current/console`.
+        """
+        for path in ("/ServerAdmin/console",
+                     "/ServerAdmin/current/console",
+                     "/ServerAdmin/current+console"):
+            r = self._post(path, {"command": command})
+            if r is not None:
+                self._log(f"send_command via {path}: ok")
+                return "sent"
+        self._log(f"send_command all paths failed for cmd={command!r}")
+        return None
 
     # -- moderation --------------------------------------------------------
 

@@ -192,8 +192,10 @@ class KF2WebAdminBackend:
         """Turn a BeautifulSoup form into a dict of {field: default value}.
 
         Preserves every input / select / textarea's current state so we can
-        submit the whole form back with only our overrides changed. This
-        matches how UE3 WebAdmin forms want to be POSTed.
+        submit the whole form back with only our overrides changed. Also
+        pulls the first *named* submit button - UE3 WebAdmin's server-side
+        handler dispatches on it (e.g. `action=save`), and omitting it makes
+        the POST return 200 but silently no-op.
         """
         data = {}
         for inp in form.find_all("input"):
@@ -221,6 +223,13 @@ class KF2WebAdminBackend:
             if not name:
                 continue
             data[name] = ta.get_text() or ""
+        # First named submit button - required for the form's action to run.
+        for btn in form.find_all(["button", "input"]):
+            typ = (btn.get("type") or "").lower()
+            name = btn.get("name")
+            if typ == "submit" and name and name not in data:
+                data[name] = btn.get("value", "")
+                break
         return data
 
     def _post_form(self, path, overrides, form_id=None, extra_submit=None):

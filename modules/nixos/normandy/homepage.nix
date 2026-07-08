@@ -239,7 +239,7 @@ let
         "Launch Killing Floor 2"
         "Press <b>~</b> (tilde) in-game to open the console"
         "Type <code>open games.ishimura.lol:7777</code> and hit Enter"
-        "When prompted for a password, enter the server password (blank if the server is open)"
+        "If prompted for a password, enter <b>Yw6vq8</b> If this fails just disconnect and connect again. It can be janky."
       ];
     }
     {

@@ -56,17 +56,19 @@ class VintageStoryStdinBackend:
         ]},
     ]
 
-    # Log-line regexes for tracking join/leave. VS's exact wording varies by
-    # version; keep alternatives here so we don't have to redeploy to iterate.
+    # Log-line regexes for tracking join/leave. Real VS 1.22 format is:
+    #   [Server Event] MaxwellPayne [::ffff:192.168.1.1]:44462 joins.
+    #   [Server Event] MaxwellPayne [::ffff:192.168.1.1]:44462 leaves.
+    # The primary patterns match that shape; alternates cover older versions.
     _JOIN_PATTERNS = [
+        re.compile(r"\[Server Event\]\s+(\S+)\s+\[[^\]]+\]:\d+\s+joins", re.I),
         re.compile(r"Player\s+(\S+)\s+(?:joins|joined|connected)", re.I),
         re.compile(r"(\S+)\s+has\s+joined", re.I),
-        re.compile(r"\[Server Event\].*?(\S+)\s+client\S*\s+connect", re.I),
     ]
     _LEAVE_PATTERNS = [
-        re.compile(r"Player\s+(\S+)\s+(?:disconnected|left|has left)", re.I),
+        re.compile(r"\[Server Event\]\s+(\S+)\s+\[[^\]]+\]:\d+\s+(?:leaves|left|disconnects)", re.I),
+        re.compile(r"Player\s+(\S+)\s+(?:disconnected|left)", re.I),
         re.compile(r"(\S+)\s+has\s+left", re.I),
-        re.compile(r"\[Server Event\].*?(\S+)\s+client\S*\s+disconnect", re.I),
     ]
     _RESET_HINTS = ("Server started", "Save game loaded", "Save game reloaded")
 

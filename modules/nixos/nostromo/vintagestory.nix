@@ -65,8 +65,11 @@ in
       marker=${volume}/.hangar-initial-config
       if [ ! -f "$marker" ]; then
         echo "Applying Hangar-managed VS defaults (one-time)"
+        # WhitelistMode is a string enum: "Off" / "On" / "Blacklist".
+        # The numeric 0 that JSON-false gets serialized to is treated as
+        # invite-only at runtime (silent - no error in the log).
         ${vsServer} --dataPath ${volume} \
-          --setconfig="{ WhitelistMode: false, AdvertiseServer: false }" \
+          --setconfig="{ WhitelistMode: 'Off', AdvertiseServer: false }" \
           || echo "warn: --setconfig exited non-zero, continuing"
         touch "$marker"
       fi

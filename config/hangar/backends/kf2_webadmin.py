@@ -338,73 +338,90 @@ class KF2WebAdminBackend:
     # masks. The delete link on each row carries a `remove=<key>` query arg
     # or a hidden input on the row's remove form.
 
+    # KF2's Access Policy lives across three separate URLs, one per ban type.
+    _BAN_PATHS = {
+        "session": "/ServerAdmin/policy/sessionbans",
+        "id":      "/ServerAdmin/policy/bans",
+        "ip":      "/ServerAdmin/policy/ipbans",
+    }
     _BAN_KIND_FIELD = {
         "session": "playerkey",
         "id":      "uniqueid",
         "ip":      "ipmask",
     }
 
-    def _parse_ban_table(self, table):
-        rows = []
-        if not table:
-            return rows
-        for tr in table.find_all("tr"):
-            cells = tr.find_all("td")
-            if not cells:
-                continue
-            name   = cells[0].get_text(strip=True) if len(cells) > 0 else ""
-            detail = cells[1].get_text(strip=True) if len(cells) > 1 else ""
-            key = ""
-            # Find any input inside this row (hidden or a remove form) that
-            # carries the value we'll POST back to unban.
-            for inp in tr.find_all("input"):
-                val = (inp.get("value") or "").strip()
-                nm  = (inp.get("name")  or "").lower()
-                if nm in ("playerkey", "uniqueid", "ipmask", "remove"):
-                    key = val
-                    break
-            if not name and not key:
-                continue
-            rows.append({"key": key or name, "name": name or key, "detail": detail})
-        return rows
+    def _parse_ban_row(self, tr, kind):
+        cells = tr.find_all("td")
+        if not cells:
+            return None
+        # Skip placeholder rows: "No bans" / "No entries" / any colspan cell.
+        if any(td.get("colspan") for td in cells):
+            return None
+        text_lower = tr.get_text(strip=True).lower()
+        if not text_lower or "no bans" in text_lower or "no entries" in text_lower:
+            return None
+        # Pull the unban key from any hidden input in this row.
+        key = ""
+        for inp in tr.find_all("input"):
+            val = (inp.get("value") or "").strip()
+            nm  = (inp.get("name")  or "").lower()
+            if nm in ("playerkey", "uniqueid", "ipmask", "remove") and val:
+                key = val
+                break
+        # Row shape: first cell is the primary identifier, middle cells hold
+        # extra detail, last cell is the actions form.
+        name = cells[0].get_text(strip=True)
+        detail_cells = [c.get_text(strip=True) for c in cells[1:-1]]
+        detail = " / ".join(x for x in detail_cells if x)
+        if not name and not key:
+            return None
+        return {"key": key or name, "name": name or key, "detail": detail or ""}
+
+    def _fetch_bans_for(self, kind):
+        path = self._BAN_PATHS.get(kind)
+        if not path:
+            return []
+        r = self._get(path)
+        if not r:
+            self._log(f"bans {kind}: fetch failed at {path}")
+            return []
+        soup = BeautifulSoup(r.text, "html.parser")
+        # Prefer .grid tables (WebAdmin's convention). Fall back to any table.
+        tables = soup.find_all("table", class_="grid") or soup.find_all("table")
+        entries = []
+        for table in tables:
+            tbody = table.find("tbody") or table
+            for tr in tbody.find_all("tr"):
+                entry = self._parse_ban_row(tr, kind)
+                if entry:
+                    entries.append(entry)
+        self._log(f"bans {kind}: {len(entries)} entries at {path}")
+        return entries
 
     def get_bans(self):
-        r = self._get("/ServerAdmin/policy/bans")
-        if not r:
-            return None
-        soup = BeautifulSoup(r.text, "html.parser")
-        tables = soup.find_all("table")
-        # Best-effort: assume WebAdmin lists in order session / id / ip.
-        # If versions differ, tweak by hunting for a distinguishing field.
-        session_t = id_t = ip_t = None
-        if len(tables) >= 3:
-            session_t, id_t, ip_t = tables[0], tables[1], tables[2]
-        elif len(tables) == 2:
-            id_t, ip_t = tables
-        elif len(tables) == 1:
-            ip_t = tables[0]
         return {
-            "session": self._parse_ban_table(session_t),
-            "id":      self._parse_ban_table(id_t),
-            "ip":      self._parse_ban_table(ip_t),
+            "session": self._fetch_bans_for("session"),
+            "id":      self._fetch_bans_for("id"),
+            "ip":      self._fetch_bans_for("ip"),
         }
 
     def add_ban(self, kind, value, reason=""):
         field = self._BAN_KIND_FIELD.get(kind)
-        if not field or not value:
+        path  = self._BAN_PATHS.get(kind)
+        if not field or not path or not value:
             return False
         data = {"action": "add", field: value}
         if reason:
             data["reason"] = reason
-        r = self._post("/ServerAdmin/policy/bans", data)
+        r = self._post(path, data)
         return r is not None
 
     def remove_ban(self, kind, key):
         field = self._BAN_KIND_FIELD.get(kind)
-        if not field or not key:
+        path  = self._BAN_PATHS.get(kind)
+        if not field or not path or not key:
             return False
-        r = self._post("/ServerAdmin/policy/bans",
-                       {"action": "delete", field: key})
+        r = self._post(path, {"action": "delete", field: key})
         return r is not None
 
     # -- passwords ---------------------------------------------------------

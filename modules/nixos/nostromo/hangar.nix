@@ -24,6 +24,7 @@ let
   managedUnits = [
     "kf2.service"
     "vintagestory.service"
+    "tarkov-spt.service"
   ];
 
   # Absolute paths - hangar's PATH doesn't include /run/current-system.

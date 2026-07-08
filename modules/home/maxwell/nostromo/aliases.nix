@@ -32,5 +32,7 @@
     restart-anubis     = "ssh -t -p 36475 maxwell@100.108.98.70 'sudo systemctl restart anubis-public anubis-homepage'";
     restart-homepage   = "ssh -t -p 36475 maxwell@100.108.98.70 sudo systemctl restart podman-homepage";
     health-check = ''for u in https://ishimura.lol https://auth.ishimura.lol https://jellyfin.ishimura.lol http://ishimura:8265 http://ishimura:47890; do printf "%-40s " "$u"; curl -kIso /dev/null -w "%{http_code}\n" "$u" --max-time 5; done'';
+    # Clear stale Hive lock after cake_wallet exits uncleanly so it can start again.
+    cake-unstick = "pkill -x cake_wallet; rm -f ~/.config/cake_wallet/*.lock";
   };
 }

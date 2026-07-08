@@ -10,6 +10,7 @@
     ./wings.nix
     ./kf2.nix
     ./vintagestory.nix
+    ./tarkov-spt.nix
     ./hangar.nix
     ./boot.nix
     ./gpu.nix

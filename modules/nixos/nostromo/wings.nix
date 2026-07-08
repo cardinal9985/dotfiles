@@ -41,23 +41,6 @@ in
     "/var/lib/pelican"
   ];
 
-  # Hangar discovery placeholder for Tarkov, which is still running inside
-  # a Pelican container. Hangar tracks its up/down via an HTTP probe on
-  # SPT's port so the homepage indicator flows through Hangar as source of
-  # truth. Replaced when Tarkov migrates to a native systemd unit in
-  # Stage 6 of the hangar spec.
-  environment.etc."hangar/servers.d/tarkov-spt.json".text = builtins.toJSON {
-    slug            = "tarkov-spt";
-    homepage_slug   = "escape-from-tarkov-fika";
-    name            = "Escape from Tarkov: Fika";
-    game_type       = "tarkov-spt";
-    connect_address = "https://games.ishimura.lol:6969";
-    status_probe    = {
-      type = "http";
-      url  = "http://127.0.0.1:6969/";
-    };
-  };
-
   systemd.services.wings = {
     description = "Pelican Wings";
     after = [ "podman.service" "podman.socket" "network-online.target" ];

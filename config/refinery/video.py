@@ -601,13 +601,16 @@ def _find_subs_folder(src_dir):
     return None
 
 
-def _copy_sidecars(src_file, dest_file):
-    """Copy subtitles / nfo / artwork sitting next to the source video into
+def _move_sidecars(src_file, dest_file):
+    """Move subtitles / nfo / artwork sitting next to the source video into
     the destination folder. Two paths:
       1. Siblings whose stem starts with the video stem (Sonarr layout).
       2. Files under an adjacent `Subs/` folder that share the video's
          SxxEyy tag OR - for movies with no such tag - copy every subtitle
-         under Subs/ verbatim."""
+         under Subs/ verbatim.
+
+    Actually moves (Path.replace) rather than copies so the source folder
+    ends up empty and the caller's rmdir sweep can clean it up."""
     src  = Path(src_file)
     dest = Path(dest_file)
 
@@ -621,9 +624,9 @@ def _copy_sidecars(src_file, dest_file):
             continue
         try:
             new = dest.parent / (dest.stem + f.name[len(src.stem):])
-            shutil.copy2(f, new)
+            f.replace(new)
         except Exception as e:
-            log.warning("sidecar copy failed %s: %s", f, e)
+            log.warning("sidecar move failed %s: %s", f, e)
 
     # 2. Subs/ folder match
     subs_dir = _find_subs_folder(src.parent)
@@ -652,9 +655,15 @@ def _copy_sidecars(src_file, dest_file):
             lang_hint = "." + sub.stem.lower()[:2]
         new = dest.parent / f"{dest.stem}{lang_hint}{sub.suffix.lower()}"
         try:
-            shutil.copy2(sub, new)
+            sub.replace(new)
         except Exception as e:
-            log.warning("Subs/ copy failed %s: %s", sub, e)
+            log.warning("Subs/ move failed %s: %s", sub, e)
+    # Nuke the now-empty Subs/ so the source folder's rmdir check succeeds.
+    try:
+        if subs_dir.exists() and not any(subs_dir.rglob("*")):
+            shutil.rmtree(subs_dir)
+    except Exception:
+        pass
 
 
 def write_and_move(item, tracks=None, fetch_subs=False):
@@ -707,7 +716,7 @@ def write_and_move(item, tracks=None, fetch_subs=False):
             dest = dest_dir / f"{base}{src.suffix.lower()}"
             try:
                 src.replace(dest)
-                _copy_sidecars(src, dest)
+                _move_sidecars(src, dest)
                 track_paths[t["id"]] = str(dest)
                 last_dest = dest
             except Exception as e:
@@ -760,7 +769,7 @@ def write_and_move(item, tracks=None, fetch_subs=False):
         log.error("move failed %s -> %s: %s", src, dest, e)
         raise
 
-    _copy_sidecars(src, dest)
+    _move_sidecars(src, dest)
 
     if fetch_subs and tmdb_id:
         try:

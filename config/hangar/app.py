@@ -10,7 +10,6 @@ from shared_auth import get_user, is_admin
 
 DISCOVERY_DIR = Path(os.environ.get("HANGAR_DISCOVERY_DIR", "/etc/hangar/servers.d"))
 SYSTEMCTL     = os.environ.get("HANGAR_SYSTEMCTL", "/run/current-system/sw/bin/systemctl")
-SUDO          = os.environ.get("HANGAR_SUDO",      "/run/wrappers/bin/sudo")
 ALLOWED_POWER = {"start", "stop", "restart"}
 UNIT_RE       = re.compile(r"^[a-zA-Z0-9@._-]+\.service$")
 
@@ -66,7 +65,7 @@ def power(unit, action):
     if not UNIT_RE.match(unit):
         raise ValueError(f"disallowed unit: {unit}")
     proc = subprocess.run(
-        [SUDO, "-n", SYSTEMCTL, action, unit],
+        [SYSTEMCTL, action, unit],
         capture_output=True, text=True, timeout=30,
     )
     return proc.returncode, (proc.stderr or proc.stdout).strip()
@@ -119,11 +118,12 @@ def server_power(slug):
     meta = servers.get(slug)
     if not meta:
         abort(404)
-    action = (request.form.get("action") or (request.json or {}).get("action") or "").strip()
+    payload = request.get_json(silent=True) or {}
+    action = (request.form.get("action") or payload.get("action") or "").strip()
     if action not in ALLOWED_POWER:
         return jsonify({"ok": False, "error": "invalid action"}), 400
     rc, msg = power(meta["systemd_unit"], action)
-    if request.headers.get("Accept", "").startswith("application/json") or request.is_json:
+    if request.is_json or request.headers.get("Accept", "").startswith("application/json"):
         return jsonify({"ok": rc == 0, "rc": rc, "message": msg})
     return redirect(url_for("server_detail", slug=slug))
 

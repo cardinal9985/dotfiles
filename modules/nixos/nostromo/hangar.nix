@@ -34,18 +34,23 @@ in
     "d /etc/hangar/servers.d   0755 root   root   -"
   ];
 
-  # Sudoers: hangar may run systemctl {start,stop,restart} on managed
-  # units only, no password. Locked down per-unit + per-verb.
-  security.sudo.extraRules = [
-    {
-      users    = [ "hangar" ];
-      commands = builtins.concatMap (u: [
-        { command = "${systemctlBin} start ${u}";   options = [ "NOPASSWD" "SETENV" ]; }
-        { command = "${systemctlBin} stop ${u}";    options = [ "NOPASSWD" "SETENV" ]; }
-        { command = "${systemctlBin} restart ${u}"; options = [ "NOPASSWD" "SETENV" ]; }
-      ]) managedUnits;
-    }
-  ];
+  # Polkit rule: hangar user can start/stop/restart the managed units via
+  # systemd's D-Bus API. No sudo/setuid required - systemctl asks polkit,
+  # polkit says yes for these specific units + verbs only.
+  security.polkit.enable = true;
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (subject.user !== "hangar") return;
+      if (action.id !== "org.freedesktop.systemd1.manage-units") return;
+      var unit = action.lookup("unit");
+      var verb = action.lookup("verb");
+      var managed = ${builtins.toJSON managedUnits};
+      var allowed = ["start", "stop", "restart", "reload"];
+      if (managed.indexOf(unit) < 0) return;
+      if (allowed.indexOf(verb)  < 0) return;
+      return polkit.Result.YES;
+    });
+  '';
 
   systemd.services.hangar = {
     description = "Hangar game-server control panel";
@@ -56,7 +61,6 @@ in
       HANGAR_DISCOVERY_DIR = "/etc/hangar/servers.d";
       HANGAR_PORT          = "5010";
       HANGAR_SYSTEMCTL     = systemctlBin;
-      HANGAR_SUDO          = "/run/wrappers/bin/sudo";
     };
     serviceConfig = {
       Type             = "simple";

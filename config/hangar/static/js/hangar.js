@@ -373,6 +373,223 @@
   refreshOnce();
 })();
 
+// Security tab - passwords + bans.
+(function() {
+  const page = document.querySelector('.server-page');
+  if (!page) return;
+  const slug   = page.dataset.slug;
+  const bansOK = page.dataset.bansSupported === 'true';
+  const pwOK   = page.dataset.passwordsSupported === 'true';
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+      { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+    ));
+  }
+
+  // Password forms
+  if (pwOK) {
+    const status = document.getElementById('pw-status');
+    document.querySelectorAll('.pw-form').forEach(form => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const kind = form.dataset.kind;
+        const pw   = form.querySelector('input[name="password"]').value;
+        status.className = 'log-status log-status-connecting';
+        status.textContent = 'SAVING';
+        try {
+          const r = await fetch(`/server/${slug}/password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ kind, password: pw }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (data.ok) {
+            status.className = 'log-status log-status-live';
+            status.textContent = kind.toUpperCase() + ' PW SET';
+            form.querySelector('input[name="password"]').value = '';
+          } else {
+            status.className = 'log-status log-status-lost';
+            status.textContent = 'FAILED';
+          }
+        } catch (err) {
+          status.className = 'log-status log-status-lost';
+          status.textContent = 'ERROR';
+        }
+      });
+    });
+  }
+
+  // Bans
+  if (bansOK) {
+    const status  = document.getElementById('bans-status');
+    const refresh = document.getElementById('bans-refresh');
+
+    function renderList(kind, entries) {
+      const tbody = document.querySelector(`tbody[data-bans-body="${kind}"]`);
+      if (!tbody) return;
+      if (!entries.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="3">no entries</td></tr>';
+        return;
+      }
+      tbody.innerHTML = entries.map(e => `
+        <tr>
+          <td class="name-cell">${esc(e.name || '')}</td>
+          <td>${esc(e.detail || '')}</td>
+          <td class="actions-cell">
+            <button type="button" class="btn-mini btn-unban" data-unban data-kind="${kind}" data-key="${esc(e.key)}">UNBAN</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function load() {
+      status.className = 'log-status log-status-connecting';
+      status.textContent = 'LOADING';
+      try {
+        const r = await fetch(`/server/${slug}/bans`, { headers: { 'Accept': 'application/json' } });
+        const data = await r.json().catch(() => ({}));
+        if (!data.ok) throw new Error('load failed');
+        renderList('session', data.session || []);
+        renderList('id',      data.id      || []);
+        renderList('ip',      data.ip      || []);
+        status.className = 'log-status log-status-live';
+        status.textContent = 'LOADED';
+      } catch (e) {
+        status.className = 'log-status log-status-lost';
+        status.textContent = 'UNAVAILABLE';
+      }
+    }
+
+    // Delegated click for UNBAN buttons across all 3 tables
+    document.querySelector('.bans-panel')?.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-unban]');
+      if (!btn) return;
+      const kind = btn.dataset.kind;
+      const key  = btn.dataset.key;
+      btn.disabled = true;
+      try {
+        const r = await fetch(`/server/${slug}/bans/remove`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ kind, key }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!data.ok) alert('unban failed');
+      } finally {
+        setTimeout(load, 400);
+      }
+    });
+
+    // Add-ban forms
+    document.querySelectorAll('.ban-add-form').forEach(form => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const kind   = form.dataset.kind;
+        const value  = form.querySelector('input[name="value"]').value.trim();
+        const reason = form.querySelector('input[name="reason"]').value.trim();
+        if (!value) return;
+        const submit = form.querySelector('button[type="submit"]');
+        submit.disabled = true;
+        try {
+          const r = await fetch(`/server/${slug}/bans/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ kind, value, reason }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (data.ok) {
+            form.reset();
+          } else {
+            alert('add ban failed');
+          }
+        } finally {
+          submit.disabled = false;
+          load();
+        }
+      });
+    });
+
+    refresh.addEventListener('click', load);
+
+    // Load bans when the SECURITY tab is first shown
+    let loaded = false;
+    document.querySelector('.tab-strip').addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-btn');
+      if (btn && btn.dataset.tab === 'security' && !loaded) {
+        loaded = true;
+        load();
+      }
+    });
+  }
+})();
+
+// MOTD tab - welcome screen editor.
+(function() {
+  const page = document.querySelector('.server-page');
+  if (!page || page.dataset.welcomeSupported !== 'true') return;
+  const slug   = page.dataset.slug;
+  const form   = document.getElementById('motd-form');
+  const status = document.getElementById('motd-status');
+  const banner = document.getElementById('motd-banner');
+  const boxes  = document.querySelectorAll('.motd-box');
+
+  function setStatus(kind, text) {
+    status.className = 'log-status log-status-' + kind;
+    status.textContent = text;
+  }
+
+  async function load() {
+    setStatus('connecting', 'LOADING');
+    try {
+      const r = await fetch(`/server/${slug}/welcome`, { headers: { 'Accept': 'application/json' } });
+      const data = await r.json().catch(() => ({}));
+      if (!data.ok) throw new Error();
+      banner.value = data.banner || '';
+      const src = data.boxes || [];
+      boxes.forEach((el, i) => {
+        el.querySelector('.motd-title').value = (src[i] && src[i].title) || '';
+        el.querySelector('.motd-body').value  = (src[i] && src[i].body)  || '';
+      });
+      setStatus('live', 'READY');
+    } catch (e) {
+      setStatus('lost', 'UNAVAILABLE');
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setStatus('connecting', 'SAVING');
+    const payload = {
+      banner: banner.value,
+      boxes:  Array.from(boxes).map(el => ({
+        title: el.querySelector('.motd-title').value,
+        body:  el.querySelector('.motd-body').value,
+      })),
+    };
+    try {
+      const r = await fetch(`/server/${slug}/welcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json().catch(() => ({}));
+      setStatus(data.ok ? 'live' : 'lost', data.ok ? 'SAVED' : 'FAILED');
+    } catch (err) {
+      setStatus('lost', 'ERROR');
+    }
+  });
+
+  let loaded = false;
+  document.querySelector('.tab-strip').addEventListener('click', (e) => {
+    const btn = e.target.closest('.tab-btn');
+    if (btn && btn.dataset.tab === 'motd' && !loaded) {
+      loaded = true;
+      load();
+    }
+  });
+})();
+
 // Auto-refresh status on server list every 10s.
 (function() {
   if (!document.querySelector('.bay-grid')) return;

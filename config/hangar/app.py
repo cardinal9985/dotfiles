@@ -222,6 +222,107 @@ def server_change_options(slug):
     return jsonify({"ok": True, **opts})
 
 
+@app.route("/server/<slug>/bans")
+def server_bans(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("bans"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    bans = backend.get_bans()
+    if bans is None:
+        return jsonify({"ok": False, "error": "backend unavailable"}), 502
+    return jsonify({"ok": True, **bans})
+
+
+@app.route("/server/<slug>/bans/add", methods=["POST"])
+def server_bans_add(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("bans"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    p = request.get_json(silent=True) or {}
+    kind   = (p.get("kind")   or "").strip()
+    value  = (p.get("value")  or "").strip()
+    reason = (p.get("reason") or "").strip()
+    if kind not in ("session", "id", "ip"):
+        return jsonify({"ok": False, "error": "invalid kind"}), 400
+    if not value:
+        return jsonify({"ok": False, "error": "empty value"}), 400
+    ok = backend.add_ban(kind, value, reason)
+    return jsonify({"ok": ok})
+
+
+@app.route("/server/<slug>/bans/remove", methods=["POST"])
+def server_bans_remove(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("bans"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    p = request.get_json(silent=True) or {}
+    kind = (p.get("kind") or "").strip()
+    key  = (p.get("key")  or "").strip()
+    if kind not in ("session", "id", "ip") or not key:
+        return jsonify({"ok": False, "error": "invalid"}), 400
+    ok = backend.remove_ban(kind, key)
+    return jsonify({"ok": ok})
+
+
+@app.route("/server/<slug>/password", methods=["POST"])
+def server_password(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("passwords"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    p = request.get_json(silent=True) or {}
+    kind = (p.get("kind") or "").strip()
+    pw   = p.get("password") or ""
+    if kind not in ("game", "admin"):
+        return jsonify({"ok": False, "error": "invalid kind"}), 400
+    ok = backend.set_password(kind, pw)
+    return jsonify({"ok": ok})
+
+
+@app.route("/server/<slug>/welcome")
+def server_welcome_get(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("welcome"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    w = backend.get_welcome()
+    if w is None:
+        return jsonify({"ok": False, "error": "backend unavailable"}), 502
+    return jsonify({"ok": True, **w})
+
+
+@app.route("/server/<slug>/welcome", methods=["POST"])
+def server_welcome_set(slug):
+    servers = load_servers()
+    meta = servers.get(slug)
+    if not meta:
+        abort(404)
+    backend = get_backend(slug, meta)
+    if not backend.has("welcome"):
+        return jsonify({"ok": False, "error": "unsupported"}), 400
+    p = request.get_json(silent=True) or {}
+    ok = backend.set_welcome(p.get("banner", ""), p.get("boxes") or [])
+    return jsonify({"ok": ok})
+
+
 @app.route("/server/<slug>/change", methods=["POST"])
 def server_change(slug):
     servers = load_servers()

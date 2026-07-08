@@ -22,6 +22,7 @@ class KF2WebAdminBackend:
     capabilities = frozenset({
         "console", "players", "kick", "ban", "player_count",
         "cheatsheet", "change_game",
+        "bans", "passwords", "welcome",
     })
 
     # Static KF2 admin command reference. WebAdmin console accepts these
@@ -297,4 +298,135 @@ class KF2WebAdminBackend:
         if map_name: data["map"]      = map_name
         if gametype: data["gametype"] = gametype
         r = self._post("/ServerAdmin/current/change", data)
+        return r is not None
+
+    # -- bans --------------------------------------------------------------
+    # KF2 WebAdmin's Access Policy page lays out three tables and their
+    # add-forms in this order: session bans (by player name), ID bans, IP
+    # masks. The delete link on each row carries a `remove=<key>` query arg
+    # or a hidden input on the row's remove form.
+
+    _BAN_KIND_FIELD = {
+        "session": "playerkey",
+        "id":      "uniqueid",
+        "ip":      "ipmask",
+    }
+
+    def _parse_ban_table(self, table):
+        rows = []
+        if not table:
+            return rows
+        for tr in table.find_all("tr"):
+            cells = tr.find_all("td")
+            if not cells:
+                continue
+            name   = cells[0].get_text(strip=True) if len(cells) > 0 else ""
+            detail = cells[1].get_text(strip=True) if len(cells) > 1 else ""
+            key = ""
+            # Find any input inside this row (hidden or a remove form) that
+            # carries the value we'll POST back to unban.
+            for inp in tr.find_all("input"):
+                val = (inp.get("value") or "").strip()
+                nm  = (inp.get("name")  or "").lower()
+                if nm in ("playerkey", "uniqueid", "ipmask", "remove"):
+                    key = val
+                    break
+            if not name and not key:
+                continue
+            rows.append({"key": key or name, "name": name or key, "detail": detail})
+        return rows
+
+    def get_bans(self):
+        r = self._get("/ServerAdmin/policy/bans")
+        if not r:
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+        tables = soup.find_all("table")
+        # Best-effort: assume WebAdmin lists in order session / id / ip.
+        # If versions differ, tweak by hunting for a distinguishing field.
+        session_t = id_t = ip_t = None
+        if len(tables) >= 3:
+            session_t, id_t, ip_t = tables[0], tables[1], tables[2]
+        elif len(tables) == 2:
+            id_t, ip_t = tables
+        elif len(tables) == 1:
+            ip_t = tables[0]
+        return {
+            "session": self._parse_ban_table(session_t),
+            "id":      self._parse_ban_table(id_t),
+            "ip":      self._parse_ban_table(ip_t),
+        }
+
+    def add_ban(self, kind, value, reason=""):
+        field = self._BAN_KIND_FIELD.get(kind)
+        if not field or not value:
+            return False
+        data = {"action": "add", field: value}
+        if reason:
+            data["reason"] = reason
+        r = self._post("/ServerAdmin/policy/bans", data)
+        return r is not None
+
+    def remove_ban(self, kind, key):
+        field = self._BAN_KIND_FIELD.get(kind)
+        if not field or not key:
+            return False
+        r = self._post("/ServerAdmin/policy/bans",
+                       {"action": "delete", field: key})
+        return r is not None
+
+    # -- passwords ---------------------------------------------------------
+    # KF2's server + admin passwords live on the general settings page.
+    # We only ever POST new values; WebAdmin never returns them in cleartext.
+
+    def set_password(self, kind, password):
+        if kind not in ("game", "admin"):
+            return False
+        field = "GamePassword" if kind == "game" else "AdminPassword"
+        # WebAdmin uses double-entry confirmation on the settings form.
+        r = self._post("/ServerAdmin/settings/general", {
+            field:                password,
+            f"{field}_confirm":   password,
+        })
+        return r is not None
+
+    # -- welcome screen (MOTD) --------------------------------------------
+
+    _WELCOME_URL = "/ServerAdmin/settings/welcome"
+
+    def get_welcome(self):
+        r = self._get(self._WELCOME_URL)
+        if not r:
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+        banner = ""
+        el = soup.find("input", attrs={"name": lambda n: n and "banner" in n.lower()})
+        if el:
+            banner = el.get("value", "")
+        # Boxes: WebAdmin numbers them 0..3 (or 1..4). Look for any input/
+        # textarea whose name contains "message" or "line" and group by index.
+        boxes = []
+        for i in range(4):
+            title_el = (
+                soup.find("input",    attrs={"name": lambda n, i=i: n and f"messagetitle{i}"  in n.lower()}) or
+                soup.find("input",    attrs={"name": lambda n, i=i: n and f"messageline{i}"   in n.lower()})
+            )
+            body_el = (
+                soup.find("textarea", attrs={"name": lambda n, i=i: n and f"messagebody{i}"   in n.lower()}) or
+                soup.find("textarea", attrs={"name": lambda n, i=i: n and f"messagetext{i}"   in n.lower()}) or
+                soup.find("textarea", attrs={"name": lambda n, i=i: n and str(i) in n.lower() and "message" in n.lower()})
+            )
+            boxes.append({
+                "title": title_el.get("value", "") if title_el else "",
+                "body":  body_el.get_text() if body_el else "",
+            })
+        return {"banner": banner, "boxes": boxes}
+
+    def set_welcome(self, banner, boxes):
+        # POST the payload back. Field names mirror what get_welcome inspects.
+        data = {"BannerImage": banner or ""}
+        for i, box in enumerate((boxes or [])[:4]):
+            data[f"MessageTitle{i}"] = box.get("title", "")
+            data[f"MessageBody{i}"]  = box.get("body",  "")
+        r = self._post(self._WELCOME_URL, data)
         return r is not None

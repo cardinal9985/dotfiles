@@ -49,6 +49,31 @@ class Backend:
     def change_game(self, **kwargs):
         return False
 
+    def get_bans(self):
+        """Return {"session": [...], "id": [...], "ip": [...]} or None.
+
+        Each entry: {"key": <opaque unban token>, "name": str, "detail": str}
+        """
+        return None
+
+    def add_ban(self, kind, value, reason=""):
+        """kind: "session" | "id" | "ip". Returns bool."""
+        return False
+
+    def remove_ban(self, kind, key):
+        return False
+
+    def set_password(self, kind, password):
+        """kind: "game" | "admin"."""
+        return False
+
+    def get_welcome(self):
+        """Return {"banner": str, "boxes": [{title, body}, ...]} or None."""
+        return None
+
+    def set_welcome(self, banner, boxes):
+        return False
+
     def has(self, cap):
         return cap in self.capabilities
 

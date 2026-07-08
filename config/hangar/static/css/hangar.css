@@ -505,3 +505,112 @@ nav .who { color: var(--amber); font-size: 0.7rem; opacity: 0.75; }
   padding-top: 1rem;
   margin-top: 0.25rem;
 }
+
+/* Passwords + bans */
+.pw-grid {
+  padding: 1rem 1.2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.pw-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.pw-form .settings-field { flex: 1; }
+.pw-form input[type="text"],
+.pw-form input[type="password"] {
+  padding: 0.5rem 0.6rem;
+  background: #030608;
+  color: var(--bright-white);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  outline: none;
+}
+.pw-form input:focus { border-color: var(--bright-cyan); }
+.pw-warn { padding: 0 1.2rem 1rem; }
+
+.bans-panel { margin-top: 1rem; }
+.ban-section { padding: 0.9rem 1.2rem 1.1rem; border-top: 1px solid var(--border); }
+.ban-section-head {
+  color: var(--amber);
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  margin-bottom: 0.5rem;
+}
+.ban-add-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  align-items: center;
+}
+.ban-add-form input {
+  padding: 0.45rem 0.6rem;
+  background: #030608;
+  color: var(--bright-white);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  outline: none;
+}
+.ban-add-form input:focus { border-color: var(--bright-amber); }
+.ban-add-form input[name="value"]  { flex: 2; }
+.ban-add-form input[name="reason"] { flex: 3; }
+
+.btn-unban {
+  border-color: rgba(58,159,191,0.55);
+  color: var(--cyan);
+}
+.btn-unban:hover { background: rgba(58,159,191,0.12); color: var(--bright-cyan); }
+
+/* MOTD */
+.motd-form { padding: 1rem 1.2rem; }
+.motd-banner { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.motd-banner input {
+  padding: 0.5rem 0.6rem;
+  background: #030608;
+  color: var(--bright-white);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  outline: none;
+}
+.motd-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+.motd-box {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 0.7rem 0.8rem;
+  background: rgba(58,159,191,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.motd-box-num {
+  color: var(--cyan);
+  letter-spacing: 0.15em;
+  font-size: 0.65rem;
+  opacity: 0.85;
+}
+.motd-title,
+.motd-body {
+  padding: 0.4rem 0.5rem;
+  background: #030608;
+  color: var(--bright-white);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  outline: none;
+  resize: vertical;
+}
+.motd-title:focus, .motd-body:focus { border-color: var(--bright-amber); }
+.motd-body { min-height: 4rem; font-family: "JetBrains Mono", monospace; }

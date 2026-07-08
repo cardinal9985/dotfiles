@@ -4,12 +4,13 @@ import re
 import subprocess
 from pathlib import Path
 
-from flask import Flask, Response, abort, jsonify, redirect, render_template, request, stream_with_context, url_for
+from flask import Flask, Response, abort, jsonify, redirect, render_template, request, send_from_directory, stream_with_context, url_for
 
 import backends
 from shared_auth import get_user, is_admin
 
 DISCOVERY_DIR = Path(os.environ.get("HANGAR_DISCOVERY_DIR", "/etc/hangar/servers.d"))
+PUBLIC_DIR    = Path(os.environ.get("HANGAR_PUBLIC_DIR",    "/etc/hangar/public"))
 SYSTEMCTL     = os.environ.get("HANGAR_SYSTEMCTL", "/run/current-system/sw/bin/systemctl")
 JOURNALCTL    = os.environ.get("HANGAR_JOURNALCTL", "/run/current-system/sw/bin/journalctl")
 ALLOWED_POWER = {"start", "stop", "restart"}
@@ -89,7 +90,8 @@ def power(unit, action):
 
 @app.before_request
 def require_admin():
-    if request.path == "/healthz":
+    # Bypass for health and public assets (banner served to KF2 clients).
+    if request.path == "/healthz" or request.path.startswith("/public/"):
         return None
     user = get_user()
     if not user:
@@ -101,6 +103,13 @@ def require_admin():
 @app.route("/healthz")
 def healthz():
     return "ok", 200
+
+
+@app.route("/public/<path:filename>")
+def public_asset(filename):
+    # Safe against traversal - send_from_directory rejects anything that
+    # escapes the base dir.
+    return send_from_directory(str(PUBLIC_DIR), filename)
 
 
 @app.route("/")

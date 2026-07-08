@@ -10,9 +10,13 @@ let
   ]);
 
   app = pkgs.runCommand "hangar" {} ''
-    mkdir -p $out
+    mkdir -p $out $out/public
     cp ${src}/app.py ${src}/shared_auth.py $out/
     cp -r ${src}/backends ${src}/templates ${src}/static $out/
+    # Publicly-served assets (no voidauth). KF2 clients fetch these when
+    # loading the welcome screen, so they must be reachable without a
+    # browser session cookie.
+    cp ${../../../config/resources/kf2-motd-banner.png} $out/public/kf2-motd-banner.png
   '';
 
   # Whitelist of systemd units Hangar may power-cycle. Every game module
@@ -66,6 +70,7 @@ in
       HANGAR_DISCOVERY_DIR = "/etc/hangar/servers.d";
       HANGAR_PORT          = "5010";
       HANGAR_SYSTEMCTL     = systemctlBin;
+      HANGAR_PUBLIC_DIR    = "${app}/public";
     };
     serviceConfig = {
       Type             = "simple";

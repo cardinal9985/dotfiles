@@ -23,6 +23,7 @@ let
   # that lands should append its unit here so the sudoers rule stays tight.
   managedUnits = [
     "kf2.service"
+    "vintagestory.service"
   ];
 
   # Absolute paths - hangar's PATH doesn't include /run/current-system.

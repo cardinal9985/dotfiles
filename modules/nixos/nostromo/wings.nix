@@ -41,23 +41,11 @@ in
     "/var/lib/pelican"
   ];
 
-  # Hangar discovery placeholders for games still running inside Pelican
-  # containers. Hangar tracks their up/down state via process probes on
-  # nostromo so the homepage indicator can already flip to Hangar as its
-  # source of truth. These entries get replaced when each game migrates
-  # to a native systemd unit under modules/nixos/nostromo/<game>.nix
-  # (Stages 5-6 of the hangar spec).
-  environment.etc."hangar/servers.d/vintage-story.json".text = builtins.toJSON {
-    slug            = "vintage-story";
-    homepage_slug   = "vintage-story";
-    name            = "Vintage Story";
-    game_type       = "vintagestory";
-    connect_address = "games.ishimura.lol:42420";
-    status_probe    = {
-      type    = "process";
-      pattern = "VintagestoryServer";
-    };
-  };
+  # Hangar discovery placeholder for Tarkov, which is still running inside
+  # a Pelican container. Hangar tracks its up/down via an HTTP probe on
+  # SPT's port so the homepage indicator flows through Hangar as source of
+  # truth. Replaced when Tarkov migrates to a native systemd unit in
+  # Stage 6 of the hangar spec.
   environment.etc."hangar/servers.d/tarkov-spt.json".text = builtins.toJSON {
     slug            = "tarkov-spt";
     homepage_slug   = "escape-from-tarkov-fika";

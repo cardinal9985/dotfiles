@@ -9,6 +9,7 @@
     ./tdarr-node.nix
     ./wings.nix
     ./kf2.nix
+    ./vintagestory.nix
     ./hangar.nix
     ./boot.nix
     ./gpu.nix

@@ -281,71 +281,42 @@ let
 
   gameStatusPoller = pkgs.writeShellScript "game-status-poller" ''
     set -uo pipefail
-    PATH=${pkgs.curl}/bin:${pkgs.jq}/bin:${pkgs.coreutils}/bin:${pkgs.gnused}/bin
-
-    API_KEY=$(cat /run/secrets/pelican/application_api_key 2>/dev/null || true)
-    [ -z "$API_KEY" ] && exit 0
+    PATH=${pkgs.curl}/bin:${pkgs.jq}/bin:${pkgs.coreutils}/bin
 
     OUT_DIR=/persist/pangolin/homepage/games-status
     mkdir -p "$OUT_DIR"
 
-    # Pelican Client API returns the logged-in user's servers. Each server
-    # listing only gives name/identifier; live state comes from per-server
-    # resources endpoint. So: list servers, then query each one's resources.
-    # ptla_ keys could use /api/application/servers in one shot; ptlc_ keys
-    # need this two-step. We support both transparently.
-    if [[ "$API_KEY" == ptla_* ]]; then
-      url="https://pelican.ishimura.lol/api/application/servers"
-    else
-      url="https://pelican.ishimura.lol/api/client"
-    fi
-
-    response=$(curl -s --max-time 8 \
-      -H "Authorization: Bearer $API_KEY" \
+    # Hangar is the single source of truth for game-server state (see
+    # notes/specs/2026-07-07-hangar-design.md). Query its /public/status
+    # endpoint over tailnet - no auth needed, no Pelican API key.
+    response=$(curl -s --max-time 6 \
       -H "Accept: application/json" \
-      "$url" || echo "{}")
+      "http://100.107.103.76:5010/public/status" || echo "[]")
 
-    # Sanity check the response is JSON, otherwise emit empty list. Some
-    # error responses are plain-text "Unauthorized" which would crash jq
-    # with exit 5, taking the whole systemd service down.
-    if ! echo "$response" | jq -e . >/dev/null 2>&1; then
-      response='{"data":[]}'
+    if ! echo "$response" | jq -e 'type == "array"' >/dev/null 2>&1; then
+      response='[]'
     fi
 
-    echo "$response" | jq -c '.data[]? | .attributes // empty' 2>/dev/null | while read -r srv; do
-      name=$(echo "$srv" | jq -r '.name // empty')
-      identifier=$(echo "$srv" | jq -r '.identifier // empty')
-      status=$(echo "$srv" | jq -r '.status // ""')
-
-      # Application API returns .status inline. Client API needs a second
-      # call to /api/client/servers/<identifier>/resources for state.
-      if [ -z "$status" ] && [ -n "$identifier" ]; then
-        resources=$(curl -s --max-time 5 \
-          -H "Authorization: Bearer $API_KEY" \
-          -H "Accept: application/json" \
-          "https://pelican.ishimura.lol/api/client/servers/$identifier/resources" || echo "{}")
-        if ! echo "$resources" | jq -e . >/dev/null 2>&1; then
-          resources='{}'
-        fi
-        status=$(echo "$resources" | jq -r '.attributes.current_state // "unknown"' 2>/dev/null || echo "unknown")
-      fi
-      [ -z "$name" ] && continue
-
-      # Slugify: lowercase, non-alnum -> hyphen, collapse hyphens, strip edges.
-      slug=$(echo "$name" | tr '[:upper:]' '[:lower:]' \
-        | sed 's/[^a-z0-9]\+/-/g; s/^-//; s/-$//')
+    echo "$response" | jq -c '.[]?' 2>/dev/null | while read -r srv; do
+      slug=$(echo "$srv"   | jq -r '.slug // empty')
+      active=$(echo "$srv" | jq -r '.active // "unknown"')
+      pc=$(echo "$srv"     | jq -r '.player_count // ""')
       [ -z "$slug" ] && continue
 
-      # Normalize Pelican states into the four homepage statuses.
-      case "$status" in
-        running)                    js_status=online       ;;
-        offline|null|"")            js_status=offline      ;;
-        installing|starting|stopping|suspending) js_status=maintenance ;;
-        *)                          js_status=unknown      ;;
+      case "$active" in
+        active)                          js_status=online       ;;
+        inactive|failed)                 js_status=offline      ;;
+        activating|deactivating|reloading) js_status=maintenance ;;
+        *)                               js_status=unknown      ;;
       esac
 
-      echo "{\"slug\":\"$slug\",\"status\":\"$js_status\",\"raw\":\"$status\"}" \
-        > "$OUT_DIR/$slug.json"
+      if [ -n "$pc" ] && [ "$pc" != "null" ]; then
+        printf '{"slug":"%s","status":"%s","raw":"%s","player_count":%s}\n' \
+          "$slug" "$js_status" "$active" "$pc" > "$OUT_DIR/$slug.json"
+      else
+        printf '{"slug":"%s","status":"%s","raw":"%s"}\n' \
+          "$slug" "$js_status" "$active" > "$OUT_DIR/$slug.json"
+      fi
     done
   '';
 in

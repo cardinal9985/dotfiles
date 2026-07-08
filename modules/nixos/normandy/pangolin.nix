@@ -166,6 +166,9 @@ let
         rewrite-games-health:
           replacePath:
             path: "/health"
+        rewrite-hangar-health:
+          replacePath:
+            path: "/healthz"
         dicebear-strip-api:
           stripPrefix:
             prefixes:
@@ -616,6 +619,21 @@ let
           middlewares:
             - noindex-headers
             - rewrite-games-health
+        homepage-health-hangar-router:
+          rule: "Host(`${domain}`) && Path(`/health/hangar`)"
+          service: hangar-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 50
+          middlewares:
+            - noindex-headers
+            - rewrite-hangar-health
         homepage-health-slskd-router:
           rule: "Host(`${domain}`) && Path(`/health/slskd`)"
           service: slskd-service
@@ -1090,6 +1108,23 @@ let
           middlewares:
             - noindex-headers
             - voidauth-forwardauth
+        # Hangar - nix-native game-server control panel replacing Pelican.
+        # Lives on nostromo (same host as game systemd units).
+        hangar-router:
+          rule: "Host(`hangar.${domain}`)"
+          service: hangar-service
+          entryPoints:
+            - websecure
+          tls:
+            certResolver: porkbun
+            domains:
+              - main: "${domain}"
+                sans:
+                  - "*.${domain}"
+          priority: 10
+          middlewares:
+            - noindex-headers
+            - voidauth-forwardauth
         synctube-router:
           rule: "Host(`watch.${domain}`)"
           service: synctube-service
@@ -1274,6 +1309,10 @@ let
           loadBalancer:
             servers:
               - url: "http://100.92.76.121:5001"
+        hangar-service:
+          loadBalancer:
+            servers:
+              - url: "http://100.107.103.76:5010"
         slskd-service:
           loadBalancer:
             servers:

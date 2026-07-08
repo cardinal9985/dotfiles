@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HANGAR // USG ISHIMURA{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/hangar.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="crt">
+  <canvas id="star-canvas"></canvas>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <span class="logo-usg">USG</span><span class="logo-name">ISHIMURA</span>
+        <span class="logo-sub">// HANGAR CONTROL</span>
+      </div>
+      <nav>
+        <a href="https://ishimura.lol" class="home-link">[&lt; HOME]</a>
+        <a href="{{ url_for('index') }}">FLEET</a>
+        {% if user %}<span class="who">OP :: {{ user }}</span>{% endif %}
+      </nav>
+    </header>
+    {% block content %}{% endblock %}
+  </div>
+  <script src="{{ url_for('static', filename='js/hangar.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -150,6 +150,14 @@ let
       healthUrl   = "http://nostromo:8380/ServerAdmin/";
     }
     {
+      name        = "Hangar";
+      description = "Game Servers";
+      url         = "https://hangar.ishimura.lol";
+      icon        = "◫";
+      statusPath  = "/health/hangar";
+      healthUrl   = "http://nostromo:5010/healthz";
+    }
+    {
       name        = "Refinery";
       description = "Media Intake";
       url         = "https://refinery.ishimura.lol";

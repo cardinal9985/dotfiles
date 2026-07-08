@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  # Hangar rollout (docs/superpowers/specs/2026-07-07-hangar-design.md).
+  # Hangar rollout (notes/specs/2026-07-07-hangar-design.md).
   # Volume + service now owned by the hangar user, no Pelican dependency.
   volume       = "/persist/gameservers/kf2";
   serverPort   = 7777;
@@ -37,6 +37,21 @@ in
   environment.persistence."/persist".directories = [
     { directory = "/persist/gameservers"; user = "hangar"; group = "hangar"; mode = "0755"; }
   ];
+
+  # Hangar discovery file. Drop under /etc/hangar/servers.d/ so the Flask
+  # panel picks up KF2 without any per-game code in Hangar itself.
+  environment.etc."hangar/servers.d/kf2.json".text = builtins.toJSON {
+    slug             = "kf2";
+    name             = "Killing Floor 2";
+    systemd_unit     = "kf2.service";
+    volume           = volume;
+    game_type        = "kf2";
+    connect_address  = "games.ishimura.lol:${toString serverPort}";
+    webadmin_url     = "http://100.107.103.76:${toString webAdminPort}";
+    config_files     = [ "KFGame/Config/KFWeb.ini" "KFGame/Config/PCServer-KFGame.ini" ];
+    console_backend  = "kf2_webadmin";
+    mod_backend      = "kf2_workshop";
+  };
 
   systemd.services.kf2 = {
     description = "Killing Floor 2 Dedicated Server";

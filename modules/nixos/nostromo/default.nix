@@ -9,6 +9,7 @@
     ./tdarr-node.nix
     ./wings.nix
     ./kf2.nix
+    ./hangar.nix
     ./boot.nix
     ./gpu.nix
     ./audio.nix

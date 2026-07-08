@@ -35,6 +35,7 @@
         25565 # Fika P2P (raid signaling)
         34123
         8380  # KF2 WebAdmin (tailnet-only, not router-forwarded)
+        5010  # Hangar control panel (tailnet-only, fronted by pangolin)
       ];
       allowedUDPPorts = [
         25565 # Fika P2P (raid game traffic)

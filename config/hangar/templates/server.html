@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}HANGAR :: {{ s.name }}{% endblock %}
+{% block content %}
+{% set active = status.active == 'active' %}
+<section class="hangar">
+  <h2 class="section-title">// BAY :: {{ s.name }}
+    <span class="sub">{{ s.systemd_unit }}</span>
+  </h2>
+
+  <div class="server-card">
+    <div class="server-head">
+      <span class="status-dot {{ 'dot-up' if active else 'dot-down' }}"></span>
+      <span class="server-state">{{ status.active|upper }}{% if status.sub %} :: {{ status.sub }}{% endif %}</span>
+    </div>
+    <dl class="server-meta">
+      <dt>Volume</dt>       <dd>{{ s.volume or '---' }}</dd>
+      <dt>Connect</dt>      <dd>{{ s.connect_address or '---' }}</dd>
+      <dt>Game type</dt>    <dd>{{ s.game_type or '---' }}</dd>
+      <dt>Load state</dt>   <dd>{{ status.loaded or '---' }}</dd>
+      <dt>PID</dt>          <dd>{{ status.main_pid if status.main_pid != '0' else '---' }}</dd>
+      <dt>Since</dt>        <dd>{{ status.since or '---' }}</dd>
+    </dl>
+
+    <form class="power-row" method="post" action="{{ url_for('server_power', slug=s.slug) }}">
+      <button type="submit" name="action" value="start"   {% if active %}disabled{% endif %} class="btn btn-start">START</button>
+      <button type="submit" name="action" value="restart" class="btn btn-restart">RESTART</button>
+      <button type="submit" name="action" value="stop"    {% if not active %}disabled{% endif %} class="btn btn-stop">STOP</button>
+    </form>
+  </div>
+
+  <p class="back"><a href="{{ url_for('index') }}">[&lt; back to fleet]</a></p>
+</section>
+{% endblock %}

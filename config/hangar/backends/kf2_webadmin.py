@@ -77,6 +77,11 @@ class KF2WebAdminBackend:
         self.session  = requests.Session()
         self._lock    = threading.Lock()
         self._logged_in = False
+        # WebAdmin doesn't expose GameLength anywhere persistent - it's a
+        # session URL arg. Cache the last-observed / last-applied value so
+        # the UI dropdown stays consistent between reloads.
+        self._last_diff   = ""
+        self._last_length = ""
 
     def has(self, cap):
         return cap in self.capabilities
@@ -416,66 +421,43 @@ class KF2WebAdminBackend:
     def _current_difficulty_length(self):
         """Return (difficulty, length) as strings "0".."3" / "0".."2".
 
-        Difficulty comes from `settings_GameDifficulty_raw` on the general
-        settings page (float `1.000000` -> "1"). Length is trickier since
-        it doesn't live in general settings on all KF2 versions; try
-        `/settings/gametypes` first, then fall back to inferring from the
-        running game's max-wave count (4=Short, 7=Medium, 10=Long).
+        Difficulty lives in `settings_GameDifficulty_raw` on the general
+        settings page and is always readable. Length is not stored in any
+        WebAdmin settings page - it's a session URL arg (`?GameLength=`) -
+        so we infer from max wave count when a game is running (4=Short,
+        7=Medium, 10=Long) and otherwise fall back to the last-observed
+        value cached on this backend instance.
         """
         diff = ""
-        # 1. Difficulty from settings_GameDifficulty_raw.
         r = self._get("/ServerAdmin/settings/general")
         if r:
             soup = BeautifulSoup(r.text, "html.parser")
-            for name in ("settings_GameDifficulty_raw", "settings_GameDifficulty"):
-                el = soup.find("input", attrs={"name": name})
-                if not el:
-                    continue
-                raw = el.get("value", "")
+            el = soup.find("input", attrs={"name": "settings_GameDifficulty_raw"})
+            if el:
                 try:
-                    diff = str(int(float(raw)))
-                    break
+                    diff = str(int(float(el.get("value", ""))))
                 except (TypeError, ValueError):
                     pass
 
         length = ""
-        # 2. Length: probe likely field names on gametypes settings.
-        r = self._get("/ServerAdmin/settings/gametypes")
+        r = self._get("/ServerAdmin/current")
         if r:
             soup = BeautifulSoup(r.text, "html.parser")
-            for name in ("settings_GameLength_raw", "settings_GameLength",
-                         "settings_KFGameLength", "GameLength"):
-                el = (soup.find("input", attrs={"name": name})
-                      or soup.find("select", attrs={"name": name}))
-                if not el:
-                    continue
-                raw = el.get("value", "") if el.name == "input" else ""
-                if el.name == "select":
-                    opt = el.find("option", attrs={"selected": True})
-                    if opt:
-                        raw = opt.get("value", "")
+            wave_dd = soup.find(attrs={"class": "gs_wave"})
+            if wave_dd and "/" in wave_dd.get_text():
                 try:
-                    length = str(int(float(raw)))
-                    self._log(f"length from gametypes.{name} = {length}")
-                    break
-                except (TypeError, ValueError):
+                    max_wave = int(wave_dd.get_text(strip=True).split("/")[-1])
+                    length = {4: "0", 7: "1", 10: "2"}.get(max_wave, "")
+                except ValueError:
                     pass
 
-        # 3. Fallback: infer length from max wave count on /current.
-        if not length:
-            r = self._get("/ServerAdmin/current")
-            if r:
-                soup = BeautifulSoup(r.text, "html.parser")
-                wave_dd = soup.find(attrs={"class": "gs_wave"})
-                if wave_dd and "/" in wave_dd.get_text():
-                    try:
-                        max_wave = int(wave_dd.get_text(strip=True).split("/")[-1])
-                        length = {4: "0", 7: "1", 10: "2"}.get(max_wave, "")
-                    except ValueError:
-                        pass
-
-        self._log(f"current_diff_length: difficulty={diff!r} length={length!r}")
-        return diff, length
+        # Update instance cache and fall back to it when live data absent.
+        if diff:   self._last_diff   = diff
+        if length: self._last_length = length
+        eff_diff   = diff   or self._last_diff
+        eff_length = length or self._last_length
+        self._log(f"current_diff_length: live=({diff!r},{length!r}) cached=({self._last_diff!r},{self._last_length!r})")
+        return eff_diff, eff_length
 
     def get_change_options(self):
         r = self._get("/ServerAdmin/current/change")
@@ -519,6 +501,11 @@ class KF2WebAdminBackend:
         if map_name: data["map"]      = map_name
         if gametype: data["gametype"] = gametype
         r = self._post("/ServerAdmin/current/change", data)
+        if r is not None:
+            # Remember what we applied so the dropdown reflects it even
+            # after the map load finishes and WebAdmin's stateful views reset.
+            if difficulty not in (None, ""): self._last_diff   = str(difficulty)
+            if length     not in (None, ""): self._last_length = str(length)
         return r is not None
 
     def change_live(self, difficulty=None, length=None, **_):
@@ -530,9 +517,13 @@ class KF2WebAdminBackend:
         if difficulty not in (None, ""):
             if self.send_command(f"SetGameDifficulty {difficulty}") is None:
                 ok = False
+            else:
+                self._last_diff = str(difficulty)
         if length not in (None, ""):
             if self.send_command(f"SetGameLength {length}") is None:
                 ok = False
+            else:
+                self._last_length = str(length)
         return ok
 
     # -- bans --------------------------------------------------------------

@@ -15,6 +15,7 @@ let
       set -euo pipefail
       export STEAM_COMPAT_DATA_PATH="${prefixDir}"
       export STEAM_COMPAT_CLIENT_INSTALL_PATH="$HOME/.steam/steam"
+      export PROTONPATH=${pkgs.proton-ge-bin.steamcompattool}
       # Xalia (Proton's accessibility bridge) crashes noisily on some Qt
       # apps including MO2; not required for anything we care about.
       export PROTON_DISABLE_XALIA=1

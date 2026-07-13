@@ -1,8 +1,7 @@
 { ... }:
-
 {
   imports = [
-    ../shared
-    ./shell
+    ./network.nix
+    ./ssh.nix
   ];
 }

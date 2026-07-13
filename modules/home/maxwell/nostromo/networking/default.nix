@@ -2,7 +2,6 @@
 
 {
   imports = [
-    ../shared
-    ./shell
+    ./ssh.nix
   ];
 }

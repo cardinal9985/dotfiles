@@ -3,8 +3,8 @@
 {
 
   imports = [
-    ./shell
-    ./system
+    ./prompt.nix
+    ./shell.nix
   ];
 
 }

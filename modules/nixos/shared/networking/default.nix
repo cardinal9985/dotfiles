@@ -1,8 +1,6 @@
 { ... }:
-
 {
   imports = [
-    ../shared
-    ./shell
+    ./tailscale.nix
   ];
 }

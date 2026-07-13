@@ -1,8 +1,7 @@
 { ... }:
-
 {
   imports = [
-    ../shared
-    ./shell
+    ./gpu.nix
+    ./storage.nix
   ];
 }

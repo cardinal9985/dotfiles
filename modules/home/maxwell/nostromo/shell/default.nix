@@ -2,7 +2,7 @@
 
 {
   imports = [
-    ../shared
-    ./shell
+    ./aliases.nix
+    ./ntfy.nix
   ];
 }

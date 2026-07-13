@@ -2,27 +2,12 @@
 
 {
   imports = [
-    ./network.nix
-    ./nfs.nix
-    ./ntfy.nix
-    ./services
+    ./desktop
     ./gameservers
-    ./boot.nix
-    ./gpu.nix
-    ./audio.nix
-    ./bluetooth.nix
-    ./desktop.nix
-    ./sops.nix
-    ./stylix.nix
-    ./substituters.nix
-    ./user.nix
-    ./packages.nix
-    ./steam.nix
-    ./swap.nix
-    ./impermanence.nix
-    ./security.nix
-    ./power.nix
-    ./peripherals.nix
-    ./ssh.nix
+    ./gaming
+    ./hardware
+    ./networking
+    ./services
+    ./system
   ];
 }

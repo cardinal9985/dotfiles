@@ -93,18 +93,18 @@
         "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
         "toolkit.telemetry.enabled" = false;
         "geo.enabled" = false;
-        "media.peerconnection.enabled" = false;
         "browser.urlbar.suggest.searches" = false;
-        "network.http.referer.XOriginPolicy" = 2;
-        "privacy.partition.network_state" = true;
         "browser.startup.page" = 0;
+
+        # Downloads
+        "browser.download.dir" = "/home/maxwell/downloads/firefox";
+        "browser.download.folderList" = 2;
 
         # Privacy
         "browser.send_pings" = false;
         "browser.sessionstore.privacy_level" = 2;
         "network.dns.disablePrefetch" = true;
         "network.prefetch-next" = false;
-        "beacon.enabled" = false;
 
         # Devtools
         "devtools.chrome.enabled" = true;

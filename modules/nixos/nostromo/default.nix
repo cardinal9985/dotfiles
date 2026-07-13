@@ -1,15 +1,12 @@
 { ... }:
 
 {
-
   imports = [
     ./network.nix
     ./nfs.nix
     ./ntfy.nix
     ./tdarr-node.nix
-    ./kf2.nix
-    ./vintagestory.nix
-    ./tarkov-spt.nix
+    ./gameservers
     ./hangar.nix
     ./boot.nix
     ./gpu.nix
@@ -29,5 +26,4 @@
     ./peripherals.nix
     ./ssh.nix
   ];
-
 }

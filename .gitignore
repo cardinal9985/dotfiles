@@ -10,5 +10,5 @@ notes/
 tmp/
 
 # Claude
-.claude/
+.claude/settings.local.json
 config/refinery/__pycache__/

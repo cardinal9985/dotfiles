@@ -16,39 +16,27 @@
       { id = "mnjggcdmjocbbbhaepdhchncahnbgone"; } # SponsorBlock
     ];
 
-    extraOpts = {
-      # ── Account + Sync ──────────────────────────────────────────────
-      "BrowserSignin"             = 0;     # disable sign-in entirely
-      "SyncDisabled"              = true;
+  };
 
-      # ── Telemetry + Reporting ────────────────────────────────────────
-      "MetricsReportingEnabled"   = false;
-      "SafeBrowsingProtectionLevel" = 0;   # disable (sends URL hashes to Google)
-      "SafeBrowsingExtendedReportingOptInAllowed" = false;
-
-      # ── Network ──────────────────────────────────────────────────────
-      "NetworkPredictionOptions"  = 2;     # never prefetch DNS or preconnect
-      "BuiltInDnsClientEnabled"   = false; # use system DNS so AdGuard applies
-      "AlternateErrorPagesEnabled" = false; # don't use Google for error pages
-
-      # ── Autofill + Passwords ─────────────────────────────────────────
-      "PasswordManagerEnabled"    = false;
-      "AutofillAddressEnabled"    = false;
-      "AutofillCreditCardEnabled" = false;
-
-      # ── UI Noise ─────────────────────────────────────────────────────
-      "TranslateEnabled"          = false;
-      "SpellcheckEnabled"         = false;
-      "SearchSuggestEnabled"      = false;
-      "BackgroundModeEnabled"     = false;
-
-      # ── Downloads ────────────────────────────────────────────────────
-      "DownloadDirectory" = "/home/maxwell/downloads/browser";
-
-      # ── Default Search: SearXNG ──────────────────────────────────────
-      "DefaultSearchProviderEnabled"   = true;
-      "DefaultSearchProviderName"      = "Degoog";
-      "DefaultSearchProviderSearchURL" = "https://search.ishimura.lol/search?q={searchTerms}";
-    };
+  home.file.".config/chromium/policies/managed/policy.json".text = builtins.toJSON {
+    BrowserSignin             = 0;
+    SyncDisabled              = true;
+    MetricsReportingEnabled   = false;
+    SafeBrowsingProtectionLevel = 0;
+    SafeBrowsingExtendedReportingOptInAllowed = false;
+    NetworkPredictionOptions  = 2;
+    BuiltInDnsClientEnabled   = false;
+    AlternateErrorPagesEnabled = false;
+    PasswordManagerEnabled    = false;
+    AutofillAddressEnabled    = false;
+    AutofillCreditCardEnabled = false;
+    TranslateEnabled          = false;
+    SpellcheckEnabled         = false;
+    SearchSuggestEnabled      = false;
+    BackgroundModeEnabled     = false;
+    DownloadDirectory         = "/home/maxwell/downloads/browser";
+    DefaultSearchProviderEnabled   = true;
+    DefaultSearchProviderName      = "Degoog";
+    DefaultSearchProviderSearchURL = "https://search.ishimura.lol/search?q={searchTerms}";
   };
 }

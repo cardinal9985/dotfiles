@@ -3,7 +3,7 @@
 {
   home.shellAliases = {
     rebuild = "nh os switch ~/dotfiles";
-    claude = "claude --dangerously-skip-permissions --model claude-opus-4-7";
+    claude = "claude --dangerously-skip-permissions";
     clean = "nh clean all -k 3";
     gc = "nh clean all -k 5";
     update = "nix flake update ~/dotfiles";

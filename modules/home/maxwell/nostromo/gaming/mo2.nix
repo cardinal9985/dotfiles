@@ -13,9 +13,17 @@ let
     }:
     pkgs.writeShellScriptBin "mo2-${name}" ''
       set -euo pipefail
+      unset LD_PRELOAD
       export STEAM_COMPAT_DATA_PATH="${prefixDir}"
       export STEAM_COMPAT_CLIENT_INSTALL_PATH="$HOME/.steam/steam"
+      export WINEPREFIX="${prefixDir}"
+      export GAMEID=umu-default
       export PROTONPATH=${pkgs.proton-ge-bin.steamcompattool}
+      export PROTON_VERB=waitforexitandrun
+      # Force native d3dcompiler_47 (from game bin/) instead of Wine's
+      # vkd3d-shader HLSL compiler, which fails on some Anomaly shaders
+      # with "E5017: Reservation shader target ps" not implemented.
+      export WINEDLLOVERRIDES="d3dcompiler_47=n,b"
       # Xalia (Proton's accessibility bridge) crashes noisily on some Qt
       # apps including MO2; not required for anything we care about.
       export PROTON_DISABLE_XALIA=1

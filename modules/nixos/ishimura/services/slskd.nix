@@ -3,8 +3,8 @@
 let
   hosts           = import ../../shared/lib/hosts.nix;
   mkPodmanNetwork = import ../../shared/lib/podman-network.nix { inherit pkgs lib; };
-  retrySrc        = ../../../config/slskd-retry;
-  retryPythonEnv  = pkgs.python3;
+
+  retryScript = pkgs.writeText "slskd-retry.py" (builtins.readFile ../../../config/slskd-retry/retry.py);
 in
 lib.mkMerge [
   (mkPodmanNetwork { name = "slskd-net"; containers = [ "slskd" ]; })
@@ -69,7 +69,7 @@ lib.mkMerge [
           "RETRY_INTERVAL_SECS=60"
           "RETRY_MAX_ATTEMPTS=20"
         ];
-        ExecStart  = "${retryPythonEnv}/bin/python ${retrySrc}/retry.py";
+        ExecStart  = "${pkgs.python3}/bin/python ${retryScript}";
         Restart    = "on-failure";
         RestartSec = "30s";
       };

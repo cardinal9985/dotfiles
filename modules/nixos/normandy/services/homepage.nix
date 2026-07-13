@@ -1,4 +1,4 @@
-{ inputs, pkgs, ... }:
+{ inputs, ... }:
 
 let
   hosts = import ../../shared/lib/hosts.nix;

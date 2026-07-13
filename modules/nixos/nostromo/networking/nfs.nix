@@ -1,11 +1,14 @@
 { pkgs, ... }:
 
+let
+  hosts = import ../../shared/lib/hosts.nix;
+in
 {
   boot.supportedFilesystems = [ "nfs" ];
   boot.kernelModules = [ "nfsv4" ];
   nix-mineral.settings.etc.kicksecure-module-blacklist = false;
   fileSystems."/mnt/storage" = {
-    device = "100.92.76.121:/";
+    device = "${hosts.ishimura.tailnet}:/";
     fsType = "nfs4";
     options = [
       "x-systemd.automount"

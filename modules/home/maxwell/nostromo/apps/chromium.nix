@@ -42,6 +42,9 @@
       "SearchSuggestEnabled"      = false;
       "BackgroundModeEnabled"     = false;
 
+      # ── Downloads ────────────────────────────────────────────────────
+      "DownloadDirectory" = "/home/maxwell/downloads/browser";
+
       # ── Default Search: SearXNG ──────────────────────────────────────
       "DefaultSearchProviderEnabled"   = true;
       "DefaultSearchProviderName"      = "Degoog";

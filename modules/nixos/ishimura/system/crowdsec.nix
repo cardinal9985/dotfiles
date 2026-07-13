@@ -1,5 +1,8 @@
 { config, pkgs, lib, ... }:
 
+let
+  hosts = import ../../shared/lib/hosts.nix;
+in
 {
   environment.etc."crowdsec/parsers/s02-enrich/tailnet-whitelist.yaml".source = pkgs.writeText "tailnet-whitelist.yaml" ''
     name: maxwell/tailnet-whitelist
@@ -29,7 +32,7 @@
 
   sops.templates."crowdsec-credentials.yaml" = {
     content = ''
-      url: http://100.108.98.70:8081
+      url: http://${hosts.normandy.tailnet}:8081
       login: ishimura
       password: ${config.sops.placeholder."crowdsec/ishimura_machine_password"}
     '';
@@ -43,7 +46,7 @@
     registerBouncer.enable = false;
     secrets.apiKeyPath = config.sops.secrets."crowdsec/ishimura_firewall_bouncer_api_key".path;
     settings = {
-      api_url = "http://100.108.98.70:8081/";
+      api_url = "http://${hosts.normandy.tailnet}:8081/";
       mode = "nftables";
       update_frequency = "10s";
       log_level = "info";

@@ -1,8 +1,9 @@
 { pkgs, ... }:
 
 let
-  src = ../../../config/homepage/src;
-  ishimuraTailnetIP = "100.92.76.121";
+  src               = ../../../config/homepage/src;
+  hosts             = import ../../shared/lib/hosts.nix;
+  ishimuraTailnetIP = hosts.ishimura.tailnet;
   services = [
     {
       name        = "Jellyfin";
@@ -259,7 +260,7 @@ let
     # endpoint over tailnet - no auth needed, no Pelican API key.
     response=$(curl -s --max-time 6 \
       -H "Accept: application/json" \
-      "http://100.107.103.76:5010/public/status" || echo "[]")
+      "http://${hosts.nostromo.tailnet}:5010/public/status" || echo "[]")
 
     if ! echo "$response" | jq -e 'type == "array"' >/dev/null 2>&1; then
       response='[]'

@@ -1,9 +1,10 @@
 { config, pkgs, lib, ... }:
 
 let
-  domain         = "ishimura.lol";
-  dashboardHost  = "pangolin.${domain}";
-  acmeEmail      = "fanatical.despise915@simplelogin.com";
+  hosts         = import ../../shared/lib/hosts.nix;
+  domain        = "ishimura.lol";
+  dashboardHost = "pangolin.${domain}";
+  acmeEmail     = "fanatical.despise915@simplelogin.com";
 
   crowdsecPluginSrc = pkgs.fetchFromGitHub {
     owner = "maxlerebourg";
@@ -1127,23 +1128,23 @@ let
         ishimura-mods-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:8087"
+              - url: "http://${hosts.ishimura.tailnet}:8087"
         ishimura-filebrowser-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:8088"
+              - url: "http://${hosts.ishimura.tailnet}:8088"
         ishimura-jellyfin-health-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:8096"
+              - url: "http://${hosts.ishimura.tailnet}:8096"
         jellyfin-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:8096"
+              - url: "http://${hosts.ishimura.tailnet}:8096"
         scrutiny-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:47890"
+              - url: "http://${hosts.ishimura.tailnet}:47890"
         ntfy-service:
           loadBalancer:
             servers:
@@ -1151,59 +1152,59 @@ let
         tdarr-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:8265"
+              - url: "http://${hosts.ishimura.tailnet}:8265"
         adguard-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:3000"
+              - url: "http://${hosts.ishimura.tailnet}:3000"
         navidrome-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:4533"
+              - url: "http://${hosts.ishimura.tailnet}:4533"
         booklore-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:6060"
+              - url: "http://${hosts.ishimura.tailnet}:6060"
         dicebear-api-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:7373"
+              - url: "http://${hosts.ishimura.tailnet}:7373"
         dicebear-www-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:7374"
+              - url: "http://${hosts.ishimura.tailnet}:7374"
         romm-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:8083"
+              - url: "http://${hosts.ishimura.tailnet}:8083"
         it-tools-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:8085"
+              - url: "http://${hosts.ishimura.tailnet}:8085"
         requests-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:5002"
+              - url: "http://${hosts.ishimura.tailnet}:5002"
         stats-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:5005"
+              - url: "http://${hosts.ishimura.tailnet}:5005"
         refinery-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:5006"
+              - url: "http://${hosts.ishimura.tailnet}:5006"
         games-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:5001"
+              - url: "http://${hosts.ishimura.tailnet}:5001"
         hangar-service:
           loadBalancer:
             servers:
-              - url: "http://100.107.103.76:5010"
+              - url: "http://${hosts.nostromo.tailnet}:5010"
         slskd-service:
           loadBalancer:
             servers:
-              - url: "http://100.92.76.121:5030"
+              - url: "http://${hosts.ishimura.tailnet}:5030"
         degoog-service:
           loadBalancer:
             servers:

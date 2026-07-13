@@ -1,11 +1,14 @@
 { ... }:
 
+let
+  hosts = import ../../shared/lib/hosts.nix;
+in
 {
   networking = {
     hostName = "nostromo";
     networkmanager = {
       enable = true;
-      insertNameservers = [ "192.168.254.186" "100.92.76.121" ];
+      insertNameservers = [ "192.168.254.186" hosts.ishimura.tailnet ];
       settings.main.no-auto-default = "*";
       ensureProfiles.profiles."enp8s0-static" = {
         connection = {
@@ -41,7 +44,7 @@
       ];
     };
     hosts = {
-      "100.108.98.70" = [ "ishimura.lol" "pangolin.ishimura.lol" "auth.ishimura.lol" "files.ishimura.lol" ];
+      "${hosts.normandy.tailnet}" = [ "ishimura.lol" "pangolin.ishimura.lol" "auth.ishimura.lol" "files.ishimura.lol" ];
       "192.168.254.97" = [ "games.ishimura.lol" ];
     };
   };

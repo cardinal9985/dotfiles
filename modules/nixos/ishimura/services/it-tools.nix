@@ -1,29 +1,16 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 let
-  tailnetIP = "100.92.76.121";
+  hosts           = import ../../shared/lib/hosts.nix;
+  mkPodmanNetwork = import ../../shared/lib/podman-network.nix { inherit pkgs lib; };
 in
-{
-  systemd.services.create-it-tools-network = {
-    description = "Create it-tools podman network (no DNS)";
-    wantedBy = [ "podman-it-tools.service" ];
-    before   = [ "podman-it-tools.service" ];
-    after    = [ "podman.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
+lib.mkMerge [
+  (mkPodmanNetwork { name = "it-tools-net"; containers = [ "it-tools" ]; })
+  {
+    virtualisation.oci-containers.containers.it-tools = {
+      image = "ghcr.io/sharevb/it-tools:latest";
+      ports = [ "${hosts.ishimura.tailnet}:8085:8080" ];
+      extraOptions = [ "--network=it-tools-net" ];
     };
-    script = ''
-      ${pkgs.podman}/bin/podman network exists it-tools-net || \
-        ${pkgs.podman}/bin/podman network create --disable-dns it-tools-net
-    '';
-  };
-
-  virtualisation.oci-containers.containers.it-tools = {
-    image = "ghcr.io/sharevb/it-tools:latest";
-    ports = [ "${tailnetIP}:8085:8080" ];
-    extraOptions = [ "--network=it-tools-net" ];
-  };
-
-  systemd.services.podman-it-tools.after = [ "create-it-tools-network.service" ];
-}
+  }
+]

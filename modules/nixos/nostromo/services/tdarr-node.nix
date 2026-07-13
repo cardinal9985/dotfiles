@@ -1,5 +1,8 @@
 { lib, pkgs, ... }:
 
+let
+  hosts = import ../../shared/lib/hosts.nix;
+in
 {
   hardware.nvidia-container-toolkit.enable = true;
 
@@ -18,7 +21,7 @@
       PGID = "100";
       UMASK_SET = "002";
       nodeName = "Nostromo-NVENC";
-      serverIP = "100.92.76.121";
+      serverIP = hosts.ishimura.tailnet;
       serverPort = "8266";
       inContainer = "true";
       NVIDIA_DRIVER_CAPABILITIES = "video,compute";

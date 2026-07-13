@@ -1,19 +1,18 @@
 { ... }:
 
 let
-  tailnetIP = "100.92.76.121";
-  normandyTailnet = "100.108.98.70";
+  hosts = import ../../shared/lib/hosts.nix;
 in
 {
   services.navidrome = {
     enable = true;
     settings = {
-      Address = tailnetIP;
+      Address = hosts.ishimura.tailnet;
       Port = 4533;
       MusicFolder = "/mnt/storage/media/music";
       DataFolder = "/var/lib/navidrome";
       ReverseProxyUserHeader = "Remote-User";
-      ReverseProxyWhitelist = "${normandyTailnet}/32";
+      ReverseProxyWhitelist = "${hosts.normandy.tailnet}/32";
       EnableTranscodingConfig = true;
       LogLevel = "info";
     };

@@ -1,6 +1,7 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 let
+  mkPodmanNetwork = import ../../shared/lib/podman-network.nix { inherit pkgs lib; };
   valkeyIP   = "10.89.70.10";
   searxngIP  = "10.89.70.11";
   searxngURL = "http://${searxngIP}:8080";
@@ -349,7 +350,13 @@ let
     "searxng-file"."baseUrl"   = searxngURL;
   });
 in
-{
+lib.mkMerge [
+  (mkPodmanNetwork {
+    name       = "searxng-net";
+    containers = [ "searxng-valkey" "searxng" "degoog" ];
+    subnet     = "10.89.70.0/24";
+  })
+  {
   systemd.tmpfiles.rules = [
     "d /persist/searxng        0755 977  977  -"
     "d /persist/searxng/data   0750 977  977  -"
@@ -357,24 +364,6 @@ in
     "d /persist/degoog         0755 1000 1000 -"
     "d /persist/degoog/data    0755 1000 1000 -"
   ];
-
-  systemd.services.create-searxng-network = {
-    description = "Create searxng podman network (no DNS, static subnet)";
-    wantedBy = [ "podman-searxng.service" "podman-searxng-valkey.service" "podman-degoog.service" ];
-    before   = [ "podman-searxng.service" "podman-searxng-valkey.service" "podman-degoog.service" ];
-    after    = [ "podman.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      ${pkgs.podman}/bin/podman network exists searxng-net || \
-        ${pkgs.podman}/bin/podman network create \
-          --disable-dns \
-          --subnet=10.89.70.0/24 \
-          searxng-net
-    '';
-  };
 
   sops.templates."searxng-settings.yml" = {
     mode = "0444";
@@ -462,10 +451,6 @@ in
     };
   };
 
-  systemd.services.podman-degoog.after        = [ "create-searxng-network.service" ];
-  systemd.services.podman-searxng.after        = [ "create-searxng-network.service" ];
-  systemd.services.podman-searxng-valkey.after = [ "create-searxng-network.service" ];
-
   system.activationScripts.degoog-config = {
     deps = [];
     text = ''
@@ -481,4 +466,5 @@ in
       fi
     '';
   };
-}
+  }
+]

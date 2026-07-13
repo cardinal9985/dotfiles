@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-
+  hosts        = import ../../shared/lib/hosts.nix;
   volume       = "/persist/gameservers/kf2";
   serverPort   = 7777;
   queryPort    = 27015;
@@ -29,7 +29,7 @@ in
     volume           = volume;
     game_type        = "kf2";
     connect_address  = "games.ishimura.lol:${toString serverPort}";
-    webadmin_url     = "http://100.107.103.76:${toString webAdminPort}";
+    webadmin_url     = "http://${hosts.nostromo.tailnet}:${toString webAdminPort}";
     config_files     = [ "KFGame/Config/KFWeb.ini" "KFGame/Config/PCServer-KFGame.ini" ];
     console_backend  = "kf2_webadmin";
     console_backend_config = {

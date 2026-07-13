@@ -3,7 +3,7 @@
 let
   hosts           = import ../../shared/lib/hosts.nix;
   mkPodmanNetwork = import ../../shared/lib/podman-network.nix { inherit pkgs lib; };
-  src             = ../../../config/dicebear;
+  src             = ../../../../config/dicebear;
 
   customizer = pkgs.runCommand "dicebear-customizer" {} ''
     mkdir -p $out

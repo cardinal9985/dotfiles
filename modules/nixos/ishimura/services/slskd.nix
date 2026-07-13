@@ -4,7 +4,7 @@ let
   hosts           = import ../../shared/lib/hosts.nix;
   mkPodmanNetwork = import ../../shared/lib/podman-network.nix { inherit pkgs lib; };
 
-  retryScript = pkgs.writeText "slskd-retry.py" (builtins.readFile ../../../config/slskd-retry/retry.py);
+  retryScript = pkgs.writeText "slskd-retry.py" (builtins.readFile ../../../../config/slskd-retry/retry.py);
 in
 lib.mkMerge [
   (mkPodmanNetwork { name = "slskd-net"; containers = [ "slskd" ]; })

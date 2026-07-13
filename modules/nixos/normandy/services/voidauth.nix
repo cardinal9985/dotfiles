@@ -45,11 +45,11 @@ in
 
   system.activationScripts.voidauth-theme = ''
     mkdir -p /persist/voidauth/config/branding
-    install -m 0644 ${../../../config/voidauth/custom.css} \
+    install -m 0644 ${../../../../config/voidauth/custom.css} \
       /persist/voidauth/config/branding/custom.css
-    install -m 0644 ${../../../config/voidauth/favicon.svg} \
+    install -m 0644 ${../../../../config/voidauth/favicon.svg} \
       /persist/voidauth/config/branding/favicon.svg
-    install -m 0644 ${../../../config/voidauth/logo.svg} \
+    install -m 0644 ${../../../../config/voidauth/logo.svg} \
       /persist/voidauth/config/branding/logo.svg
 
     # Email templates. Voidauth overwrites *.default.ejs on every start, so
@@ -58,46 +58,46 @@ in
       mkdir -p /persist/voidauth/config/email_templates/$type
     done
 
-    install -m 0644 ${../../../config/voidauth/email_templates/admin_notification/subject.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/admin_notification/subject.ejs} \
       /persist/voidauth/config/email_templates/admin_notification/subject.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/admin_notification/html.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/admin_notification/html.ejs} \
       /persist/voidauth/config/email_templates/admin_notification/html.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/admin_notification/text.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/admin_notification/text.ejs} \
       /persist/voidauth/config/email_templates/admin_notification/text.ejs
 
-    install -m 0644 ${../../../config/voidauth/email_templates/approved/subject.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/approved/subject.ejs} \
       /persist/voidauth/config/email_templates/approved/subject.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/approved/html.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/approved/html.ejs} \
       /persist/voidauth/config/email_templates/approved/html.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/approved/text.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/approved/text.ejs} \
       /persist/voidauth/config/email_templates/approved/text.ejs
 
-    install -m 0644 ${../../../config/voidauth/email_templates/email_verification/subject.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/email_verification/subject.ejs} \
       /persist/voidauth/config/email_templates/email_verification/subject.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/email_verification/html.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/email_verification/html.ejs} \
       /persist/voidauth/config/email_templates/email_verification/html.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/email_verification/text.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/email_verification/text.ejs} \
       /persist/voidauth/config/email_templates/email_verification/text.ejs
 
-    install -m 0644 ${../../../config/voidauth/email_templates/invitation/subject.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/invitation/subject.ejs} \
       /persist/voidauth/config/email_templates/invitation/subject.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/invitation/html.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/invitation/html.ejs} \
       /persist/voidauth/config/email_templates/invitation/html.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/invitation/text.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/invitation/text.ejs} \
       /persist/voidauth/config/email_templates/invitation/text.ejs
 
-    install -m 0644 ${../../../config/voidauth/email_templates/reset_password/subject.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/reset_password/subject.ejs} \
       /persist/voidauth/config/email_templates/reset_password/subject.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/reset_password/html.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/reset_password/html.ejs} \
       /persist/voidauth/config/email_templates/reset_password/html.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/reset_password/text.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/reset_password/text.ejs} \
       /persist/voidauth/config/email_templates/reset_password/text.ejs
 
-    install -m 0644 ${../../../config/voidauth/email_templates/test_notification/subject.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/test_notification/subject.ejs} \
       /persist/voidauth/config/email_templates/test_notification/subject.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/test_notification/html.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/test_notification/html.ejs} \
       /persist/voidauth/config/email_templates/test_notification/html.ejs
-    install -m 0644 ${../../../config/voidauth/email_templates/test_notification/text.ejs} \
+    install -m 0644 ${../../../../config/voidauth/email_templates/test_notification/text.ejs} \
       /persist/voidauth/config/email_templates/test_notification/text.ejs
   '';
 

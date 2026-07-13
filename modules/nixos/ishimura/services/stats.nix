@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  src = ../../../config/stats;
+  src = ../../../../config/stats;
 
   pythonEnv = pkgs.python3.withPackages (ps: with ps; [
     flask

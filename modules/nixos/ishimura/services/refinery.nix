@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  src = ../../../config/refinery;
+  src = ../../../../config/refinery;
 
   pythonEnv = pkgs.python3.withPackages (ps: with ps; [
     flask
@@ -24,7 +24,7 @@ let
   '';
 
   reprocessLibrary = pkgs.writeShellScriptBin "refinery-reprocess-library"
-    (builtins.readFile ../../../config/refinery/reprocess-library.sh);
+    (builtins.readFile ../../../../config/refinery/reprocess-library.sh);
 in
 {
   environment.systemPackages = [ reprocessLibrary ];

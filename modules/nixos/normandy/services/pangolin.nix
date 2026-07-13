@@ -54,27 +54,27 @@ in
       ACME_EMAIL=$(cat ${config.sops.secrets."pangolin/acme_email".path})
       ${pkgs.gnused}/bin/sed \
         "s|__SERVER_SECRET__|$SERVER_SECRET|" \
-        ${../../../config/pangolin/config.yml.tmpl} \
+        ${../../../../config/pangolin/config.yml.tmpl} \
         > /persist/pangolin/config/config.yml
       ${pkgs.gnused}/bin/sed \
         "s|__ACME_EMAIL__|$ACME_EMAIL|g" \
-        ${../../../config/pangolin/traefik-static.yml.tmpl} \
+        ${../../../../config/pangolin/traefik-static.yml.tmpl} \
         > /persist/pangolin/config/traefik/traefik_config.yml
-      install -m 0644 ${../../../config/pangolin/ban.html} \
+      install -m 0644 ${../../../../config/pangolin/ban.html} \
         /persist/pangolin/config/traefik/ban.html
-      install -m 0644 ${../../../config/pangolin/403.html} \
+      install -m 0644 ${../../../../config/pangolin/403.html} \
         /persist/pangolin/errors/403.html
-      install -m 0644 ${../../../config/pangolin/404.html} \
+      install -m 0644 ${../../../../config/pangolin/404.html} \
         /persist/pangolin/errors/404.html
-      install -m 0644 ${../../../config/pangolin/approval_required.html} \
+      install -m 0644 ${../../../../config/pangolin/approval_required.html} \
         /persist/pangolin/errors/approval_required.html
-      install -m 0644 ${../../../config/pangolin/robots.txt} \
+      install -m 0644 ${../../../../config/pangolin/robots.txt} \
         /persist/pangolin/errors/robots.txt
-      install -m 0644 ${../../../config/pangolin/anubis-theme.css} \
+      install -m 0644 ${../../../../config/pangolin/anubis-theme.css} \
         /persist/pangolin/errors/anubis-theme.css
-      install -m 0644 ${../../../config/pangolin/ishimura-banner.png} \
+      install -m 0644 ${../../../../config/pangolin/ishimura-banner.png} \
         /persist/pangolin/errors/ishimura-banner.png
-      install -m 0644 ${../../../config/resources/ishimura-favicon.png} \
+      install -m 0644 ${../../../../config/resources/ishimura-favicon.png} \
         /persist/pangolin/errors/ishimura-favicon.png
       ${pkgs.gnused}/bin/sed \
         -e "s|__CROWDSEC_TRAEFIK_API_KEY__|$CROWDSEC_KEY|g" \
@@ -82,7 +82,7 @@ in
         -e "s|__NOSTROMO_IP__|${hosts.nostromo.tailnet}|g" \
         -e "s|__DOMAIN__|ishimura.lol|g" \
         -e "s|__DASHBOARD_HOST__|pangolin.ishimura.lol|g" \
-        ${../../../config/pangolin/traefik-dynamic.yml.tmpl} \
+        ${../../../../config/pangolin/traefik-dynamic.yml.tmpl} \
         > /persist/pangolin/config/traefik/dynamic/dynamic_config.yml
     '';
   };

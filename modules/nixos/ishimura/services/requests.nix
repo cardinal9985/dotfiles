@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  src = ../../../config/requests;
+  src = ../../../../config/requests;
 
   pythonEnv = pkgs.python3.withPackages (ps: [ ps.flask ]);
 

@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 let
-  src               = ../../../config/homepage/src;
+  src               = ../../../../config/homepage/src;
   hosts             = import ../../shared/lib/hosts.nix;
   ishimuraTailnetIP = hosts.ishimura.tailnet;
   services = [
@@ -245,7 +245,7 @@ let
     cp ${gamesJson}                                $out/games.json
     cp ${src}/admin/index.html                     $out/admin/index.html
     cp ${adminServicesJson}                        $out/admin/services.json
-    cp ${../../../config/resources/ishimura-favicon.png}  $out/ishimura-favicon.png
+    cp ${../../../../config/resources/ishimura-favicon.png}  $out/ishimura-favicon.png
   '';
 
   gameStatusPoller = pkgs.writeShellScript "game-status-poller" ''

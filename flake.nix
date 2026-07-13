@@ -76,6 +76,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    refinery = {
+      url = "git+ssh://git@github.com/cardinal9985/refinery";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix-gaming = {
       url = "github:fufexan/nix-gaming";
       inputs.nixpkgs.follows = "nixpkgs";

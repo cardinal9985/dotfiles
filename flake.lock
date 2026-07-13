@@ -1029,6 +1029,26 @@
         "type": "github"
       }
     },
+    "refinery": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783956823,
+        "narHash": "sha256-lPr6dODMYJMXWRfHl/RjWkVQuCWQIh292FCoUC1VBdw=",
+        "ref": "refs/heads/main",
+        "rev": "c299793b1dcdb6942a48ef0a07e02dd3bdceaca5",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/refinery"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/refinery"
+      }
+    },
     "rocksmith-nix": {
       "inputs": {
         "flake-parts": "flake-parts_6",
@@ -1069,6 +1089,7 @@
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_2",
         "nur": "nur",
+        "refinery": "refinery",
         "rocksmith-nix": "rocksmith-nix",
         "sops-nix": "sops-nix",
         "spicetify-nix": "spicetify-nix",

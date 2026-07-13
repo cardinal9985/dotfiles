@@ -1,33 +1,10 @@
-{ config, pkgs, ... }:
+{ inputs, config, pkgs, ... }:
 
 let
-  src = ../../../../config/refinery;
-
-  pythonEnv = pkgs.python3.withPackages (ps: with ps; [
-    flask
-    apscheduler
-    requests
-    mutagen
-    numpy
-    ebooklib
-    guessit
-  ]);
-
-  app = pkgs.runCommand "ishimura-refinery" {} ''
-    mkdir -p $out
-    cp -r ${src}/app.py ${src}/bandcamp.py ${src}/book.py ${src}/db.py \
-          ${src}/downloader.py ${src}/game_dat.py ${src}/game_igdb.py \
-          ${src}/game_platforms.py ${src}/games.py ${src}/genres.py \
-          ${src}/library.py ${src}/music.py ${src}/quality.py \
-          ${src}/scanner.py ${src}/subtitles.py ${src}/targets.py \
-          ${src}/video.py ${src}/templates $out/
-  '';
-
-  reprocessLibrary = pkgs.writeShellScriptBin "refinery-reprocess-library"
-    (builtins.readFile ../../../../config/refinery/reprocess-library.sh);
+  refinery = inputs.refinery.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {
-  environment.systemPackages = [ reprocessLibrary ];
+  environment.systemPackages = [ refinery ];
 
   systemd.tmpfiles.rules = [
     "d /persist/refinery              0750 refinery refinery -"
@@ -119,7 +96,6 @@ in
       Type            = "oneshot";
       RemainAfterExit = true;
     };
-
     script = ''
       for dir in /mnt/storage/media/movies /mnt/storage/media/shows \
                  /mnt/storage/media/anime  /mnt/storage/media/anime/movies \
@@ -159,8 +135,8 @@ in
       Environment      = [
         "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin:${pkgs.calibre}/bin:${pkgs.yt-dlp}/bin:${pkgs.mame-tools}/bin:${pkgs.p7zip}/bin:${pkgs.unzip}/bin"
       ];
-      ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
-      WorkingDirectory = app;
+      ExecStart        = "${refinery}/bin/refinery";
+      WorkingDirectory = "${refinery}/lib";
       Restart          = "on-failure";
       RestartSec       = "5s";
     };
@@ -190,7 +166,7 @@ in
     wantedBy    = [ "timers.target" ];
     timerConfig = {
       OnCalendar         = "daily";
-      Persistent         = true;        # catch-up after downtime
+      Persistent         = true;
       RandomizedDelaySec = "30min";
     };
   };
@@ -200,14 +176,12 @@ in
     after       = [ "network-online.target" ];
     wants       = [ "network-online.target" ];
     serviceConfig = {
-      Type             = "oneshot";
-      User             = "refinery";
-      Group            = "refinery";
-      EnvironmentFile  = config.sops.templates."refinery.env".path;
+      Type            = "oneshot";
+      User            = "refinery";
+      Group           = "refinery";
+      EnvironmentFile = config.sops.templates."refinery.env".path;
+      ExecStart       = "${refinery}/bin/refinery-dat-refresh";
     };
-    script = ''
-      ${pythonEnv}/bin/python -c 'import sys; sys.path.insert(0, "${app}"); import game_dat; game_dat.refresh_all()'
-    '';
   };
 
   systemd.timers.refinery-dat-refresh = {

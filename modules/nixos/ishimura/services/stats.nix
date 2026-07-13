@@ -1,19 +1,7 @@
-{ config, pkgs, ... }:
+{ inputs, config, pkgs, ... }:
 
 let
-  src = ../../../../config/stats;
-
-  pythonEnv = pkgs.python3.withPackages (ps: with ps; [
-    flask
-    apscheduler
-    pymysql
-    requests
-  ]);
-
-  app = pkgs.runCommand "ishimura-stats" {} ''
-    mkdir -p $out
-    cp -r ${src}/app.py ${src}/db.py ${src}/poller.py ${src}/recommend.py ${src}/templates $out/
-  '';
+  stats = inputs.stats.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {
   systemd.services.navidrome.serviceConfig.UMask = pkgs.lib.mkForce "0007";
@@ -70,14 +58,14 @@ in
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      Type = "simple";
-      User = "stats";
-      Group = "stats";
+      Type            = "simple";
+      User            = "stats";
+      Group           = "stats";
       EnvironmentFile = config.sops.templates."stats.env".path;
-      ExecStart = "${pythonEnv}/bin/python ${app}/app.py";
-      WorkingDirectory = app;
-      Restart = "on-failure";
-      RestartSec = "5s";
+      ExecStart       = "${stats}/bin/stats";
+      WorkingDirectory = "${stats}/lib";
+      Restart         = "on-failure";
+      RestartSec      = "5s";
     };
   };
 }

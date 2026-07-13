@@ -81,6 +81,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    stats = {
+      url = "git+ssh://git@github.com/cardinal9985/stats";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix-gaming = {
       url = "github:fufexan/nix-gaming";
       inputs.nixpkgs.follows = "nixpkgs";

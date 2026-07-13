@@ -1093,6 +1093,7 @@
         "rocksmith-nix": "rocksmith-nix",
         "sops-nix": "sops-nix",
         "spicetify-nix": "spicetify-nix",
+        "stats": "stats",
         "stylix": "stylix",
         "zen-browser": "zen-browser"
       }
@@ -1168,6 +1169,26 @@
         "ref": "nixos-25.05",
         "repo": "nixpkgs",
         "type": "github"
+      }
+    },
+    "stats": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783957577,
+        "narHash": "sha256-v3Oi5ALkNi25wg2PhEy+QLdyY9ZV1cEP/sDlR8ISBtE=",
+        "ref": "refs/heads/main",
+        "rev": "db96ea4dc1562b9c3a7b9e733f85504c8cf7d1fb",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/stats"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/stats"
       }
     },
     "std": {

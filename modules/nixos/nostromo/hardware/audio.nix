@@ -52,6 +52,5 @@
   environment.systemPackages = with pkgs; [
     alsa-scarlett-gui
     qpwgraph
-    pavucontrol
   ];
 }

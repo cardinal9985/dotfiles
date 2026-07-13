@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 let
 
@@ -58,17 +58,6 @@ EOF
     ${pkgs.coreutils}/bin/install -m 0644 "$new_state" ${stateFile}
   '';
 
-  critical = [
-    "jellyfin"
-    "podman-tdarr-server"
-    "scrutiny"
-    "adguardhome"
-    "unbound"
-    "nfs-server"
-  ];
-  alertFor = name: {
-    "${name}".unitConfig.OnFailure = [ "ntfy-on-failure@%n.service" ];
-  };
 in
 
 {
@@ -95,15 +84,11 @@ in
     };
   };
 
-  systemd.services = lib.mkMerge ([
-    {
-      disk-space-ntfy = {
-        description = "Poll disk usage and notify ntfy on threshold crossings";
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = diskPollScript;
-        };
-      };
-    }
-  ] ++ map alertFor critical);
+  systemd.services.disk-space-ntfy = {
+    description = "Poll disk usage and notify ntfy on threshold crossings";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = diskPollScript;
+    };
+  };
 }

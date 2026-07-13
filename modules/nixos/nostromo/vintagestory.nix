@@ -1,15 +1,12 @@
 { config, pkgs, ... }:
 
 let
-  # Hangar rollout (notes/specs/2026-07-07-hangar-design.md), Stage 5.
-  # VS gets a native systemd unit; volume moves off Pelican into /persist.
   volume     = "/persist/gameservers/vintagestory";
   gamePort   = 42420;  # UDP - already in nostromo firewall
   maxClients = 8;
   vsServer   = "${pkgs.vintagestory}/bin/vintagestory-server";
 in
 {
-  # /persist/gameservers dir + hangar user are declared in hangar.nix.
   systemd.tmpfiles.rules = [
     "d ${volume}                     0755 hangar hangar -"
     "d ${volume}/Saves               0755 hangar hangar -"
@@ -23,10 +20,6 @@ in
     { directory = volume; user = "hangar"; group = "hangar"; mode = "0755"; }
   ];
 
-  # One-shot: migrate the Pelican volume if we haven't yet AND apply
-  # Hangar-managed defaults on first launch only. The marker file at
-  # `.hangar-initial-config` guards the config-writing step so future
-  # `/serverconfig ...` changes from the in-game console persist.
   systemd.services.vintagestory-migrate = {
     description = "Migrate VS files + apply one-time defaults";
     wantedBy    = [ "vintagestory.service" ];
@@ -85,10 +78,6 @@ in
     requires    = [ "vintagestory-migrate.service" ];
     wantedBy    = [ "multi-user.target" ];
 
-    # Redirect VS's stdin to a named pipe so Hangar's backend can inject
-    # console commands (VS has no first-party HTTP admin API). A backgrounded
-    # `sleep infinity > FIFO` keeps the write end open so the reader (VS)
-    # doesn't see EOF and shut down.
     script = ''
       FIFO=/run/vintagestory/stdin
       ${pkgs.coreutils}/bin/rm -f "$FIFO"
@@ -113,7 +102,6 @@ in
       RestartSec        = "10s";
       LimitNOFILE       = 1048576;
       NoNewPrivileges   = true;
-      # KillMode default (control-group) cleans up the sleeper on stop.
     };
 
     unitConfig = {
@@ -122,7 +110,6 @@ in
     };
   };
 
-  # Replace the wings.nix placeholder discovery entry - now VS is native.
   environment.etc."hangar/servers.d/vintage-story.json".text = builtins.toJSON {
     slug             = "vintage-story";
     homepage_slug    = "vintage-story";

@@ -2,6 +2,8 @@
 
 let
   tailnetIP = "100.92.76.121";
+  retrySrc       = ../../../config/slskd-retry;
+  retryPythonEnv = pkgs.python3;
 in
 {
   systemd.tmpfiles.rules = [
@@ -67,4 +69,23 @@ in
   };
 
   systemd.services.podman-slskd.after = [ "create-slskd-network.service" ];
+
+  systemd.services.slskd-retry = {
+    description = "Re-queue slskd downloads that finished in Completed/Rejected state";
+    after       = [ "podman-slskd.service" "network-online.target" ];
+    wants       = [ "network-online.target" ];
+    wantedBy    = [ "multi-user.target" ];
+    serviceConfig = {
+      Type        = "simple";
+      DynamicUser = true;
+      Environment = [
+        "SLSKD_URL=http://${tailnetIP}:5030"
+        "RETRY_INTERVAL_SECS=60"
+        "RETRY_MAX_ATTEMPTS=20"
+      ];
+      ExecStart   = "${retryPythonEnv}/bin/python ${retrySrc}/retry.py";
+      Restart     = "on-failure";
+      RestartSec  = "30s";
+    };
+  };
 }

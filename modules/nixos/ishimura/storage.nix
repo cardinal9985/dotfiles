@@ -24,10 +24,6 @@
       "dropcacheonclose=true"
       "category.create=mfs"
       "nofail"
-      # Honor POSIX ACLs from the underlying ext4. Without this mergerfs
-      # falls back to mode-bit checks (default_permissions) and named-user
-      # ACLs like `user:refinery:rwx` are ignored, so refinery can't write
-      # into slskd-created folders even though setfacl says it should.
       "posix_acl=true"
     ];
     depends = [ "/mnt/disk1" "/mnt/disk2" ];

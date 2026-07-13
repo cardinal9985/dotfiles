@@ -40,8 +40,6 @@ in
   };
   users.groups.games = {};
 
-  # Sops keys stay named `chess/*` (already provisioned); we just alias them
-  # into the games env under new variable names.
   sops.templates."games.env" = {
     owner   = "games";
     content = ''
@@ -54,8 +52,6 @@ in
     '';
   };
 
-  # One-shot: migrate old chess.db to games.db on first boot if it doesn't
-  # already exist. Preserves the old DB file for rollback safety.
   systemd.services.ishimura-games-migrate = {
     description = "Migrate chess.db to games.db (one-time)";
     wantedBy    = [ "ishimura-games.service" ];

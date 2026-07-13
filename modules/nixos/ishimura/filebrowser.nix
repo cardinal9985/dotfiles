@@ -1,20 +1,7 @@
 { pkgs, config, ... }:
 
-# FileBrowser Quantum (gtsteffaniak/filebrowser fork) - modernized web file
-# manager for /mnt/storage. Lets us manage media library + mod bundles + any
-# other shared files through a UI instead of scp.
-#
-# Auth: double-gated at Pangolin (voidauth + tailnet-only). FileBrowser also
-# has its own admin user as a defense-in-depth layer.
-#
-# Sees the same /mnt/storage/mods folder that mods-server.nix exposes
-# publicly, so dropping a new mod zip via the UI immediately makes it
-# downloadable at ishimura.lol/mods/<game>/file.zip.
-
 let
-  # Minimal config - Quantum's schema is strict and version-dependent.
-  # Start with just port + source, customize the rest via admin UI after
-  # first login. Default branding/auth applies until then.
+
   configYaml = pkgs.writeText "filebrowser-config.yml" ''
     server:
       port: 8088
@@ -45,9 +32,6 @@ in
     "d /persist/filebrowser/branding 0755 root root -"
   ];
 
-  # Render config + branding CSS at activation time.
-  # mkdir -p here because activationScripts run before systemd-tmpfiles
-  # processes the rules above on the first deploy.
   system.activationScripts.filebrowser-config = ''
     mkdir -p /persist/filebrowser/config /persist/filebrowser/branding
     install -m 0644 ${configYaml}    /persist/filebrowser/config/settings.yaml
@@ -71,8 +55,6 @@ in
       "/persist/filebrowser/branding:/branding:ro"
     ];
 
-    # See mods-server for why --network=host: AdGuard already owns udp/53
-    # on the default bridge gateway, so aardvark-dns can't start.
     extraOptions = [ "--network=host" ];
   };
 

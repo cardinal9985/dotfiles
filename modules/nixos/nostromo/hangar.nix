@@ -19,22 +19,19 @@ let
     cp ${../../../config/resources/kf2-motd-banner.png} $out/public/kf2-motd-banner.png
   '';
 
-  # Whitelist of systemd units Hangar may power-cycle. Every game module
-  # that lands should append its unit here so the sudoers rule stays tight.
   managedUnits = [
     "kf2.service"
     "vintagestory.service"
     "tarkov-spt.service"
   ];
 
-  # Absolute paths - hangar's PATH doesn't include /run/current-system.
   systemctlBin = "/run/current-system/sw/bin/systemctl";
 in
 {
   users.users.hangar = {
     isSystemUser = true;
     group        = "hangar";
-    extraGroups  = [ "systemd-journal" ];  # journalctl -u <unit> for log tailing
+    extraGroups  = [ "systemd-journal" ];
     home         = "/persist/gameservers";
     description  = "Hangar game-server control panel + runtime user";
   };
@@ -45,9 +42,6 @@ in
     "d /etc/hangar/servers.d   0755 root   root   -"
   ];
 
-  # Polkit rule: hangar user can start/stop/restart the managed units via
-  # systemd's D-Bus API. No sudo/setuid required - systemctl asks polkit,
-  # polkit says yes for these specific units + verbs only.
   security.polkit.enable = true;
   security.polkit.extraConfig = ''
     polkit.addRule(function(action, subject) {

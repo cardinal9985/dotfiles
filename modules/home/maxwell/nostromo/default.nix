@@ -21,7 +21,6 @@
     ./rofi.nix
     ./hyprlock.nix
     ./gaming.nix
-    ./spt.nix
     ./hypridle.nix
     ./awww.nix
   ];

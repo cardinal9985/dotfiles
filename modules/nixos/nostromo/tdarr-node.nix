@@ -40,26 +40,16 @@
   systemd.services.podman-tdarr-node = {
     after = [ "mnt-storage.automount" ];
     requires = [ "mnt-storage.automount" ];
-    # Throttle so simultaneous transcode jobs can't starve gameplay/desktop.
-    # Each ffmpeg worker can peg a core (saw 240% CPU + 6MB/s sustained disk),
-    # which caused 10-20s stalls in Mordhau/BattleBit. Cap CPU + give the
-    # game/desktop IO priority. tdarr will transcode slower but won't compete.
     serviceConfig = {
       CPUQuota          = "400%";   # max 4 of 12 threads
       CPUWeight         = 20;       # default 100, lower = less scheduler share under contention
       Nice              = 19;       # absolute lowest CPU priority
       IOWeight          = 50;       # half default IO bandwidth
       IOSchedulingClass = "idle";   # only get IO when nothing else wants it
-      # Give ffmpeg jobs 5s to flush, then SIGKILL. Without this, `tdarr-off`
-      # hangs ~90-120s waiting for in-flight transcodes. Jobs are checkpointed
-      # by tdarr-server and will resume on next start. mkForce because
-      # oci-containers default is 120s.
       TimeoutStopSec    = lib.mkForce "5s";
     };
   };
 
-  # Let maxwell pause/resume tdarr without a password prompt. Used by the
-  # tdarr-off / tdarr-on aliases for manual toggle before/after gaming.
   security.sudo.extraRules = [{
     users = [ "maxwell" ];
     commands = [

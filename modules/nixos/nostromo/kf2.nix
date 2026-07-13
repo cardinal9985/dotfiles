@@ -1,23 +1,17 @@
 { config, pkgs, ... }:
 
 let
-  # Hangar rollout (notes/specs/2026-07-07-hangar-design.md).
-  # Volume + service now owned by the hangar user, no Pelican dependency.
+
   volume       = "/persist/gameservers/kf2";
   serverPort   = 7777;
   queryPort    = 27015;
   webAdminPort = 8380;  # 8080 collides with Wings' API port on nostromo
   mapName      = "kf-bioticslab";
-  difficulty   = 0;  # 0 Normal, 1 Hard, 2 Suicidal, 3 Hell on Earth
-  serverName   = "USG-ISHIMURA";  # spaces don't survive URL-encoded startup args
+  difficulty   = 1;  # 0 Normal, 1 Hard, 2 Suicidal, 3 Hell on Earth
+  serverName   = "USG-ISHIMURA";
 in
 {
-  # sops secret defined in ./sops.nix
-  # hangar user/group live in ./hangar.nix (canonical owner).
 
-  # /persist/gameservers is the root under which every game module drops
-  # a subdirectory owned by hangar. Group-traversable so future tooling
-  # (backup timer, hangar Flask panel) can read as its own user.
   systemd.tmpfiles.rules = [
     "d /persist/gameservers      0755 hangar hangar -"
     "d /persist/gameservers/kf2  0755 hangar hangar -"
@@ -27,8 +21,6 @@ in
     { directory = "/persist/gameservers"; user = "hangar"; group = "hangar"; mode = "0755"; }
   ];
 
-  # Hangar discovery file. Drop under /etc/hangar/servers.d/ so the Flask
-  # panel picks up KF2 without any per-game code in Hangar itself.
   environment.etc."hangar/servers.d/kf2.json".text = builtins.toJSON {
     slug             = "kf2";
     homepage_slug    = "killing-floor-2";
@@ -54,8 +46,6 @@ in
     wants       = [ "network-online.target" ];
     wantedBy    = [ "multi-user.target" ];
 
-    # Ensure WebAdmin is enabled and on the right port every start. Case
-    # matters here - KF2 writes bEnabled=False (capital F).
     preStart = ''
       set -eu
       CFG="${volume}/KFGame/Config/KFWeb.ini"

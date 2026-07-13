@@ -1,11 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  # Hangar rollout (notes/specs/2026-07-07-hangar-design.md), Stage 6.
-  # SPT + Fika migrate off Pelican to a native systemd unit under hangar.
-  # SPT ships as a self-contained .NET bundle (libcoreclr + all System.*.dll
-  # in-tree), so no dotnet runtime dependency - steam-run gives us the
-  # glibc/FHS environment the launcher expects.
+
   volume     = "/persist/gameservers/tarkov-spt";
   pelicanSrc = "/var/lib/pelican/volumes/bb020144-8167-4da9-8cb1-252fd9ed3384";
   gamePort   = 6969;  # HTTP + WebSocket (Fika relay), already open in network.nix
@@ -20,9 +16,6 @@ in
     { directory = volume; user = "hangar"; group = "hangar"; mode = "0755"; }
   ];
 
-  # One-shot: import the whole Pelican volume the first time we launch.
-  # Unlike VS this preserves everything - profiles, mods (Fika + friends),
-  # certs, cache - because the user has active playtime and mod state here.
   systemd.services.tarkov-spt-migrate = {
     description = "Migrate SPT files from Pelican volume";
     wantedBy    = [ "tarkov-spt.service" ];
@@ -91,7 +84,6 @@ in
     };
   };
 
-  # Replace the wings.nix placeholder discovery entry - now SPT is native.
   environment.etc."hangar/servers.d/tarkov-spt.json".text = builtins.toJSON {
     slug             = "tarkov-spt";
     homepage_slug    = "escape-from-tarkov-fika";

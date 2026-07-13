@@ -5,9 +5,6 @@
     ./crowdsec.nix
     ./dns.nix
     ./gpu.nix
-    ./grafana.nix
-    ./loki.nix
-    ./prometheus.nix
     ./impermanence.nix
     ./booklore.nix
     ./games.nix
@@ -21,7 +18,6 @@
     ./requests.nix
     ./romm.nix
     ./slskd.nix
-    ./slskd-retry.nix
     ./stats.nix
     ./network.nix
     ./nfs.nix

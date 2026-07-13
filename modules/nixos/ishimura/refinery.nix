@@ -53,14 +53,6 @@ in
     isSystemUser = true;
     group        = "refinery";
     home         = "/var/lib/refinery";
-    # Need to write into both the downloads area (to extract zips / move
-    # processed items aside) and the media library (final destination).
-    # `navidrome` group gives read on /var/lib/navidrome/navidrome.db so the
-    # library view can list owned artists/albums (we already widened the WAL
-    # files to group-write for the stats SQLite reader).
-    # systemd-oom is the group on /mnt/storage/media (default ownership from
-    # mergerfs creation - weird but real). Without it refinery can't create
-    # artist folders in the music library on approve.
     extraGroups  = [ "users" "navidrome" "systemd-oom" ];
   };
   users.groups.refinery = {};
@@ -119,40 +111,15 @@ in
     '';
   };
 
-  # Grant the refinery user write access to the music library via ACL.
-  # The dir is owned by maxwell:systemd-oom 0775, but mergerfs +
-  # default_permissions doesn't reliably honor supplementary groups, so
-  # adding refinery to systemd-oom alone isn't enough. ACL grants the user
-  # specifically. The -d default ACL is inherited by any new artist/album
-  # folders refinery creates. Re-applied on every activation so a backup
-  # restore or stray chacl can't permanently break imports.
   systemd.services.refinery-media-acl = {
     description = "Grant refinery user ACL write on music library + slskd inbox";
     wantedBy = [ "multi-user.target" ];
-    # Must run AFTER systemd-tmpfiles-setup. tmpfiles enforces mode 0755 on
-    # /mnt/storage/downloads/slskd/{,complete,incomplete} which calls chmod
-    # under the hood. chmod on a file with extended ACLs resets the ACL mask
-    # to match the group bits (r-x), which silently downgrades refinery's
-    # rwx grant to effective r-x. Setting m::rwx below is the explicit fix,
-    # and the ordering makes sure we win the race.
     after    = [ "mnt-storage.mount" "systemd-tmpfiles-setup.service" ];
     serviceConfig = {
       Type            = "oneshot";
       RemainAfterExit = true;
     };
-    # refinery needs write on:
-    #  - /mnt/storage/media/music    (artist/album folders on approve)
-    #  - /mnt/storage/media/books    (author folders on approve)
-    #  - /mnt/storage/media/roms     (per-platform game folders, RomM shares these)
-    #  - /mnt/storage/media/{movies,shows,anime,documentaries,docuseries,short-films,fan-edits}
-    #    (video library roots - Jellyfin reads from these)
-    #  - /mnt/storage/downloads/slskd (retag source files + accept uploads)
-    # Default ACL on each root makes new subfolders inherit the grant, so
-    # newly-created destinations are writable without re-running this. m::rwx
-    # explicitly sets the mask so a subsequent chmod doesn't silently
-    # downgrade refinery's effective access. mkdir -p ensures the video roots
-    # exist before setfacl runs - the video processor creates <title>/ under
-    # each, but the root itself has to be there for the ACL grant.
+
     script = ''
       for dir in /mnt/storage/media/movies /mnt/storage/media/shows \
                  /mnt/storage/media/anime  /mnt/storage/media/anime/movies \
@@ -189,13 +156,6 @@ in
       User             = "refinery";
       Group            = "refinery";
       EnvironmentFile  = config.sops.templates."refinery.env".path;
-      # External CLI subprocesses:
-      #   flac/ffmpeg/sox/rsgain - music quality + spectrogram + replaygain
-      #   calibre                - book format conversion (MOBI/AZW -> EPUB)
-      #                            and cover/metadata embedding
-      #   yt-dlp                 - URL downloader (bandcamp/youtube/etc) -> inbox
-      #   chdman (mame-tools)    - ROM disc image conversion (BIN/CUE/ISO -> CHD)
-      #   p7zip / unzip          - extract archived ROM downloads
       Environment      = [
         "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin:${pkgs.calibre}/bin:${pkgs.yt-dlp}/bin:${pkgs.mame-tools}/bin:${pkgs.p7zip}/bin:${pkgs.unzip}/bin"
       ];
@@ -206,9 +166,6 @@ in
     };
   };
 
-  # Nightly SQLite snapshot. sqlite3 .backup is online-safe (doesn't lock
-  # against running refinery). Keeps 14 days so an "oops I forgot all 171
-  # albums I just approved" rollback is one cp away.
   systemd.services.refinery-db-backup = {
     description = "Nightly snapshot of refinery's SQLite DB";
     serviceConfig = {
@@ -238,8 +195,6 @@ in
     };
   };
 
-  # Weekly DAT refresh - no-intro / redump release updates roughly weekly,
-  # and a stale DAT just means new dumps aren't recognised until refresh.
   systemd.services.refinery-dat-refresh = {
     description = "Refresh no-intro / redump DAT files for ROM integrity";
     after       = [ "network-online.target" ];

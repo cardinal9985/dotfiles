@@ -4,17 +4,12 @@ let
   tailnetIP = "100.92.76.121";  # ishimura
   src = ../../../config/dicebear;
 
-  # Build the customizer page tree with Nix (mirrors how homepage.nix does it).
-  # Add more files here as the customizer grows.
   customizer = pkgs.runCommand "dicebear-customizer" {} ''
     mkdir -p $out
     cp ${src}/index.html $out/index.html
   '';
 in
 {
-  # z (lowercase, non-recursive) chowns the existing /persist/dicebear dir
-  # that the persistence module pre-creates as root before tmpfiles can.
-  # Without z, the d on the parent silently no-ops and subdirs never get made.
   systemd.tmpfiles.rules = [
     "z /persist/dicebear     0755 maxwell users -"
     "d /persist/dicebear/www 0755 maxwell users -"
@@ -29,7 +24,6 @@ in
     chmod -R a+rX /persist/dicebear/www
   '';
 
-  # Same AGH-conflict workaround as the other ishimura podman containers.
   systemd.services.create-dicebear-network = {
     description = "Create dicebear podman network (no DNS)";
     wantedBy = [ "podman-dicebear-api.service" "podman-dicebear-www.service" ];
@@ -46,16 +40,12 @@ in
   };
 
   virtualisation.oci-containers.containers = {
-    # DiceBear self-hosted HTTP API. Generates SVG/PNG avatars from a seed,
-    # endpoints like /10.x/{style}/svg?seed=maxwell&... .
     dicebear-api = {
       image = "docker.io/dicebear/api:4";
       ports = [ "${tailnetIP}:7373:3000" ];
       extraOptions = [ "--network=dicebear-net" ];
     };
 
-    # Static customizer page served by busybox httpd, content built by Nix
-    # above and rsynced to /persist/dicebear/www.
     dicebear-www = {
       image = "docker.io/library/busybox:latest";
       cmd = [ "httpd" "-f" "-p" "80" "-h" "/srv" ];

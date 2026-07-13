@@ -16,9 +16,6 @@ let
   '';
 in
 {
-  # Group-writable umask so stats (in navidrome group) can update the WAL
-  # index files - SQLite needs write access to -shm even for read-only queries
-  # to track WAL changes; otherwise readers see stale snapshots.
   systemd.services.navidrome.serviceConfig.UMask = pkgs.lib.mkForce "0007";
   systemd.tmpfiles.rules = [
     "d /persist/stats 0750 stats stats -"

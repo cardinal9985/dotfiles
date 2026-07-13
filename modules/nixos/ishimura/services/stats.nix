@@ -1,10 +1,21 @@
-{ inputs, config, pkgs, ... }:
-
-let
-  stats = inputs.stats.packages.${pkgs.stdenv.hostPlatform.system}.default;
-in
 {
+  inputs,
+  config,
+  pkgs,
+  ...
+}:
+
+{
+  imports = [ inputs.stats.nixosModules.default ];
+
+  services.stats = {
+    enable = true;
+    environmentFile = config.sops.templates."stats.env".path;
+    extraGroups = [ "navidrome" ];
+  };
+
   systemd.services.navidrome.serviceConfig.UMask = pkgs.lib.mkForce "0007";
+
   systemd.tmpfiles.rules = [
     "d /persist/stats 0750 stats stats -"
     "z /var/lib/navidrome              0770 navidrome navidrome -"
@@ -14,16 +25,13 @@ in
   ];
 
   environment.persistence."/persist".directories = [
-    { directory = "/persist/stats"; user = "stats"; group = "stats"; mode = "0750"; }
+    {
+      directory = "/persist/stats";
+      user = "stats";
+      group = "stats";
+      mode = "0750";
+    }
   ];
-
-  users.users.stats = {
-    isSystemUser = true;
-    group = "stats";
-    home = "/var/lib/stats";
-    extraGroups = [ "navidrome" ];
-  };
-  users.groups.stats = {};
 
   sops.templates."stats.env" = {
     owner = "stats";
@@ -50,22 +58,5 @@ in
       BOOKLORE_DB_USER=booklore
       BOOKLORE_DB_PASSWORD=${config.sops.placeholder."booklore/db_password"}
     '';
-  };
-
-  systemd.services.ishimura-stats = {
-    description = "Ishimura Stats - cross-service playback/usage tracker";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type            = "simple";
-      User            = "stats";
-      Group           = "stats";
-      EnvironmentFile = config.sops.templates."stats.env".path;
-      ExecStart       = "${stats}/bin/stats";
-      WorkingDirectory = "${stats}/lib";
-      Restart         = "on-failure";
-      RestartSec      = "5s";
-    };
   };
 }

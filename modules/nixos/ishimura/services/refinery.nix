@@ -1,10 +1,28 @@
-{ inputs, config, pkgs, ... }:
-
-let
-  refinery = inputs.refinery.packages.${pkgs.stdenv.hostPlatform.system}.default;
-in
 {
-  environment.systemPackages = [ refinery ];
+  inputs,
+  config,
+  pkgs,
+  ...
+}:
+
+{
+  imports = [ inputs.refinery.nixosModules.default ];
+
+  services.refinery = {
+    enable = true;
+    environmentFile = config.sops.templates."refinery.env".path;
+    extraGroups = [
+      "users"
+      "navidrome"
+      "systemd-oom"
+    ];
+    dbBackup = {
+      enable = true;
+      dbPath = "/persist/refinery/refinery.db";
+      backupDir = "/persist/refinery/backups";
+    };
+    datRefresh.enable = true;
+  };
 
   systemd.tmpfiles.rules = [
     "d /persist/refinery              0750 refinery refinery -"
@@ -23,19 +41,16 @@ in
   ];
 
   environment.persistence."/persist".directories = [
-    { directory = "/persist/refinery"; user = "refinery"; group = "refinery"; mode = "0750"; }
+    {
+      directory = "/persist/refinery";
+      user = "refinery";
+      group = "refinery";
+      mode = "0750";
+    }
   ];
 
-  users.users.refinery = {
-    isSystemUser = true;
-    group        = "refinery";
-    home         = "/var/lib/refinery";
-    extraGroups  = [ "users" "navidrome" "systemd-oom" ];
-  };
-  users.groups.refinery = {};
-
   sops.templates."refinery.env" = {
-    owner   = "refinery";
+    owner = "refinery";
     content = ''
       REFINERY_DB_PATH=/persist/refinery/refinery.db
       REFINERY_COVER_DIR=/persist/refinery/covers
@@ -91,9 +106,12 @@ in
   systemd.services.refinery-media-acl = {
     description = "Grant refinery user ACL write on music library + slskd inbox";
     wantedBy = [ "multi-user.target" ];
-    after    = [ "mnt-storage.mount" "systemd-tmpfiles-setup.service" ];
+    after = [
+      "mnt-storage.mount"
+      "systemd-tmpfiles-setup.service"
+    ];
     serviceConfig = {
-      Type            = "oneshot";
+      Type = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
@@ -120,77 +138,5 @@ in
         fi
       done
     '';
-  };
-
-  systemd.services.ishimura-refinery = {
-    description = "USG Refinery - media intake, tagging, approval, and library import";
-    after       = [ "network-online.target" ];
-    wants       = [ "network-online.target" ];
-    wantedBy    = [ "multi-user.target" ];
-    serviceConfig = {
-      Type             = "simple";
-      User             = "refinery";
-      Group            = "refinery";
-      EnvironmentFile  = config.sops.templates."refinery.env".path;
-      Environment      = [
-        "PATH=${pkgs.flac}/bin:${pkgs.ffmpeg-headless}/bin:${pkgs.sox}/bin:${pkgs.rsgain}/bin:${pkgs.calibre}/bin:${pkgs.yt-dlp}/bin:${pkgs.mame-tools}/bin:${pkgs.p7zip}/bin:${pkgs.unzip}/bin"
-      ];
-      ExecStart        = "${refinery}/bin/refinery";
-      WorkingDirectory = "${refinery}/lib";
-      Restart          = "on-failure";
-      RestartSec       = "5s";
-    };
-  };
-
-  systemd.services.refinery-db-backup = {
-    description = "Nightly snapshot of refinery's SQLite DB";
-    serviceConfig = {
-      Type  = "oneshot";
-      User  = "refinery";
-      Group = "refinery";
-    };
-    script = ''
-      set -euo pipefail
-      DB=/persist/refinery/refinery.db
-      OUT=/persist/refinery/backups
-      [ -f "$DB" ] || exit 0
-      STAMP=$(date +%Y-%m-%d)
-      ${pkgs.sqlite}/bin/sqlite3 "$DB" ".backup '$OUT/$STAMP.db'"
-      # Keep last 14 daily snapshots
-      ls -1t "$OUT"/*.db 2>/dev/null | tail -n +15 | xargs -r rm -f
-    '';
-  };
-
-  systemd.timers.refinery-db-backup = {
-    description = "Trigger nightly refinery DB backup";
-    wantedBy    = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar         = "daily";
-      Persistent         = true;
-      RandomizedDelaySec = "30min";
-    };
-  };
-
-  systemd.services.refinery-dat-refresh = {
-    description = "Refresh no-intro / redump DAT files for ROM integrity";
-    after       = [ "network-online.target" ];
-    wants       = [ "network-online.target" ];
-    serviceConfig = {
-      Type            = "oneshot";
-      User            = "refinery";
-      Group           = "refinery";
-      EnvironmentFile = config.sops.templates."refinery.env".path;
-      ExecStart       = "${refinery}/bin/refinery-dat-refresh";
-    };
-  };
-
-  systemd.timers.refinery-dat-refresh = {
-    description = "Trigger weekly DAT refresh";
-    wantedBy    = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar         = "weekly";
-      Persistent         = true;
-      RandomizedDelaySec = "1h";
-    };
   };
 }

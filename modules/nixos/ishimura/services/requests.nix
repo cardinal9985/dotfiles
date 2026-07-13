@@ -1,23 +1,25 @@
-{ inputs, config, pkgs, ... }:
+{ inputs, config, ... }:
 
-let
-  requests = inputs.requests.packages.${pkgs.stdenv.hostPlatform.system}.default;
-in
 {
+  imports = [ inputs.requests.nixosModules.default ];
+
+  services.requests = {
+    enable = true;
+    environmentFile = config.sops.templates."requests.env".path;
+  };
+
   systemd.tmpfiles.rules = [
     "d /persist/requests 0750 requests requests -"
   ];
 
   environment.persistence."/persist".directories = [
-    { directory = "/persist/requests"; user = "requests"; group = "requests"; mode = "0750"; }
+    {
+      directory = "/persist/requests";
+      user = "requests";
+      group = "requests";
+      mode = "0750";
+    }
   ];
-
-  users.users.requests = {
-    isSystemUser = true;
-    group = "requests";
-    home = "/var/lib/requests";
-  };
-  users.groups.requests = {};
 
   sops.templates."requests.env" = {
     owner = "requests";
@@ -30,22 +32,5 @@ in
       NTFY_TOPIC=ishimura-requests
       NTFY_TOKEN=
     '';
-  };
-
-  systemd.services.ishimura-requests = {
-    description = "Ishimura media + game request board";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type            = "simple";
-      User            = "requests";
-      Group           = "requests";
-      EnvironmentFile = config.sops.templates."requests.env".path;
-      ExecStart       = "${requests}/bin/requests";
-      WorkingDirectory = "${requests}/lib";
-      Restart         = "on-failure";
-      RestartSec      = "5s";
-    };
   };
 }

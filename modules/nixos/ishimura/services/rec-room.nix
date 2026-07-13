@@ -1,26 +1,35 @@
-{ inputs, config, pkgs, ... }:
-
-let
-  rec-room = inputs.rec-room.packages.${pkgs.stdenv.hostPlatform.system}.default;
-in
 {
+  inputs,
+  config,
+  pkgs,
+  ...
+}:
+
+{
+  imports = [ inputs.rec-room.nixosModules.default ];
+
+  services.rec-room = {
+    enable = true;
+    environmentFile = config.sops.templates."rec-room.env".path;
+    home = "/persist/rec-room";
+    openFirewall = true;
+  };
+
   systemd.tmpfiles.rules = [
     "d /persist/rec-room 0750 rec-room rec-room -"
   ];
 
   environment.persistence."/persist".directories = [
-    { directory = "/persist/rec-room"; user = "rec-room"; group = "rec-room"; mode = "0750"; }
+    {
+      directory = "/persist/rec-room";
+      user = "rec-room";
+      group = "rec-room";
+      mode = "0750";
+    }
   ];
 
-  users.users.rec-room = {
-    isSystemUser = true;
-    group        = "rec-room";
-    home         = "/var/lib/rec-room";
-  };
-  users.groups.rec-room = {};
-
   sops.templates."rec-room.env" = {
-    owner   = "rec-room";
+    owner = "rec-room";
     content = ''
       SECRET_KEY=${config.sops.placeholder."chess/secret_key"}
       CHESS_DISCORD_WEBHOOK=${config.sops.placeholder."chess/discord_webhook"}
@@ -33,10 +42,10 @@ in
 
   systemd.services.ishimura-rec-room-migrate = {
     description = "Migrate chess.db / games.db to rec-room persist dir (one-time)";
-    wantedBy    = [ "ishimura-rec-room.service" ];
-    before      = [ "ishimura-rec-room.service" ];
+    wantedBy = [ "ishimura-rec-room.service" ];
+    before = [ "ishimura-rec-room.service" ];
     serviceConfig = {
-      Type            = "oneshot";
+      Type = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
@@ -56,22 +65,7 @@ in
   };
 
   systemd.services.ishimura-rec-room = {
-    description = "USG Ishimura Rec Room";
-    after       = [ "network-online.target" "ishimura-rec-room-migrate.service" ];
-    wants       = [ "network-online.target" ];
-    requires    = [ "ishimura-rec-room-migrate.service" ];
-    wantedBy    = [ "multi-user.target" ];
-    serviceConfig = {
-      Type            = "simple";
-      User            = "rec-room";
-      Group           = "rec-room";
-      EnvironmentFile = config.sops.templates."rec-room.env".path;
-      ExecStart       = "${rec-room}/bin/rec-room";
-      WorkingDirectory = "${rec-room}/lib";
-      Restart         = "on-failure";
-      RestartSec      = "5s";
-    };
+    after = [ "ishimura-rec-room-migrate.service" ];
+    requires = [ "ishimura-rec-room-migrate.service" ];
   };
-
-  networking.firewall.allowedTCPPorts = [ 5001 ];
 }

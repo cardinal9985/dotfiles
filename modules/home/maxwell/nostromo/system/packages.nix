@@ -1,4 +1,4 @@
-{ pkgs, inputs, ... }:
+{ pkgs, ... }:
 
 {
   home.packages = with pkgs; [
@@ -52,14 +52,6 @@
     freetube          # YouTube Client
     mpv               # Video Player
 
-    # ─── [ Game Development ] ───────────────────────────────────────────
-
-    godot-mono        # Game Engine
-    blender           # 3D Modeling
-    material-maker    # Procedural Materials Authoring
-    libresprite       # Sprite Editor
-    pixelorama        # Pixel Art
-
     # ─── [ Browsing ] ───────────────────────────────────────────────────
 
     tor-browser  # Private Browser
@@ -81,16 +73,6 @@
     cakewallet        # Multi-Currency Crypto Wallet
     feather           # Monero Wallet
 
-    # ─── [ Audio Engineering ] ──────────────────────────────────────────
-
-    tenacity                 # Audio Editing
-    reaper                   # DAW
-    reaper-sws-extension     # Reaper Plugin
-    reaper-reapack-extension # Reaper Package Manager
-    yabridge                 # VST Bridge
-    synthesia                # Rocksmith but for a piano
-    odin2                    # Odin 2 Synthesizer Plugin
-
     # ─── [ Video Recording & Editing ] ──────────────────────────────────
 
     obs-studio            # Recording and Streaming
@@ -109,16 +91,5 @@
 
     claude-code     # Clanker
 
-    # ─── [ Hyprland ] ───────────────────────────────────────────────────
-
-    grimblast       # Screenshot Tool
-    grim            # Screenshot Backend
-    slurp           # Region Selection
-    swappy          # Screenshot Annotation
-    cliphist        # Clipboard History
-    wl-clipboard    # Wayland Clipboard
-    playerctl       # Media Key Control
-    pavucontrol     # Volume Mixer
-    hyprpolkitagent # Authentication Agent
   ];
 }

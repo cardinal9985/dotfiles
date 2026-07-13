@@ -1,7 +1,7 @@
 { ... }:
 {
   imports = [
-    ./hanger.nix
+    ./hangar.nix
     ./tdarr-node.nix
   ];
 }

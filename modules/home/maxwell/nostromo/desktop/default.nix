@@ -11,6 +11,7 @@
     ./stylix.nix
     ./swaync.nix
     ./waybar.nix
+    ./wayland-tools.nix
     ./xdg.nix
   ];
 }

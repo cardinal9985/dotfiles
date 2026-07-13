@@ -1241,11 +1241,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783957577,
-        "narHash": "sha256-v3Oi5ALkNi25wg2PhEy+QLdyY9ZV1cEP/sDlR8ISBtE=",
+        "lastModified": 1783959045,
+        "narHash": "sha256-4KW8FUAkkjdeBjzR24w6fRpaEcFTwkEAg+qQqdswYEw=",
         "ref": "refs/heads/main",
-        "rev": "db96ea4dc1562b9c3a7b9e733f85504c8cf7d1fb",
-        "revCount": 1,
+        "rev": "c874c925f348d3617cacc451b1a618af1ae2df65",
+        "revCount": 3,
         "type": "git",
         "url": "ssh://git@github.com/cardinal9985/stats"
       },

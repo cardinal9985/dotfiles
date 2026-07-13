@@ -1,0 +1,64 @@
+accessLog:
+  filePath: "/var/log/traefik/access.log"
+  format: json
+experimental:
+  localPlugins:
+    crowdsec:
+      moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+    rewriteBody:
+      moduleName: github.com/packruler/rewrite-body
+providers:
+  http:
+    endpoint: "http://127.0.0.1:3001/api/v1/traefik-config"
+    pollInterval: "5s"
+  file:
+    directory: "/etc/traefik/dynamic"
+    watch: true
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    transport:
+      respondingTimeouts:
+        readTimeout: "30m"
+    http3: {}
+    http:
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - crowdsec@file
+  # Raw UDP entrypoints for game-server traffic. Pangolin's "raw resource"
+  # admin UI pushes a matching TCP/UDP router via the HTTP provider once
+  # the resource is defined. Naming convention is protocol-port.
+  udp-42420:
+    address: ":42420/udp"
+  tcp-50300:
+    address: ":50300/tcp"
+  tcp-6969:
+    address: ":6969/tcp"
+  udp-6790:
+    address: ":6790/udp"
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      httpChallenge:
+        entryPoint: web
+      email: __ACME_EMAIL__
+      storage: "/letsencrypt/acme.json"
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+  porkbun:
+    acme:
+      dnsChallenge:
+        provider: porkbun
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+      email: __ACME_EMAIL__
+      storage: "/letsencrypt/porkbun.json"
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"

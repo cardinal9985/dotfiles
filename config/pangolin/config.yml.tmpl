@@ -1,0 +1,31 @@
+app:
+  dashboard_url: "https://pangolin.ishimura.lol"
+  base_domain: "ishimura.lol"
+  log_level: "info"
+  save_logs: false
+server:
+  external_port: 3000
+  internal_port: 3001
+  next_port: 3002
+  internal_hostname: pangolin
+  session_cookie_name: pangolin
+  resource_session_cookie_name: pangolin_resource
+  secret: __SERVER_SECRET__
+  cors:
+    origins: ["https://pangolin.ishimura.lol"]
+domains:
+  domain1:
+    base_domain: "ishimura.lol"
+    cert_resolver: letsencrypt
+gerbil:
+  start_port: 51820
+  base_endpoint: "pangolin.ishimura.lol"
+  use_subdomain: false
+  block_size: 24
+  site_block_size: 30
+  subnet_group: 100.89.137.0/20
+flags:
+  require_email_verification: false
+  disable_signup_without_invite: true
+  disable_user_create_org: false
+  allow_raw_resources: true

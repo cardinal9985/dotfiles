@@ -1,0 +1,1167 @@
+http:
+  middlewares:
+    crowdsec:
+      plugin:
+        crowdsec:
+          enabled: true
+          logLevel: INFO
+          updateIntervalSeconds: 30
+          defaultDecisionSeconds: 60
+          crowdsecMode: live
+          crowdsecLapiHost: 127.0.0.1:8081
+          crowdsecLapiScheme: http
+          crowdsecLapiKey: __CROWDSEC_TRAEFIK_API_KEY__
+          banHTMLFilePath: /etc/traefik/ban.html
+    tailnet-only:
+      ipAllowList:
+        sourceRange:
+          - 100.64.0.0/10
+    error-pages:
+      errors:
+        status:
+          - "403"
+          - "404"
+        service: errors-service
+        query: /{status}.html
+    noindex-headers:
+      headers:
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow, noarchive, nosnippet, noimageindex"
+    # Inject the stylesheet only on Anubis-served pages. auth-router
+    # proxies BOTH Anubis challenge pages and voidauth's Angular SPA
+    # responses, so matching a universal HTML anchor like </head>
+    # tears up voidauth's strict-dynamic + sha256 CSP hashes and the
+    # SPA refuses to bootstrap.
+    #
+    # The anchor here, <script id="anubis_version", appears on every
+    # Anubis page (challenge AND error) and on zero voidauth pages,
+    # so this rewrite is a no-op on voidauth responses and the CSP
+    # hashes survive intact.
+    anubis-theme:
+      plugin:
+        rewriteBody:
+          lastModified: true
+          rewrites:
+            - regex: '<script id="anubis_version"'
+              replacement: '<link rel="stylesheet" href="/anubis-theme.css"><script id="anubis_version"'
+    voidauth-forwardauth:
+      forwardAuth:
+        address: "http://127.0.0.1:3030/api/authz/forward-auth"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - Remote-User
+          - Remote-Name
+          - Remote-Email
+          - Remote-Groups
+    # Voidauth ships Cross-Origin-Resource-Policy: same-origin which blocks
+    # OIDC discovery fetches from other ishimura.lol subdomains (BookLore,
+    # any other relying party that loads /.well-known/* from the browser).
+    # Relax to cross-origin so OIDC clients on books.ishimura.lol etc. can
+    # discover the provider.
+    voidauth-cors-relax:
+      headers:
+        customResponseHeaders:
+          Cross-Origin-Resource-Policy: "cross-origin"
+    rewrite-jellyfin-health:
+      replacePath:
+        path: "/health"
+    rewrite-scrutiny-health:
+      replacePath:
+        path: "/api/health"
+    rewrite-ntfy-health:
+      replacePath:
+        path: "/v1/health"
+    rewrite-voidauth-health:
+      replacePath:
+        path: "/oidc/jwks"
+    rewrite-tdarr-health:
+      replacePath:
+        path: "/api/v2/status"
+    rewrite-adguard-health:
+      replacePath:
+        path: "/login.html"
+    rewrite-navidrome-health:
+      replacePath:
+        path: "/ping"
+    rewrite-booklore-health:
+      replacePath:
+        path: "/"
+    rewrite-romm-health:
+      replacePath:
+        path: "/api/heartbeat"
+    rewrite-tools-health:
+      replacePath:
+        path: "/"
+    rewrite-requests-health:
+      replacePath:
+        path: "/health"
+    rewrite-stats-health:
+      replacePath:
+        path: "/health"
+    rewrite-refinery-health:
+      replacePath:
+        path: "/health"
+    rewrite-games-health:
+      replacePath:
+        path: "/health"
+    rewrite-hangar-health:
+      replacePath:
+        path: "/healthz"
+    dicebear-strip-api:
+      stripPrefix:
+        prefixes:
+          - "/api"
+    strip-mods-prefix:
+      stripPrefix:
+        prefixes:
+          - "/mods"
+    rewrite-slskd-health:
+      replacePath:
+        path: "/api/v0/application"
+    rewrite-degoog-health:
+      replacePath:
+        path: "/"
+    rewrite-synctube-health:
+      replacePath:
+        path: "/"
+    rewrite-moodist-health:
+      replacePath:
+        path: "/"
+    rewrite-paste-health:
+      replacePath:
+        path: "/"
+    rewrite-favicon-png:
+      replacePath:
+        path: "/ishimura-favicon.png"
+    # EmulatorJS netplay socket.io connects to /socket.io/ (the default
+    # path) because ROMM's defineNetplayFunctions override fails on the
+    # nightly build — undefined is not callable. Rewrite to the actual
+    # ROMM netplay mount point so the socket.io handshake succeeds.
+    rewrite-romm-socket-path:
+      replacePathRegex:
+        regex: "^/socket\\.io(.*)"
+        replacement: "/netplay/socket.io$1"
+    # EmulatorJS netplay room list: fetch(this.url + "/list?...") where
+    # this.url = "romm.ishimura.lol" (bare hostname) is treated as a
+    # relative path, resolving to e.g. /console/rom/5/romm.ishimura.lol/list.
+    # Rewrite that to the actual ROMM REST endpoint.
+    rewrite-romm-netplay-list:
+      replacePathRegex:
+        regex: "^.*/romm\\.ishimura\\.lol/list"
+        replacement: "/api/netplay/list"
+    rewrite-approval-required:
+      replacePath:
+        path: "/approval_required.html"
+  routers:
+    robots-router:
+      rule: "Path(`/robots.txt`)"
+      service: errors-service
+      entryPoints:
+        - websecure
+      priority: 1000
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      middlewares:
+        - noindex-headers
+    next-router:
+      rule: "Host(`__DASHBOARD_HOST__`)"
+      service: next-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+    api-router:
+      # No tailnet-only: newt clients (e.g. ishimura) connect from public
+      # IP via WG hole-punching; the API auths them via secret tokens, so
+      # IP gating here would lock newt out. UI (next-router) stays tailnet-only.
+      rule: "Host(`__DASHBOARD_HOST__`) && PathPrefix(`/api/v1`)"
+      service: api-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - noindex-headers
+        - error-pages
+    auth-approval-router:
+      rule: "Host(`auth.__DOMAIN__`) && Path(`/approval_required`)"
+      service: errors-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 30
+      middlewares:
+        - noindex-headers
+        - rewrite-approval-required
+    auth-admin-router:
+      rule: "Host(`auth.__DOMAIN__`) && PathPrefix(`/admin`)"
+      service: auth-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      priority: 20
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+    anubis-theme-css-router:
+      rule: "(Host(`auth.__DOMAIN__`) || Host(`__DOMAIN__`)) && Path(`/anubis-theme.css`)"
+      service: errors-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      priority: 100
+      middlewares:
+        - noindex-headers
+    ishimura-banner-png-router:
+      rule: "HostRegexp(`^.+\\.__DOMAIN__$`) && Path(`/ishimura-banner.png`)"
+      service: errors-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 100
+      middlewares:
+        - noindex-headers
+    ishimura-favicon-png-router:
+      rule: "HostRegexp(`^.+\\.__DOMAIN__$`) && Path(`/ishimura-favicon.png`)"
+      service: errors-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 100
+      middlewares:
+        - noindex-headers
+    favicon-ico-subdomain-router:
+      rule: "HostRegexp(`^.+\\.__DOMAIN__$`) && Path(`/favicon.ico`)"
+      service: errors-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 100
+      middlewares:
+        - noindex-headers
+        - rewrite-favicon-png
+    favicon-ico-root-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/favicon.ico`)"
+      service: errors-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 100
+      middlewares:
+        - noindex-headers
+        - rewrite-favicon-png
+    auth-router:
+      rule: "Host(`auth.__DOMAIN__`)"
+      service: auth-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-cors-relax
+        - anubis-theme
+        - error-pages
+    homepage-health-jellyfin-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/jellyfin`)"
+      service: ishimura-jellyfin-health-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-jellyfin-health
+    homepage-health-scrutiny-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/scrutiny`)"
+      service: scrutiny-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-scrutiny-health
+    homepage-health-ntfy-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/ntfy`)"
+      service: ntfy-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-ntfy-health
+    homepage-health-tdarr-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/tdarr`)"
+      service: tdarr-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-tdarr-health
+    homepage-health-voidauth-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/voidauth`)"
+      service: auth-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-voidauth-health
+    homepage-health-adguard-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/adguard`)"
+      service: adguard-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-adguard-health
+    homepage-health-navidrome-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/navidrome`)"
+      service: navidrome-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-navidrome-health
+    homepage-health-booklore-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/booklore`)"
+      service: booklore-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-booklore-health
+    homepage-health-romm-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/romm`)"
+      service: romm-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-romm-health
+    homepage-health-tools-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/tools`)"
+      service: it-tools-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-tools-health
+    homepage-health-requests-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/requests`)"
+      service: requests-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-requests-health
+    homepage-health-stats-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/stats`)"
+      service: stats-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-stats-health
+    homepage-health-refinery-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/refinery`)"
+      service: refinery-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-refinery-health
+    homepage-health-games-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/games`)"
+      service: games-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-games-health
+    homepage-health-hangar-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/hangar`)"
+      service: hangar-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-hangar-health
+    homepage-health-slskd-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/slskd`)"
+      service: slskd-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-slskd-health
+    homepage-health-synctube-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/synctube`)"
+      service: synctube-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-synctube-health
+    homepage-health-moodist-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/moodist`)"
+      service: moodist-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-moodist-health
+    homepage-health-paste-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/paste`)"
+      service: privatebin-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-paste-health
+    homepage-health-search-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/search`)"
+      service: degoog-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-degoog-health
+    homepage-admin-router:
+      rule: "Host(`__DOMAIN__`) && PathPrefix(`/admin`)"
+      service: homepage-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 20
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+    # Public mod bundles at ishimura.lol/mods/* - bypasses voidauth so
+    # friends without an account can pull mod zips. Served from ishimura
+    # (mods-server busybox container reading /mnt/storage/mods/), not
+    # normandy, so the files live next to the rest of the storage.
+    # Higher priority than homepage-router so it matches before the
+    # catch-all auth-gated route.
+    homepage-mods-router:
+      rule: "Host(`__DOMAIN__`) && PathPrefix(`/mods`)"
+      service: ishimura-mods-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 20
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - strip-mods-prefix
+    homepage-router:
+      rule: "Host(`__DOMAIN__`)"
+      service: homepage-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 5
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+        - error-pages
+    scrutiny-router:
+      rule: "Host(`scrutiny.__DOMAIN__`)"
+      service: scrutiny-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+    tdarr-router:
+      rule: "Host(`tdarr.__DOMAIN__`)"
+      service: tdarr-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+    ntfy-router:
+      rule: "Host(`ntfy.__DOMAIN__`)"
+      service: ntfy-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+    adguard-router:
+      rule: "Host(`adguard.__DOMAIN__`)"
+      service: adguard-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+    slskd-router:
+      rule: "Host(`slskd.__DOMAIN__`)"
+      service: slskd-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+    jellyfin-router:
+      rule: "Host(`jellyfin.__DOMAIN__`)"
+      service: jellyfin-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+    # FileBrowser Quantum admin UI on ishimura. Double-gated: tailnet-only
+    # at the proxy + FileBrowser's own admin user. Only used to manage
+    # files in /mnt/storage from the browser instead of scp.
+    filebrowser-router:
+      rule: "Host(`files.__DOMAIN__`)"
+      service: ishimura-filebrowser-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - error-pages
+        - tailnet-only
+        - voidauth-forwardauth
+    # Subsonic API (/rest/*) needs to bypass voidauth so phone apps like
+    # DSub, Substreamer, Symfonium can authenticate with their own
+    # Subsonic password (set per-user in the Navidrome UI).
+    navidrome-api-router:
+      rule: "Host(`music.__DOMAIN__`) && PathPrefix(`/rest`)"
+      service: navidrome-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 20
+      middlewares:
+        - noindex-headers
+    navidrome-router:
+      rule: "Host(`music.__DOMAIN__`)"
+      service: navidrome-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    booklore-router:
+      rule: "Host(`books.__DOMAIN__`)"
+      service: booklore-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    # Dicebear API: /api/* paths strip the prefix and proxy to the
+    # self-hosted dicebear/api container on ishimura. Public (no auth)
+    # so the OIDC `picture` URLs voidauth eventually issues are fetchable
+    # without a cookie. High priority so it beats the customizer router.
+    dicebear-api-router:
+      rule: "Host(`avatars.__DOMAIN__`) && PathPrefix(`/api`)"
+      service: dicebear-api-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 20
+      middlewares:
+        - noindex-headers
+        - dicebear-strip-api
+    # Customizer static page (busybox httpd) at the root, voidauth-gated
+    # so only signed-in crew see the foundry.
+    dicebear-router:
+      rule: "Host(`avatars.__DOMAIN__`)"
+      service: dicebear-www-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    romm-router:
+      rule: "Host(`romm.__DOMAIN__`)"
+      service: romm-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+        - rewrite-romm-socket-path
+        - rewrite-romm-netplay-list
+    it-tools-router:
+      rule: "Host(`tools.__DOMAIN__`)"
+      service: it-tools-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    requests-router:
+      rule: "Host(`requests.__DOMAIN__`)"
+      service: requests-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    stats-router:
+      rule: "Host(`stats.__DOMAIN__`)"
+      service: stats-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    refinery-router:
+      rule: "Host(`refinery.__DOMAIN__`)"
+      service: refinery-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    games-router:
+      rule: "Host(`rec.__DOMAIN__`)"
+      service: games-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    # Hangar - nix-native game-server control panel replacing Pelican.
+    # Lives on nostromo (same host as game systemd units).
+    hangar-router:
+      rule: "Host(`hangar.__DOMAIN__`)"
+      service: hangar-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    # Public banner + other assets that KF2 clients fetch when loading
+    # the welcome screen. No voidauth - they arrive without cookies.
+    # Higher priority than the main hangar router so this matches first.
+    hangar-public-router:
+      rule: "Host(`hangar.__DOMAIN__`) && PathPrefix(`/public/`)"
+      service: hangar-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 20
+      middlewares:
+        - noindex-headers
+    synctube-router:
+      rule: "Host(`watch.__DOMAIN__`)"
+      service: synctube-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    moodist-router:
+      rule: "Host(`moodist.__DOMAIN__`)"
+      service: moodist-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    paste-router:
+      rule: "Host(`paste.__DOMAIN__`)"
+      service: privatebin-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    degoog-router:
+      rule: "Host(`search.__DOMAIN__`)"
+      service: degoog-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
+    catchall-router:
+      rule: 'HostRegexp(`^.+\.${builtins.replaceStrings ["."] ["\\."] domain}$`)'
+      service: errors-service
+      entryPoints:
+        - websecure
+      priority: 1
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      middlewares:
+        - noindex-headers
+        - error-pages
+  services:
+    next-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3002"
+    api-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3000"
+    auth-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8923"
+    errors-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8085"
+    homepage-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8086"
+    ishimura-mods-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:8087"
+    ishimura-filebrowser-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:8088"
+    ishimura-jellyfin-health-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:8096"
+    jellyfin-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:8096"
+    scrutiny-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:47890"
+    ntfy-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8080"
+    tdarr-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:8265"
+    adguard-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:3000"
+    navidrome-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:4533"
+    booklore-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:6060"
+    dicebear-api-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:7373"
+    dicebear-www-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:7374"
+    romm-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:8083"
+    it-tools-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:8085"
+    requests-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:5002"
+    stats-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:5005"
+    refinery-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:5006"
+    games-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:5001"
+    hangar-service:
+      loadBalancer:
+        servers:
+          - url: "http://__NOSTROMO_IP__:5010"
+    slskd-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:5030"
+    degoog-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:4444"
+    synctube-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:4545"
+    moodist-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:4546"
+    privatebin-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:4549"
+

@@ -55,7 +55,6 @@
     # ─── [ Browsing ] ───────────────────────────────────────────────────
 
     tor-browser  # Private Browser
-    brave        # Backup Browser
 
     # ─── [ Communication ] ──────────────────────────────────────────────
 

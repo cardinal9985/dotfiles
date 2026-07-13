@@ -13,6 +13,10 @@
     eq-flat   = "easyeffects --load-preset flat";
     eq-night  = "easyeffects --load-preset night";
     eq-voice  = "easyeffects --load-preset voice";
+    fix-nostromo = ''systemctl --failed --no-legend | awk '{print $1}' | xargs -r sudo systemctl restart'';
+    fix-ishimura = ''ssh -t -p 36475 maxwell@192.168.254.186 "systemctl --failed --no-legend | awk '{print \$1}' | xargs -r sudo systemctl restart"'';
+    fix-normandy = ''ssh -t -p 36475 maxwell@100.108.98.70 "systemctl --failed --no-legend | awk '{print \$1}' | xargs -r sudo systemctl restart"'';
+    fix-all      = ''fix-nostromo; ssh -t -p 36475 maxwell@192.168.254.186 "systemctl --failed --no-legend | awk '{print \$1}' | xargs -r sudo systemctl restart"; ssh -t -p 36475 maxwell@100.108.98.70 "systemctl --failed --no-legend | awk '{print \$1}' | xargs -r sudo systemctl restart"'';
     deploy-ishimura = ''colmena apply --on ishimura && curl -s -H "X-Title: Deploy ishimura ✓" -H "X-Tags: rocket" -d "ok" http://normandy:8080/deploy || curl -s -H "X-Title: Deploy ishimura ✗" -H "X-Priority: high" -H "X-Tags: x" -d "failed" http://normandy:8080/deploy'';
     deploy-normandy = ''colmena apply --on normandy && curl -s -H "X-Title: Deploy normandy ✓" -H "X-Tags: rocket" -d "ok" http://normandy:8080/deploy || curl -s -H "X-Title: Deploy normandy ✗" -H "X-Priority: high" -H "X-Tags: x" -d "failed" http://normandy:8080/deploy'';
     deploy-all      = ''colmena apply --on ishimura,normandy && curl -s -H "X-Title: Deploy all ✓" -H "X-Tags: rocket" -d "ok" http://normandy:8080/deploy || curl -s -H "X-Title: Deploy all ✗" -H "X-Priority: high" -H "X-Tags: x" -d "failed" http://normandy:8080/deploy'';
@@ -20,10 +24,6 @@
     normandy  = "TERM=xterm-256color ssh -p 36475 maxwell@100.108.98.70";
     restart-jellyfin   = "ssh -t -p 36475 maxwell@192.168.254.186 sudo systemctl restart jellyfin";
     restart-tdarr      = "ssh -t -p 36475 maxwell@192.168.254.186 sudo systemctl restart podman-tdarr-server";
-    # Pause/resume the LOCAL tdarr-node before/after gaming. Even with
-    # throttling in place, fully stopping the transcoder eliminates any
-    # competition for CPU/IO. tdarr-off before launching a game, tdarr-on
-    # when done.
     tdarr-off          = "sudo systemctl stop podman-tdarr-node";
     tdarr-on           = "sudo systemctl start podman-tdarr-node";
     restart-scrutiny   = "ssh -t -p 36475 maxwell@192.168.254.186 sudo systemctl restart scrutiny";
@@ -33,6 +33,6 @@
     restart-homepage   = "ssh -t -p 36475 maxwell@100.108.98.70 sudo systemctl restart podman-homepage";
     health-check = ''for u in https://ishimura.lol https://auth.ishimura.lol https://jellyfin.ishimura.lol http://ishimura:8265 http://ishimura:47890; do printf "%-40s " "$u"; curl -kIso /dev/null -w "%{http_code}\n" "$u" --max-time 5; done'';
     # Clear stale Hive lock after cake_wallet exits uncleanly so it can start again.
-    cake-unstick = "pkill -x cake_wallet; rm -f ~/.config/cake_wallet/*.lock";
+    cake-fix = "pkill -x cake_wallet; rm -f ~/.config/cake_wallet/*.lock";
   };
 }

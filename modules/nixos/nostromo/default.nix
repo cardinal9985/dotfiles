@@ -5,9 +5,8 @@
     ./network.nix
     ./nfs.nix
     ./ntfy.nix
-    ./tdarr-node.nix
+    ./services
     ./gameservers
-    ./hangar.nix
     ./boot.nix
     ./gpu.nix
     ./audio.nix

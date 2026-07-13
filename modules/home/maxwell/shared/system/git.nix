@@ -17,6 +17,7 @@
       push.autoSetupRemote = true;
       gpg.format = "ssh";
       "gpg \"ssh\"".allowedSignersFile = "/home/maxwell/.ssh/allowed_signers";
+      "url \"git@github.com:\"".insteadOf = "https://github.com/";
     };
   };
 

@@ -1,6 +1,7 @@
 { ... }:
 {
   imports = [
+    ./alerts.nix
     ./boot.nix
     ./crowdsec.nix
     ./impermanence.nix

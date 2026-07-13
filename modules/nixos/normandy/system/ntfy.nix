@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 let
   stateDir  = "/var/lib/crowdsec-ntfy";
@@ -148,22 +148,6 @@ $top_ips" \
       http://localhost:8080/honeypot >/dev/null || true
   '';
 
-  critical = [
-    "podman-pangolin"
-    "podman-traefik"
-    "podman-gerbil"
-    "podman-voidauth"
-    "podman-voidauth-db"
-    "podman-ntfy"
-    "podman-homepage"
-    "podman-errorpages"
-    "anubis-public"
-    "crowdsec"
-    "crowdsec-ntfy"
-  ];
-  alertFor = name: {
-    "${name}".unitConfig.OnFailure = [ "ntfy-on-failure@%n.service" ];
-  };
 in
 {
 
@@ -225,39 +209,37 @@ in
     };
   };
 
-  systemd.services = lib.mkMerge ([
-    {
-      crowdsec-ntfy = {
-        description = "Poll CrowdSec decisions, post new bans to ntfy";
-        after = [ "crowdsec.service" "ntfy-sh.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = crowdsecPollScript;
-        };
+  systemd.services = {
+    crowdsec-ntfy = {
+      description = "Poll CrowdSec decisions, post new bans to ntfy";
+      after = [ "crowdsec.service" "ntfy-sh.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = crowdsecPollScript;
       };
-      cert-expiry-ntfy = {
-        description = "Watch TLS cert expiry on public hosts";
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = certPollScript;
-        };
+    };
+    cert-expiry-ntfy = {
+      description = "Watch TLS cert expiry on public hosts";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = certPollScript;
       };
-      voidauth-ntfy = {
-        description = "Poll voidauth-db for pending-approval signups, post new ones to ntfy";
-        after = [ "podman-voidauth-db.service" "ntfy-sh.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = voidauthPollScript;
-        };
+    };
+    voidauth-ntfy = {
+      description = "Poll voidauth-db for pending-approval signups, post new ones to ntfy";
+      after = [ "podman-voidauth-db.service" "ntfy-sh.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = voidauthPollScript;
       };
-      endlessh-ntfy-digest = {
-        description = "Hourly endlessh attempt digest -> ntfy";
-        after = [ "endlessh-go.service" "ntfy-sh.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = endlesshDigestScript;
-        };
+    };
+    endlessh-ntfy-digest = {
+      description = "Hourly endlessh attempt digest -> ntfy";
+      after = [ "endlessh-go.service" "ntfy-sh.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = endlesshDigestScript;
       };
-    }
-  ] ++ map alertFor critical);
+    };
+  };
 }

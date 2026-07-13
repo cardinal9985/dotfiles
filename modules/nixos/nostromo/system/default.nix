@@ -8,5 +8,6 @@
     ./impermanence.nix
     ./security.nix
     ./ntfy.nix
+    ./nix-ld.nix
   ];
 }

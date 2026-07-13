@@ -15,6 +15,9 @@ let
       set -euo pipefail
       export STEAM_COMPAT_DATA_PATH="${prefixDir}"
       export STEAM_COMPAT_CLIENT_INSTALL_PATH="$HOME/.steam/steam"
+      # Xalia (Proton's accessibility bridge) crashes noisily on some Qt
+      # apps including MO2; not required for anything we care about.
+      export PROTON_DISABLE_XALIA=1
       mkdir -p "$STEAM_COMPAT_DATA_PATH" "${mo2Dir}"
 
       if [ ! -f "${mo2Dir}/ModOrganizer.exe" ]; then
@@ -32,14 +35,77 @@ let
       exec ${pkgs.umu-launcher}/bin/umu-run "${mo2Dir}/ModOrganizer.exe" "$@"
     '';
 
+  # Patch a Wine user.reg to enable subpixel font smoothing (rgb).
+  # Direct file edit — no wine invocation needed. Idempotent.
+  mkFontsmoothTool =
+    { name, prefixDir }:
+    pkgs.writers.writePython3Bin "mo2-${name}-fontsmooth"
+      {
+        flakeIgnore = [
+          "E501"
+          "E203"
+        ];
+      }
+      ''
+        import re
+        import sys
+        from pathlib import Path
+
+        REG = Path("${prefixDir}/pfx/user.reg")
+        TARGET = r"[Control Panel\\Desktop]"
+        DESIRED = {
+            '"FontSmoothing"': '"2"',
+            '"FontSmoothingType"': "dword:00000002",
+            '"FontSmoothingGamma"': "dword:00000578",
+            '"FontSmoothingOrientation"': "dword:00000001",
+        }
+
+        if not REG.is_file():
+            print(f"error: {REG} not found. Run mo2-${name} first.", file=sys.stderr)
+            sys.exit(1)
+
+        lines = REG.read_text().splitlines(keepends=True)
+        start = next((i for i, l in enumerate(lines) if l.startswith(TARGET)), None)
+
+        if start is None:
+            block = [f"{TARGET}\n"] + [f"{k}={v}\n" for k, v in DESIRED.items()] + ["\n"]
+            REG.write_text("".join(lines) + "".join(block))
+            print("added [Control Panel\\Desktop] section with fontsmoothing keys")
+            sys.exit(0)
+
+        end = next((j for j in range(start + 1, len(lines)) if lines[j].startswith("[")), len(lines))
+        key_re = re.compile(r'^("[^"]+")=')
+        seen = set()
+        out = [lines[start]]
+        for line in lines[start + 1 : end]:
+            m = key_re.match(line)
+            if m and m.group(1) in DESIRED:
+                out.append(f"{m.group(1)}={DESIRED[m.group(1)]}\n")
+                seen.add(m.group(1))
+            else:
+                out.append(line)
+        for k, v in DESIRED.items():
+            if k not in seen:
+                out.append(f"{k}={v}\n")
+
+        REG.write_text("".join(lines[:start] + out + lines[end:]))
+        print("patched fontsmoothing keys in", REG)
+      '';
+
   mo2-anomaly = mkMO2 {
     name = "anomaly";
     mo2Dir = "${gamesRoot}/mo2/anomaly";
+    prefixDir = "${gamesRoot}/prefixes/anomaly";
+  };
+
+  mo2-anomaly-fontsmooth = mkFontsmoothTool {
+    name = "anomaly";
     prefixDir = "${gamesRoot}/prefixes/anomaly";
   };
 in
 {
   home.packages = [
     mo2-anomaly
+    mo2-anomaly-fontsmooth
   ];
 }

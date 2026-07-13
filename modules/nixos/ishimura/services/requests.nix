@@ -1,14 +1,7 @@
-{ config, pkgs, ... }:
+{ inputs, config, pkgs, ... }:
 
 let
-  src = ../../../../config/requests;
-
-  pythonEnv = pkgs.python3.withPackages (ps: [ ps.flask ]);
-
-  app = pkgs.runCommand "ishimura-requests" {} ''
-    mkdir -p $out
-    cp -r ${src}/app.py ${src}/templates $out/
-  '';
+  requests = inputs.requests.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {
   systemd.tmpfiles.rules = [
@@ -45,14 +38,14 @@ in
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      Type = "simple";
-      User = "requests";
-      Group = "requests";
+      Type            = "simple";
+      User            = "requests";
+      Group           = "requests";
       EnvironmentFile = config.sops.templates."requests.env".path;
-      ExecStart = "${pythonEnv}/bin/python ${app}/app.py";
-      WorkingDirectory = app;
-      Restart = "on-failure";
-      RestartSec = "5s";
+      ExecStart       = "${requests}/bin/requests";
+      WorkingDirectory = "${requests}/lib";
+      Restart         = "on-failure";
+      RestartSec      = "5s";
     };
   };
 }

@@ -130,6 +130,9 @@ http:
     rewrite-paste-health:
       replacePath:
         path: "/"
+    rewrite-files-health:
+      replacePath:
+        path: "/health"
     rewrite-favicon-png:
       replacePath:
         path: "/ishimura-favicon.png"
@@ -584,6 +587,21 @@ http:
       middlewares:
         - noindex-headers
         - rewrite-paste-health
+    homepage-health-files-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/files`)"
+      service: ishimura-filebrowser-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-files-health
     homepage-health-search-router:
       rule: "Host(`__DOMAIN__`) && Path(`/health/search`)"
       service: degoog-service

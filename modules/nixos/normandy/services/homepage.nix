@@ -187,6 +187,8 @@ in
         description = "File Manager";
         url = "https://files.ishimura.lol";
         icon = "▤";
+        statusPath = "/health/files";
+        healthUrl = "http://${ishimuraTailnetIP}:8088/health";
       }
     ];
 

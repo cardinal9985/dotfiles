@@ -1,7 +1,7 @@
 { inputs, pkgs, ... }:
 
 let
-  hangar = inputs.hangar.packages.${pkgs.system}.default;
+  hangar = inputs.hangar.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   managedUnits = [
     "kf2.service"

@@ -4,7 +4,6 @@ let
   hosts         = import ../../shared/lib/hosts.nix;
   domain        = "ishimura.lol";
   dashboardHost = "pangolin.${domain}";
-  acmeEmail     = "fanatical.despise915@simplelogin.com";
 
   crowdsecPluginSrc = pkgs.fetchFromGitHub {
     owner = "maxlerebourg";
@@ -1275,7 +1274,7 @@ let
         acme:
           httpChallenge:
             entryPoint: web
-          email: ${acmeEmail}
+          email: __ACME_EMAIL__
           storage: "/letsencrypt/acme.json"
           caServer: "https://acme-v02.api.letsencrypt.org/directory"
       porkbun:
@@ -1285,12 +1284,14 @@ let
             resolvers:
               - "1.1.1.1:53"
               - "8.8.8.8:53"
-          email: ${acmeEmail}
+          email: __ACME_EMAIL__
           storage: "/letsencrypt/porkbun.json"
           caServer: "https://acme-v02.api.letsencrypt.org/directory"
   '';
 in
 {
+  sops.secrets."pangolin/acme_email" = {};
+
   sops.templates."porkbun.env" = {
     content = ''
       PORKBUN_API_KEY=${config.sops.placeholder."porkbun/api_key"}
@@ -1321,12 +1322,15 @@ in
       set -euo pipefail
       SERVER_SECRET=$(cat ${config.sops.secrets."pangolin/server_secret".path})
       CROWDSEC_KEY=$(cat ${config.sops.secrets."crowdsec/traefik_bouncer_api_key".path})
+      ACME_EMAIL=$(cat ${config.sops.secrets."pangolin/acme_email".path})
       ${pkgs.gnused}/bin/sed \
         "s|__SERVER_SECRET__|$SERVER_SECRET|" \
         ${configYamlTemplate} \
         > /persist/pangolin/config/config.yml
-      install -m 0644 ${traefikStaticConfig} \
-        /persist/pangolin/config/traefik/traefik_config.yml
+      ${pkgs.gnused}/bin/sed \
+        "s|__ACME_EMAIL__|$ACME_EMAIL|g" \
+        ${traefikStaticConfig} \
+        > /persist/pangolin/config/traefik/traefik_config.yml
       install -m 0644 ${../../../config/pangolin/ban.html} \
         /persist/pangolin/config/traefik/ban.html
       install -m 0644 ${../../../config/pangolin/403.html} \

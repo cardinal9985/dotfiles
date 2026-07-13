@@ -7,6 +7,18 @@
     mode = "0400";
   };
 
+  sops.secrets."anubis/webmaster_email" = {};
+
+  sops.templates."anubis-public.env" = {
+    content = ''
+      WEBMASTER_EMAIL=${config.sops.placeholder."anubis/webmaster_email"}
+    '';
+    owner = "anubis";
+  };
+
+  systemd.services.anubis-public.serviceConfig.EnvironmentFile =
+    config.sops.templates."anubis-public.env".path;
+
   services.anubis = {
     defaultOptions = {
       extraFlags = [ "-cookie-domain" ".ishimura.lol" ];
@@ -74,7 +86,6 @@
         TARGET = "http://127.0.0.1:3030";
         SERVE_ROBOTS_TXT = false;
         OG_PASSTHROUGH = true;
-        WEBMASTER_EMAIL = "fanatical.despise915@simplelogin.com";
       };
     };
   };

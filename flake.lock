@@ -551,6 +551,26 @@
         "type": "github"
       }
     },
+    "hangar": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783955596,
+        "narHash": "sha256-pLXbAxzeuBBJA7StfwGbTedMBWpiWIak3MHi9T87Sls=",
+        "ref": "refs/heads/main",
+        "rev": "6db54b9fe397d80856d989c152540095232886d9",
+        "revCount": 2,
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/hangar"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/hangar"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -1039,6 +1059,7 @@
       "inputs": {
         "colmena": "colmena",
         "disko": "disko",
+        "hangar": "hangar",
         "home-manager": "home-manager",
         "impermanence": "impermanence",
         "nix-citizen": "nix-citizen",

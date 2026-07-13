@@ -1,23 +1,7 @@
-{ config, pkgs, ... }:
+{ inputs, pkgs, ... }:
 
 let
-  src = ../../../config/hangar;
-
-  pythonEnv = pkgs.python3.withPackages (ps: with ps; [
-    flask
-    requests
-    beautifulsoup4
-  ]);
-
-  app = pkgs.runCommand "hangar" {} ''
-    mkdir -p $out $out/public
-    cp ${src}/app.py ${src}/shared_auth.py $out/
-    cp -r ${src}/backends ${src}/templates ${src}/static $out/
-    # Publicly-served assets (no voidauth). KF2 clients fetch these when
-    # loading the welcome screen, so they must be reachable without a
-    # browser session cookie.
-    cp ${../../../config/resources/kf2-motd-banner.png} $out/public/kf2-motd-banner.png
-  '';
+  hangar = inputs.hangar.packages.${pkgs.system}.default;
 
   managedUnits = [
     "kf2.service"
@@ -38,8 +22,8 @@ in
   users.groups.hangar = {};
 
   systemd.tmpfiles.rules = [
-    "d /etc/hangar             0755 root   root   -"
-    "d /etc/hangar/servers.d   0755 root   root   -"
+    "d /etc/hangar           0755 root root -"
+    "d /etc/hangar/servers.d 0755 root root -"
   ];
 
   security.polkit.enable = true;
@@ -66,17 +50,17 @@ in
       HANGAR_DISCOVERY_DIR = "/etc/hangar/servers.d";
       HANGAR_PORT          = "5010";
       HANGAR_SYSTEMCTL     = systemctlBin;
-      HANGAR_PUBLIC_DIR    = "${app}/public";
+      HANGAR_PUBLIC_DIR    = "${hangar}/public";
     };
     serviceConfig = {
       Type             = "simple";
       User             = "hangar";
       Group            = "hangar";
-      WorkingDirectory = app;
-      ExecStart        = "${pythonEnv}/bin/python ${app}/app.py";
+      WorkingDirectory = "${hangar}/lib";
+      ExecStart        = "${hangar}/bin/hangar";
       Restart          = "on-failure";
       RestartSec       = "5s";
-      NoNewPrivileges  = false;  # sudo needs setuid
+      NoNewPrivileges  = false;
     };
   };
 

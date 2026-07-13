@@ -655,6 +655,26 @@
         "type": "github"
       }
     },
+    "homepage": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783958754,
+        "narHash": "sha256-riJjkUeRtcuvUeEiD/vfj1ErZ170Nv3gEbVBsyLlwYc=",
+        "ref": "refs/heads/main",
+        "rev": "f2918ccb90d81603f195cd080247aaa39c2eae56",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/homepage"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/homepage"
+      }
+    },
     "impermanence": {
       "inputs": {
         "home-manager": "home-manager_2",
@@ -1121,6 +1141,7 @@
         "disko": "disko",
         "hangar": "hangar",
         "home-manager": "home-manager",
+        "homepage": "homepage",
         "impermanence": "impermanence",
         "nix-citizen": "nix-citizen",
         "nix-gaming": "nix-gaming_2",

@@ -1,7 +1,7 @@
-{ pkgs, ... }:
+{ inputs, pkgs, ... }:
 
 let
-  src               = ../../../../config/homepage/src;
+  homepageSrc       = inputs.homepage.packages.${pkgs.stdenv.hostPlatform.system}.default;
   hosts             = import ../../shared/lib/hosts.nix;
   ishimuraTailnetIP = hosts.ishimura.tailnet;
   services = [
@@ -237,15 +237,15 @@ let
 
   homepage = pkgs.runCommand "ishimura-homepage" {} ''
     mkdir -p $out $out/admin $out/games-status
-    cp ${src}/index.html                           $out/index.html
-    cp ${src}/style.css                            $out/style.css
-    cp ${src}/app.js                               $out/app.js
-    cp ${src}/404.html                             $out/404.html
-    cp ${servicesJson}                             $out/services.json
-    cp ${gamesJson}                                $out/games.json
-    cp ${src}/admin/index.html                     $out/admin/index.html
-    cp ${adminServicesJson}                        $out/admin/services.json
-    cp ${../../../../config/resources/ishimura-favicon.png}  $out/ishimura-favicon.png
+    cp ${homepageSrc}/index.html       $out/index.html
+    cp ${homepageSrc}/style.css        $out/style.css
+    cp ${homepageSrc}/app.js           $out/app.js
+    cp ${homepageSrc}/404.html         $out/404.html
+    cp ${servicesJson}                 $out/services.json
+    cp ${gamesJson}                    $out/games.json
+    cp ${homepageSrc}/admin/index.html $out/admin/index.html
+    cp ${adminServicesJson}            $out/admin/services.json
+    cp ${homepageSrc}/ishimura-favicon.png $out/ishimura-favicon.png
   '';
 
   gameStatusPoller = pkgs.writeShellScript "game-status-poller" ''

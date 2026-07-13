@@ -1029,6 +1029,26 @@
         "type": "github"
       }
     },
+    "rec-room": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783958535,
+        "narHash": "sha256-fdUtxtAna+I9yT43Q9E5/O5uKwop2lUZTrEzi41Znzs=",
+        "ref": "refs/heads/main",
+        "rev": "db1f0c80e131a0d50b0021507603176f08f7e680",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/rec-room"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/rec-room"
+      }
+    },
     "refinery": {
       "inputs": {
         "nixpkgs": [
@@ -1109,6 +1129,7 @@
         "nixcord": "nixcord",
         "nixpkgs": "nixpkgs_2",
         "nur": "nur",
+        "rec-room": "rec-room",
         "refinery": "refinery",
         "requests": "requests",
         "rocksmith-nix": "rocksmith-nix",

@@ -4,7 +4,7 @@
     ./booklore.nix
     ./dicebear.nix
     ./filebrowser.nix
-    ./games.nix
+    ./rec-room.nix
     ./it-tools.nix
     ./jellyfin.nix
     ./mods-server.nix

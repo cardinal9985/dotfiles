@@ -85,6 +85,9 @@
       "chess/discord_webhook" = {
         mode = "0400";
       };
+      "daily/nasa_api_key" = {
+        mode = "0400";
+      };
     };
   };
 }

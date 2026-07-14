@@ -29,6 +29,7 @@
       DAILY_DB_PATH=/persist/daily/daily.db
       DAILY_PORT=5011
       DAILY_NASA_API_KEY=DEMO_KEY
+      DAILY_USER_LATITUDE=45
     '';
   };
 }

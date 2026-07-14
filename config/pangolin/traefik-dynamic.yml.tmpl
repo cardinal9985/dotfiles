@@ -110,6 +110,9 @@ http:
     rewrite-bridge-health:
       replacePath:
         path: "/health"
+    rewrite-daily-health:
+      replacePath:
+        path: "/health"
     dicebear-strip-api:
       stripPrefix:
         prefixes:
@@ -500,6 +503,21 @@ http:
       middlewares:
         - noindex-headers
         - rewrite-refinery-health
+    homepage-health-daily-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/daily`)"
+      service: daily-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-daily-health
     homepage-health-games-router:
       rule: "Host(`__DOMAIN__`) && Path(`/health/games`)"
       service: games-service

@@ -86,6 +86,14 @@ in
         healthUrl = "http://${ishimuraTailnetIP}:8888/healthz";
       }
       {
+        name = "News";
+        description = "CEC Newspaper";
+        url = "https://daily.ishimura.lol";
+        icon = "☰";
+        statusPath = "/health/daily";
+        healthUrl = "http://${ishimuraTailnetIP}:5011/health";
+      }
+      {
         name = "SyncTube";
         description = "Watch Together";
         url = "https://watch.ishimura.lol";

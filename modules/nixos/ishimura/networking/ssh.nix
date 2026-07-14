@@ -13,7 +13,10 @@
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
         PermitRootLogin = "no";
-        AllowUsers = [ "maxwell" ];
+        AllowUsers = [
+          "maxwell"
+          "bridge"
+        ];
       };
     };
 
@@ -38,7 +41,9 @@
         overalljails = true;
       };
       ignoreIP = [
-        "10.0.0.0/8" "172.16.0.0/12" "192.168.0.0/16"
+        "10.0.0.0/8"
+        "172.16.0.0/12"
+        "192.168.0.0/16"
         "100.64.0.0/10"
       ];
       jails.sshd.settings.port = "36475";

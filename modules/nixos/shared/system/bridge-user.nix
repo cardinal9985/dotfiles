@@ -9,6 +9,7 @@
   users.users.bridge = {
     isSystemUser = true;
     group = "bridge";
+    useDefaultShell = true;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAYojLHN87/Ae/Ba+7truhAMnsKqo0SfNvO7jBGnGna6 bridge@normandy"
     ];

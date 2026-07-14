@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Pre-commit: auto-format staged .nix files with nixfmt,
-# warn on antipatterns (statix) and dead code (deadnix).
+# Pre-commit: auto-format staged .nix files with nixfmt.
 # Bypass with `git commit --no-verify`.
 
 set -euo pipefail
@@ -15,16 +14,6 @@ echo "→ nixfmt (auto-fix)"
 while IFS= read -r f; do
   nix run --quiet nixpkgs#nixfmt-rfc-style -- "$f"
   git add "$f"
-done <<< "$STAGED_NIX"
-
-echo "→ statix (warn)"
-while IFS= read -r f; do
-  nix run --quiet nixpkgs#statix -- check "$f" || true
-done <<< "$STAGED_NIX"
-
-echo "→ deadnix (warn)"
-while IFS= read -r f; do
-  nix run --quiet nixpkgs#deadnix -- "$f" || true
 done <<< "$STAGED_NIX"
 
 echo "✓ pre-commit checks complete"

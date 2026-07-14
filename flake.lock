@@ -68,6 +68,26 @@
         "type": "github"
       }
     },
+    "bridge": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784001064,
+        "narHash": "sha256-7lQGvJAbJfasrdyNUl1b4Cm8PiTvhBpPy9l5SRfnN+Q=",
+        "ref": "refs/heads/main",
+        "rev": "88fd672c534fc31340a750577fae349271b2b39a",
+        "revCount": 2,
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/bridge"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/bridge"
+      }
+    },
     "colmena": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -1137,6 +1157,7 @@
     },
     "root": {
       "inputs": {
+        "bridge": "bridge",
         "colmena": "colmena",
         "disko": "disko",
         "hangar": "hangar",

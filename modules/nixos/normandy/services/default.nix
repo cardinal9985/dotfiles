@@ -2,6 +2,7 @@
 {
   imports = [
     ./anubis.nix
+    ./bridge.nix
     ./coturn.nix
     ./homepage.nix
     ./moodist.nix

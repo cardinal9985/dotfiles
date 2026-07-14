@@ -45,6 +45,10 @@
       "searxng/secret_key" = {
         mode = "0400";
       };
+      "bridge/ssh_key" = {
+        owner = "bridge";
+        mode = "0400";
+      };
     };
   };
 }

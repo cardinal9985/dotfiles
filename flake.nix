@@ -91,6 +91,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    bridge = {
+      url = "git+ssh://git@github.com/cardinal9985/bridge";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     rec-room = {
       url = "git+ssh://git@github.com/cardinal9985/rec-room";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -107,116 +112,159 @@
     };
   };
 
-  outputs = { self, nixpkgs, colmena, impermanence, disko, sops-nix, home-manager, nur, nixcord, stylix, spicetify-nix, nix-mineral, zen-browser, nix-citizen, rocksmith-nix, nix-index-database, nix-gaming, ... }@inputs:
-  let
-    system = "x86_64-linux";
+  outputs =
+    {
+      self,
+      nixpkgs,
+      colmena,
+      impermanence,
+      disko,
+      sops-nix,
+      home-manager,
+      nur,
+      nixcord,
+      stylix,
+      spicetify-nix,
+      nix-mineral,
+      zen-browser,
+      nix-citizen,
+      rocksmith-nix,
+      nix-index-database,
+      nix-gaming,
+      ...
+    }@inputs:
+    let
+      system = "x86_64-linux";
 
-    workstationModules = { host, user }: [
-      disko.nixosModules.disko
-      nix-mineral.nixosModules.nix-mineral
-      impermanence.nixosModules.impermanence
-      home-manager.nixosModules.home-manager
-      nur.modules.nixos.default
-      stylix.nixosModules.stylix
-      {
-        nixpkgs.overlays = [
-          (import ./overlays/deskmat.nix)
-          (import ./overlays/cakewallet.nix)
-          rocksmith-nix.overlays.default
-        ];
-      }
-      {
-        home-manager.useGlobalPkgs = true;
-        home-manager.useUserPackages = true;
-        home-manager.backupFileExtension = "backup";
-        home-manager.extraSpecialArgs = { inherit host user inputs; };
-        home-manager.users.${user} = import ./home/${user}/${host}.nix;
-        home-manager.sharedModules = [
-          nixcord.homeModules.default
-          spicetify-nix.homeManagerModules.default
-          zen-browser.homeModules.default
-          rocksmith-nix.homeManagerModules.default
-          nix-index-database.homeModules.nix-index
-        ];
-      }
-      ./hosts/${host}/disko.nix
-      ./hosts/${host}/hardware-configuration.nix
-      ./hosts/${host}/configuration.nix
-    ];
+      workstationModules = { host, user }: [
+        disko.nixosModules.disko
+        nix-mineral.nixosModules.nix-mineral
+        impermanence.nixosModules.impermanence
+        home-manager.nixosModules.home-manager
+        nur.modules.nixos.default
+        stylix.nixosModules.stylix
+        {
+          nixpkgs.overlays = [
+            (import ./overlays/deskmat.nix)
+            (import ./overlays/cakewallet.nix)
+            rocksmith-nix.overlays.default
+          ];
+        }
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "backup";
+          home-manager.extraSpecialArgs = { inherit host user inputs; };
+          home-manager.users.${user} = import ./home/${user}/${host}.nix;
+          home-manager.sharedModules = [
+            nixcord.homeModules.default
+            spicetify-nix.homeManagerModules.default
+            zen-browser.homeModules.default
+            rocksmith-nix.homeManagerModules.default
+            nix-index-database.homeModules.nix-index
+          ];
+        }
+        ./hosts/${host}/disko.nix
+        ./hosts/${host}/hardware-configuration.nix
+        ./hosts/${host}/configuration.nix
+      ];
 
-    serverModules = { host, user }: [
-      disko.nixosModules.disko
-      impermanence.nixosModules.impermanence
-      sops-nix.nixosModules.sops
-      home-manager.nixosModules.home-manager
-      {
-        home-manager.useGlobalPkgs = true;
-        home-manager.useUserPackages = true;
-        home-manager.backupFileExtension = "backup";
-        home-manager.extraSpecialArgs = { inherit host user inputs; };
-        home-manager.users.${user} = import ./home/${user}/${host}.nix;
-        home-manager.sharedModules = [
-          nix-index-database.homeModules.nix-index
-        ];
-      }
-      ./hosts/${host}/disko.nix
-      ./hosts/${host}/hardware-configuration.nix
-      ./hosts/${host}/configuration.nix
-    ];
+      serverModules = { host, user }: [
+        disko.nixosModules.disko
+        impermanence.nixosModules.impermanence
+        sops-nix.nixosModules.sops
+        home-manager.nixosModules.home-manager
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "backup";
+          home-manager.extraSpecialArgs = { inherit host user inputs; };
+          home-manager.users.${user} = import ./home/${user}/${host}.nix;
+          home-manager.sharedModules = [
+            nix-index-database.homeModules.nix-index
+          ];
+        }
+        ./hosts/${host}/disko.nix
+        ./hosts/${host}/hardware-configuration.nix
+        ./hosts/${host}/configuration.nix
+      ];
 
-    mkWorkstation = { host, user }: nixpkgs.lib.nixosSystem {
-      inherit system;
-      specialArgs = { inherit host user inputs; };
-      modules = workstationModules { inherit host user; };
-    };
-
-    mkServer = { host, user }: nixpkgs.lib.nixosSystem {
-      inherit system;
-      specialArgs = { inherit host user inputs; };
-      modules = serverModules { inherit host user; };
-    };
-  in {
-    nixosConfigurations = {
-      nostromo = mkWorkstation { host = "nostromo"; user = "maxwell"; };
-      ishimura = mkServer { host = "ishimura"; user = "maxwell"; };
-      normandy = mkServer { host = "normandy"; user = "maxwell"; };
-    };
-
-    colmena = {
-      meta = {
-        nixpkgs = import nixpkgs { inherit system; };
-        specialArgs = { inherit inputs; };
-      };
-
-      nostromo = { ... }: {
-        deployment = {
-          targetHost = "192.168.254.87";
-          targetPort = 36475;
-          targetUser = "maxwell";
-          tags = [ "workstation" ];
+      mkWorkstation =
+        { host, user }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit host user inputs; };
+          modules = workstationModules { inherit host user; };
         };
-        imports = workstationModules { host = "nostromo"; user = "maxwell"; };
+
+      mkServer =
+        { host, user }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit host user inputs; };
+          modules = serverModules { inherit host user; };
+        };
+    in
+    {
+      nixosConfigurations = {
+        nostromo = mkWorkstation {
+          host = "nostromo";
+          user = "maxwell";
+        };
+        ishimura = mkServer {
+          host = "ishimura";
+          user = "maxwell";
+        };
+        normandy = mkServer {
+          host = "normandy";
+          user = "maxwell";
+        };
       };
 
-      ishimura = { ... }: {
-        deployment = {
-          targetHost = "192.168.254.186";
-          targetPort = 36475;
-          targetUser = "maxwell";
-          tags = [ "server" ];
+      colmena = {
+        meta = {
+          nixpkgs = import nixpkgs { inherit system; };
+          specialArgs = { inherit inputs; };
         };
-        imports = serverModules { host = "ishimura"; user = "maxwell"; };
-      };
 
-      normandy = { ... }: {
-        deployment = {
-          targetHost = "100.108.98.70";
-          targetPort = 36475;
-          targetUser = "maxwell";
-          tags = [ "server" ];
+        nostromo = { ... }: {
+          deployment = {
+            targetHost = "192.168.254.87";
+            targetPort = 36475;
+            targetUser = "maxwell";
+            tags = [ "workstation" ];
+          };
+          imports = workstationModules {
+            host = "nostromo";
+            user = "maxwell";
+          };
         };
-        imports = serverModules { host = "normandy"; user = "maxwell"; };
+
+        ishimura = { ... }: {
+          deployment = {
+            targetHost = "192.168.254.186";
+            targetPort = 36475;
+            targetUser = "maxwell";
+            tags = [ "server" ];
+          };
+          imports = serverModules {
+            host = "ishimura";
+            user = "maxwell";
+          };
+        };
+
+        normandy = { ... }: {
+          deployment = {
+            targetHost = "100.108.98.70";
+            targetPort = 36475;
+            targetUser = "maxwell";
+            tags = [ "server" ];
+          };
+          imports = serverModules {
+            host = "normandy";
+            user = "maxwell";
+          };
+        };
       };
     };
-  };
 }

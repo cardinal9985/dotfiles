@@ -735,6 +735,21 @@ http:
         - noindex-headers
         - error-pages
         - tailnet-only
+    bridge-router:
+      rule: "Host(`bridge.__DOMAIN__`)"
+      service: bridge-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
     slskd-router:
       rule: "Host(`slskd.__DOMAIN__`)"
       service: slskd-service
@@ -1162,6 +1177,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://__NOSTROMO_IP__:5010"
+    bridge-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:5015"
     slskd-service:
       loadBalancer:
         servers:

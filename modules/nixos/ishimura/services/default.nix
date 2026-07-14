@@ -2,6 +2,7 @@
 {
   imports = [
     ./booklore.nix
+    ./daily.nix
     ./dicebear.nix
     ./filebrowser.nix
     ./rec-room.nix

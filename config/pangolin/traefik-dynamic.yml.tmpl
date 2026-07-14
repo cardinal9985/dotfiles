@@ -988,6 +988,21 @@ http:
       middlewares:
         - noindex-headers
         - voidauth-forwardauth
+    daily-router:
+      rule: "Host(`daily.__DOMAIN__`)"
+      service: daily-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
     games-router:
       rule: "Host(`rec.__DOMAIN__`)"
       service: games-service
@@ -1201,6 +1216,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://__ISHIMURA_IP__:5006"
+    daily-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:5011"
     games-service:
       loadBalancer:
         servers:

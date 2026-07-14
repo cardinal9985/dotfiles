@@ -112,6 +112,26 @@
         "type": "github"
       }
     },
+    "daily": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784063599,
+        "narHash": "sha256-B6zSwaP4KlrQ+D5YKODZPIWKtrVym3IejoeIfzPCBiY=",
+        "ref": "refs/heads/main",
+        "rev": "65837bae3f7bc567c366475fe4751fac15246acf",
+        "revCount": 3,
+        "type": "git",
+        "url": "file:///home/maxwell/projects/daily"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/maxwell/projects/daily"
+      }
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -1159,6 +1179,7 @@
       "inputs": {
         "bridge": "bridge",
         "colmena": "colmena",
+        "daily": "daily",
         "disko": "disko",
         "hangar": "hangar",
         "home-manager": "home-manager",

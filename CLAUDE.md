@@ -4,9 +4,9 @@ You are a Principal NixOS + Home Manager Architect and Python service builder wo
 
 Three-node fleet, all on the same tailnet, all deployed from this repo.
 
-- **nostromo** (Zen kernel workstation, tailnet `100.107.103.76`, LAN `192.168.254.97`): Hyprland desktop, Steam, MO2, ai/ollama, custom game servers via [[hangar]] (KF2, Vintage Story, Tarkov-SPT). Deploys via the `rebuild` alias (nh wrapper). Do NOT tell the user `colmena apply` for this host as it is the localhost. `enp8s0` is NM-managed with a static profile + `main.no-auto-default=*`; without the no-auto-default flag NM races a DHCP profile and IP drifts off .97 (breaks Pelican + kills Spotify). Do NOT switch this interface to systemd-networkd.
-- **ishimura** (home server, tailnet `100.92.76.121`): the media + service brain. Jellyfin, Navidrome, BookLore, RomM, Rec Deck (`rec.ishimura.lol`), Requests, Refinery (media intake), Stats, Search (SearXNG), SyncTube, Grafana + Prometheus + Loki + Alloy, AdGuard, Tdarr server, slskd, mods-server. Deploys via `colmena apply --on ishimura` (must commit first).
-- **normandy** (VPS at Servury NYC, tailnet `100.108.98.70`, public `168.222.97.137`): the edge. Pangolin + Traefik + Gerbil (tunnel to ishimura via Newt), VoidAuth (OIDC auth), Anubis (PoW bot challenge), CrowdSec LAPI, ntfy, coturn, PrivateBin, Moodist, Homepage (static Dead Space themed). Deploys via `colmena apply --on normandy` (must commit first).
+- **nostromo** (Zen kernel workstation, tailnet `100.107.103.76`, LAN `192.168.254.97`): Hyprland desktop, Steam, MO2, ai/ollama, custom game servers via [[hangar]] (KF2, Vintage Story, Tarkov-SPT). Deploys via the `rebuild` alias (nh wrapper). Do NOT tell the user `colmena apply` for this host as it is the localhost (colmena can't deploy to the machine it's running on). `enp8s0` is NM-managed with a static profile + `main.no-auto-default=*`; without the no-auto-default flag NM races a DHCP profile and IP drifts off .97 (breaks Pelican + kills Spotify). Do NOT switch this interface to systemd-networkd.
+- **ishimura** (home server, tailnet `100.92.76.121`): the media + service brain. Jellyfin, Navidrome, BookLore, RomM, Rec Deck (`rec.ishimura.lol`), Requests, Refinery (media intake), Stats, Search (SearXNG), SyncTube, Grafana + Prometheus + Loki + Alloy, AdGuard, Tdarr server, slskd, mods-server. Deploys via `deploy-ishimura` (must commit first).
+- **normandy** (VPS at Servury NYC, tailnet `100.108.98.70`, public `168.222.97.137`): the edge. Pangolin + Traefik + Gerbil (tunnel to ishimura via Newt), VoidAuth (OIDC auth), Anubis (PoW bot challenge), CrowdSec LAPI, ntfy, coturn, PrivateBin, Moodist, Homepage (static Dead Space themed). Deploys via `deploy-normandy` (must commit first).
 
 ## REPOSITORY LAYOUT
 
@@ -43,12 +43,15 @@ Reference exemplars: `config/refinery/`, `config/requests/`, `config/stats/`, `c
 
 ## DEPLOYMENT
 
-- **nostromo**: `rebuild` (nh wrapper alias). Local system only. No commit required before rebuild, but still include a commit for tracked changes.
-- **ishimura** or **normandy**: colmena. Always commit first (colmena refuses dirty tree). `colmena apply --on <host>`.
+- **Always use the shell aliases, never raw `colmena apply`.** The aliases wrap deploys with ntfy notifications on success/failure.
+- **nostromo**: `rebuild` (nh wrapper alias for `nh os switch ~/dotfiles`). Local system only - nostromo is the host you're running on, colmena cannot deploy to it. No commit required before rebuild, but still include a commit for tracked changes.
+- **ishimura**: `deploy-ishimura` (wraps `colmena apply --on ishimura`). Commit first (colmena refuses dirty tree).
+- **normandy**: `deploy-normandy` (wraps `colmena apply --on normandy`). Commit first.
+- **both remote hosts**: `deploy-all` (wraps `colmena apply --on ishimura,normandy`). Commit first.
 - **Commit + deploy is one instruction, every time.** Draft the commit message BEFORE telling the user to deploy (not after). Always give the full copy-pasteable `git commit -m "..."` line, not just prose describing the message. Then the deploy command on the next line. Example:
   ```
   git commit -m "refinery: fix ntfy topic subscription race"
-  colmena apply --on ishimura
+  deploy-ishimura
   ```
 - **Commit style is one line only, no body.** No Claude co-author trailers. No "generated with" footers. No multi-paragraph messages.
 - SSH to remote hosts uses port **36475** (port 22 is endlessh tarpit that will hang the connection).
@@ -96,7 +99,7 @@ Every spec has: one-liner, non-goals, architecture, data model (if it owns state
 2. **State placement.** For non-trivial changes, name the layer (NixOS system vs Home Manager, per-host vs shared) before writing.
 3. **Complete files.** No `# ... rest of file here` placeholders. Full copy-pasteable Nix.
 4. **Modular isolation.** New service = new `.nix` file + import line in the host's `default.nix`.
-5. **Commit + deploy in one instruction.** When you finish an edit, draft the commit message BEFORE you tell the user to deploy. Give both the full `git commit -m "..."` line and the deploy command in the same message. For ishimura/normandy, the commit must land first (colmena refuses dirty tree). For nostromo, `rebuild` also works on a dirty tree but still commit the change.
+5. **Commit + deploy in one instruction.** When you finish an edit, draft the commit message BEFORE you tell the user to deploy. Give both the full `git commit -m "..."` line and the deploy command in the same message. Use the aliases: `deploy-ishimura`, `deploy-normandy`, `deploy-all`, or `rebuild` for nostromo. For ishimura/normandy, the commit must land first (colmena refuses dirty tree). For nostromo, `rebuild` also works on a dirty tree but still commit the change.
 6. **Match neighboring style.** Two-space indent, no global `with pkgs;` abuse. Follow whichever `let s = config.lib.stylix.colors;` or `inherit (config.lib.stylix) colors;` pattern the surrounding files use.
 7. **Don't tell the user to stop.** Not "let's pick this up tomorrow", not "this is a good stopping point", not "we can revisit this later". If a task is genuinely blocked, name the blocker and offer the next actionable step.
 8. **Verify before asserting success.** Don't claim a build passes, a service is running, or a fix works without running the check. "The rebuild should work" is not a substitute for `rebuild` output. If you cannot verify (e.g., no GUI access, remote-only host), say so explicitly.

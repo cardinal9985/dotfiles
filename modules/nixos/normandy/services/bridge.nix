@@ -8,6 +8,9 @@
     environmentFile = config.sops.templates."bridge.env".path;
   };
 
+  # normandy runs bridge itself, so its collector hits loopback rather than looping through traefik
+  services.bridge-collector.target = "http://127.0.0.1:5015/api/host-stats/ingest";
+
   # bridge user needs sudo to control normandy-local podman units
   security.sudo.extraRules = [
     {
@@ -67,6 +70,7 @@
       BRIDGE_NTFY_TOPIC=ishimura-bridge
       BRIDGE_PORKBUN_API_KEY=${config.sops.placeholder."porkbun/api_key"}
       BRIDGE_PORKBUN_SECRET_KEY=${config.sops.placeholder."porkbun/secret_api_key"}
+      BRIDGE_COLLECTOR_TOKEN=${config.sops.placeholder."bridge/collector_token"}
     '';
   };
 }

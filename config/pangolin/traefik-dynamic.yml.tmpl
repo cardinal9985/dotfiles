@@ -753,6 +753,20 @@ http:
         - noindex-headers
         - error-pages
         - tailnet-only
+    bridge-ingest-router:
+      rule: "Host(`bridge.__DOMAIN__`) && PathPrefix(`/api/host-stats/ingest`)"
+      service: bridge-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 100
+      middlewares:
+        - noindex-headers
     bridge-router:
       rule: "Host(`bridge.__DOMAIN__`)"
       service: bridge-service

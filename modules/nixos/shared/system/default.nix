@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./bridge-collector.nix
     ./bridge-user.nix
     ./fonts.nix
     ./hardening.nix

@@ -107,6 +107,9 @@ http:
     rewrite-hangar-health:
       replacePath:
         path: "/healthz"
+    rewrite-bridge-health:
+      replacePath:
+        path: "/health"
     dicebear-strip-api:
       stripPrefix:
         prefixes:
@@ -527,6 +530,21 @@ http:
       middlewares:
         - noindex-headers
         - rewrite-hangar-health
+    homepage-health-bridge-router:
+      rule: "Host(`__DOMAIN__`) && Path(`/health/bridge`)"
+      service: bridge-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 50
+      middlewares:
+        - noindex-headers
+        - rewrite-bridge-health
     homepage-health-slskd-router:
       rule: "Host(`__DOMAIN__`) && Path(`/health/slskd`)"
       service: slskd-service

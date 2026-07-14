@@ -151,6 +151,14 @@ in
         healthUrl = "http://nostromo:5010/healthz";
       }
       {
+        name = "Bridge";
+        description = "Fleet Control";
+        url = "https://bridge.ishimura.lol";
+        icon = "⎈";
+        statusPath = "/health/bridge";
+        healthUrl = "http://127.0.0.1:5015/health";
+      }
+      {
         name = "Refinery";
         description = "Media Intake";
         url = "https://refinery.ishimura.lol";

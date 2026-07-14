@@ -63,6 +63,8 @@
       BRIDGE_ISHIMURA_IP=100.92.76.121
       BRIDGE_NOSTROMO_IP=100.107.103.76
       BRIDGE_PORT=5015
+      BRIDGE_NTFY_URL=http://127.0.0.1:8080
+      BRIDGE_NTFY_TOPIC=ishimura-bridge
     '';
   };
 }

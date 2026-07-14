@@ -119,11 +119,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784066444,
-        "narHash": "sha256-5JzHe9k+6JZb9XgdbHfl5uloTxOPaNl1lF6N7aVh2g8=",
+        "lastModified": 1784066876,
+        "narHash": "sha256-JQxN44/um0mn8kXsfoT9vx/7rbLQU1DOxlOy31Rnk+U=",
         "ref": "refs/heads/main",
-        "rev": "aff28a81022ca089a45bfcace1343d63fc1aaf4d",
-        "revCount": 9,
+        "rev": "5a920049d75c85414013822c3e3c016d8fd26ecf",
+        "revCount": 10,
         "type": "git",
         "url": "file:///home/maxwell/projects/daily"
       },

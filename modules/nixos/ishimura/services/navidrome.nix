@@ -15,7 +15,9 @@ in
       ReverseProxyWhitelist = "${hosts.normandy.tailnet}/32";
       EnableTranscodingConfig = true;
       LogLevel = "info";
-      PrometheusEnabled = true;
+      Prometheus = {
+        Enabled = true;
+      };
     };
   };
 

@@ -1,35 +1,35 @@
 { pkgs, ... }:
 
 let
-  stateDir  = "/var/lib/crowdsec-ntfy";
+  stateDir = "/var/lib/crowdsec-ntfy";
   stateFile = "${stateDir}/seen.txt";
 
   crowdsecPollScript = pkgs.writeShellScript "crowdsec-ntfy-poll" ''
-    set -euo pipefail
-    mkdir -p ${stateDir}
-    touch ${stateFile}
+        set -euo pipefail
+        mkdir -p ${stateDir}
+        touch ${stateFile}
 
-    CONFIG=$(${pkgs.systemd}/bin/systemctl cat crowdsec | ${pkgs.gnugrep}/bin/grep -o "/nix/store/[^ ]*-crowdsec.yaml" | head -1)
-    [ -z "$CONFIG" ] && exit 0
+        CONFIG=$(${pkgs.systemd}/bin/systemctl cat crowdsec | ${pkgs.gnugrep}/bin/grep -o "/nix/store/[^ ]*-crowdsec.yaml" | head -1)
+        [ -z "$CONFIG" ] && exit 0
 
-    decisions=$(${pkgs.crowdsec}/bin/cscli -c "$CONFIG" decisions list -o json 2>/dev/null || echo "[]")
-    [ -z "$decisions" ] || [ "$decisions" = "null" ] && decisions="[]"
+        decisions=$(${pkgs.crowdsec}/bin/cscli -c "$CONFIG" decisions list -o json 2>/dev/null || echo "[]")
+        [ -z "$decisions" ] || [ "$decisions" = "null" ] && decisions="[]"
 
-    echo "$decisions" | ${pkgs.jq}/bin/jq -r '.[].decisions[]? | "\(.id)\t\(.value)\t\(.scenario)\t\(.origin)\t\(.duration)"' | while IFS=$'\t' read -r id value scenario origin duration; do
-      if ! ${pkgs.gnugrep}/bin/grep -qFx "$id" ${stateFile}; then
-        ${pkgs.curl}/bin/curl -s \
-          -H "X-Title: CrowdSec Ban" \
-          -H "X-Tags: shield,no_entry" \
-          -d "Banned $value
-Scenario: $scenario
-Origin: $origin
-Duration: $duration" \
-          http://localhost:8080/crowdsec >/dev/null || true
-      fi
-    done
+        echo "$decisions" | ${pkgs.jq}/bin/jq -r '.[].decisions[]? | "\(.id)\t\(.value)\t\(.scenario)\t\(.origin)\t\(.duration)"' | while IFS=$'\t' read -r id value scenario origin duration; do
+          if ! ${pkgs.gnugrep}/bin/grep -qFx "$id" ${stateFile}; then
+            ${pkgs.curl}/bin/curl -s \
+              -H "X-Title: CrowdSec Ban" \
+              -H "X-Tags: shield,no_entry" \
+              -d "Banned $value
+    Scenario: $scenario
+    Origin: $origin
+    Duration: $duration" \
+              http://localhost:8080/crowdsec >/dev/null || true
+          fi
+        done
 
-    echo "$decisions" | ${pkgs.jq}/bin/jq -r '.[].decisions[]?.id' | sort -u > ${stateFile}.new
-    mv ${stateFile}.new ${stateFile}
+        echo "$decisions" | ${pkgs.jq}/bin/jq -r '.[].decisions[]?.id' | sort -u > ${stateFile}.new
+        mv ${stateFile}.new ${stateFile}
   '';
 
   certHosts = [
@@ -38,7 +38,7 @@ Duration: $duration" \
     "jellyfin.ishimura.lol"
     "pangolin.ishimura.lol"
   ];
-  certStateDir  = "/var/lib/cert-expiry-ntfy";
+  certStateDir = "/var/lib/cert-expiry-ntfy";
   certStateFile = "${certStateDir}/seen.txt";
 
   certPollScript = pkgs.writeShellScript "cert-expiry-ntfy-poll" ''
@@ -87,65 +87,65 @@ Duration: $duration" \
     ${pkgs.coreutils}/bin/install -m 0644 "$new_state" ${certStateFile}
   '';
 
-  voidauthStateDir  = "/var/lib/voidauth-ntfy";
+  voidauthStateDir = "/var/lib/voidauth-ntfy";
   voidauthStateFile = "${voidauthStateDir}/seen.txt";
 
   voidauthPollScript = pkgs.writeShellScript "voidauth-ntfy-poll" ''
-    set -euo pipefail
-    mkdir -p ${voidauthStateDir}
-    touch ${voidauthStateFile}
+        set -euo pipefail
+        mkdir -p ${voidauthStateDir}
+        touch ${voidauthStateFile}
 
-    rows=$(${pkgs.podman}/bin/podman exec voidauth-db psql -U voidauth -d voidauth -t -A -F $'\t' \
-      -c 'SELECT id::text, username, email, "createdAt"::text FROM "user" WHERE approved = false' \
-      2>/dev/null || true)
-    [ -z "$rows" ] && exit 0
+        rows=$(${pkgs.podman}/bin/podman exec voidauth-db psql -U voidauth -d voidauth -t -A -F $'\t' \
+          -c 'SELECT id::text, username, email, "createdAt"::text FROM "user" WHERE approved = false' \
+          2>/dev/null || true)
+        [ -z "$rows" ] && exit 0
 
-    new_state=$(mktemp)
-    trap "rm -f $new_state" EXIT
+        new_state=$(mktemp)
+        trap "rm -f $new_state" EXIT
 
-    echo "$rows" | while IFS=$'\t' read -r id username email created; do
-      [ -z "$id" ] && continue
-      echo "$id" >> "$new_state"
+        echo "$rows" | while IFS=$'\t' read -r id username email created; do
+          [ -z "$id" ] && continue
+          echo "$id" >> "$new_state"
 
-      if ! ${pkgs.gnugrep}/bin/grep -qFx "$id" ${voidauthStateFile}; then
-        ${pkgs.curl}/bin/curl -s \
-          -H "X-Title: New signup pending approval" \
-          -H "X-Tags: bust_in_silhouette,hourglass" \
-          -d "Username: $username
-Email: $email
-Created: $created
+          if ! ${pkgs.gnugrep}/bin/grep -qFx "$id" ${voidauthStateFile}; then
+            ${pkgs.curl}/bin/curl -s \
+              -H "X-Title: New signup pending approval" \
+              -H "X-Tags: bust_in_silhouette,hourglass" \
+              -d "Username: $username
+    Email: $email
+    Created: $created
 
-Approve at https://auth.ishimura.lol/admin/" \
-          http://localhost:8080/auth >/dev/null || true
-      fi
-    done
+    Approve at https://auth.ishimura.lol/admin/" \
+              http://localhost:8080/auth >/dev/null || true
+          fi
+        done
 
-    ${pkgs.coreutils}/bin/install -m 0644 "$new_state" ${voidauthStateFile}
+        ${pkgs.coreutils}/bin/install -m 0644 "$new_state" ${voidauthStateFile}
   '';
 
   endlesshDigestScript = pkgs.writeShellScript "endlessh-ntfy-digest" ''
-    set -euo pipefail
+        set -euo pipefail
 
-    # Last hour of endlessh accepted-connection entries.
-    entries=$(${pkgs.systemd}/bin/journalctl -u endlessh-go.service \
-      --since "1 hour ago" --no-pager 2>/dev/null \
-      | ${pkgs.gnugrep}/bin/grep -oE 'ACCEPT host=[0-9.]+' || true)
+        # Last hour of endlessh accepted-connection entries.
+        entries=$(${pkgs.systemd}/bin/journalctl -u endlessh-go.service \
+          --since "1 hour ago" --no-pager 2>/dev/null \
+          | ${pkgs.gnugrep}/bin/grep -oE 'ACCEPT host=[0-9.]+' || true)
 
-    [ -z "$entries" ] && exit 0
+        [ -z "$entries" ] && exit 0
 
-    total=$(echo "$entries" | ${pkgs.coreutils}/bin/wc -l)
-    unique=$(echo "$entries" | ${pkgs.coreutils}/bin/sort -u | ${pkgs.coreutils}/bin/wc -l)
-    top_ips=$(echo "$entries" | ${pkgs.gnugrep}/bin/grep -oE '[0-9.]+$' \
-      | ${pkgs.coreutils}/bin/sort | ${pkgs.coreutils}/bin/uniq -c \
-      | ${pkgs.coreutils}/bin/sort -rn | ${pkgs.coreutils}/bin/head -5 \
-      | ${pkgs.gawk}/bin/awk '{printf "  %s (%dx)\n", $2, $1}')
+        total=$(echo "$entries" | ${pkgs.coreutils}/bin/wc -l)
+        unique=$(echo "$entries" | ${pkgs.coreutils}/bin/sort -u | ${pkgs.coreutils}/bin/wc -l)
+        top_ips=$(echo "$entries" | ${pkgs.gnugrep}/bin/grep -oE '[0-9.]+$' \
+          | ${pkgs.coreutils}/bin/sort | ${pkgs.coreutils}/bin/uniq -c \
+          | ${pkgs.coreutils}/bin/sort -rn | ${pkgs.coreutils}/bin/head -5 \
+          | ${pkgs.gawk}/bin/awk '{printf "  %s (%dx)\n", $2, $1}')
 
-    ${pkgs.curl}/bin/curl -s \
-      -H "X-Title: SSH honeypot: $total attempts ($unique unique IPs)" \
-      -H "X-Tags: hook,spider_web" \
-      -d "Top sources:
-$top_ips" \
-      http://localhost:8080/honeypot >/dev/null || true
+        ${pkgs.curl}/bin/curl -s \
+          -H "X-Title: SSH honeypot: $total attempts ($unique unique IPs)" \
+          -H "X-Tags: hook,spider_web" \
+          -d "Top sources:
+    $top_ips" \
+          http://localhost:8080/honeypot >/dev/null || true
   '';
 
 in
@@ -161,6 +161,7 @@ in
       attachment-cache-dir = "/var/lib/ntfy-sh/attachments";
       behind-proxy = false;
       auth-default-access = "read-write";
+      enable-metrics = true;
     };
   };
 
@@ -212,7 +213,10 @@ in
   systemd.services = {
     crowdsec-ntfy = {
       description = "Poll CrowdSec decisions, post new bans to ntfy";
-      after = [ "crowdsec.service" "ntfy-sh.service" ];
+      after = [
+        "crowdsec.service"
+        "ntfy-sh.service"
+      ];
       serviceConfig = {
         Type = "oneshot";
         ExecStart = crowdsecPollScript;
@@ -227,7 +231,10 @@ in
     };
     voidauth-ntfy = {
       description = "Poll voidauth-db for pending-approval signups, post new ones to ntfy";
-      after = [ "podman-voidauth-db.service" "ntfy-sh.service" ];
+      after = [
+        "podman-voidauth-db.service"
+        "ntfy-sh.service"
+      ];
       serviceConfig = {
         Type = "oneshot";
         ExecStart = voidauthPollScript;
@@ -235,7 +242,10 @@ in
     };
     endlessh-ntfy-digest = {
       description = "Hourly endlessh attempt digest -> ntfy";
-      after = [ "endlessh-go.service" "ntfy-sh.service" ];
+      after = [
+        "endlessh-go.service"
+        "ntfy-sh.service"
+      ];
       serviceConfig = {
         Type = "oneshot";
         ExecStart = endlesshDigestScript;

@@ -15,12 +15,18 @@ in
       ReverseProxyWhitelist = "${hosts.normandy.tailnet}/32";
       EnableTranscodingConfig = true;
       LogLevel = "info";
+      PrometheusEnabled = true;
     };
   };
 
   users.users.navidrome.extraGroups = [ "gamemode" ];
 
   environment.persistence."/persist".directories = [
-    { directory = "/var/lib/navidrome"; user = "navidrome"; group = "navidrome"; mode = "0700"; }
+    {
+      directory = "/var/lib/navidrome";
+      user = "navidrome";
+      group = "navidrome";
+      mode = "0700";
+    }
   ];
 }

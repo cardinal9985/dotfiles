@@ -75,11 +75,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784054346,
-        "narHash": "sha256-7TCQINbeR7fpVjajdIy/pHwGez817C0QMHbOG+zbwB8=",
+        "lastModified": 1784057653,
+        "narHash": "sha256-nyM8MIgy6HO1vFIqbkQGl4dXBZZc4+2U/vS8YWiprKY=",
         "ref": "refs/heads/main",
-        "rev": "ab3a67de0018ea6f6fb3886c9faabfb84ba35801",
-        "revCount": 26,
+        "rev": "7c393dda06105ba8c9242bad3492d7ebb4ad3d50",
+        "revCount": 27,
         "type": "git",
         "url": "ssh://git@github.com/cardinal9985/bridge"
       },

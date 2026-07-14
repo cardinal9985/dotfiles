@@ -40,6 +40,10 @@
           command = "/run/current-system/sw/bin/journalctl *";
           options = [ "NOPASSWD" ];
         }
+        {
+          command = "/run/current-system/sw/bin/cat /persist/pangolin/config/letsencrypt/acme.json";
+          options = [ "NOPASSWD" ];
+        }
       ];
     }
   ];

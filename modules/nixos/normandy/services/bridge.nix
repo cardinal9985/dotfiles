@@ -65,6 +65,8 @@
       BRIDGE_PORT=5015
       BRIDGE_NTFY_URL=http://127.0.0.1:8080
       BRIDGE_NTFY_TOPIC=ishimura-bridge
+      BRIDGE_PORKBUN_API_KEY=${config.sops.placeholder."porkbun/api_key"}
+      BRIDGE_PORKBUN_SECRET_KEY=${config.sops.placeholder."porkbun/secret_api_key"}
     '';
   };
 }

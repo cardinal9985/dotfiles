@@ -76,6 +76,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    loadout = {
+      url = "git+ssh://git@github.com/cardinal9985/loadout";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     refinery = {
       url = "git+ssh://git@github.com/cardinal9985/refinery";
       inputs.nixpkgs.follows = "nixpkgs";

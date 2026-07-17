@@ -88,6 +88,9 @@
       "daily/nasa_api_key" = {
         mode = "0400";
       };
+      "deck/secret_key" = {
+        mode = "0400";
+      };
     };
   };
 }

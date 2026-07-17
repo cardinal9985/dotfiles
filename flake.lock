@@ -132,6 +132,26 @@
         "url": "file:///home/maxwell/projects/daily"
       }
     },
+    "deck": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784320036,
+        "narHash": "sha256-Thc7qb4IAQCUEjYJjC4cR4ZeVU2dw5DW32Hiwov/JGs=",
+        "ref": "refs/heads/main",
+        "rev": "c241fb394897555b570e07115320d214dd92613b",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/deck"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/cardinal9985/deck"
+      }
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -1219,6 +1239,7 @@
         "bridge": "bridge",
         "colmena": "colmena",
         "daily": "daily",
+        "deck": "deck",
         "disko": "disko",
         "hangar": "hangar",
         "home-manager": "home-manager",

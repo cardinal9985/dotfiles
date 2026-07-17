@@ -1021,6 +1021,24 @@ http:
       middlewares:
         - noindex-headers
         - voidauth-forwardauth
+    # Deck - USG Ishimura crew portal. Runs alongside the existing homepage
+    # during Stage 1-N iteration. Cutover swaps homepage-router to point at
+    # deck-service and drops this subdomain route.
+    deck-router:
+      rule: "Host(`deck.__DOMAIN__`)"
+      service: deck-service
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: porkbun
+        domains:
+          - main: "__DOMAIN__"
+            sans:
+              - "*.__DOMAIN__"
+      priority: 10
+      middlewares:
+        - noindex-headers
+        - voidauth-forwardauth
     games-router:
       rule: "Host(`rec.__DOMAIN__`)"
       service: games-service
@@ -1238,6 +1256,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://__ISHIMURA_IP__:5011"
+    deck-service:
+      loadBalancer:
+        servers:
+          - url: "http://__ISHIMURA_IP__:5020"
     games-service:
       loadBalancer:
         servers:

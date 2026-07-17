@@ -3,6 +3,7 @@
   imports = [
     ./booklore.nix
     ./daily.nix
+    ./deck.nix
     ./dicebear.nix
     ./filebrowser.nix
     ./rec-room.nix

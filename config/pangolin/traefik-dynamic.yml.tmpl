@@ -1024,6 +1024,10 @@ http:
     # Deck - USG Ishimura crew portal. Runs alongside the existing homepage
     # during Stage 1-N iteration. Cutover swaps homepage-router to point at
     # deck-service and drops this subdomain route.
+    #
+    # tailnet-only during iteration = admin-only in practice (only Maxwell's
+    # machines are on the tailnet). Remove it when ready to open to the crew.
+    # Long-term admin-group gate happens voidauth-side via ProxyAuth Domain.
     deck-router:
       rule: "Host(`deck.__DOMAIN__`)"
       service: deck-service
@@ -1038,6 +1042,7 @@ http:
       priority: 10
       middlewares:
         - noindex-headers
+        - tailnet-only
         - voidauth-forwardauth
     games-router:
       rule: "Host(`rec.__DOMAIN__`)"

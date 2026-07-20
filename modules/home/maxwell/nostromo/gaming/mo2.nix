@@ -24,7 +24,9 @@ let
       # fails on some Anomaly shaders with "E5017: Reservation shader
       # target ps" not implemented. Native DLLs must be pre-installed in
       # the prefix (winetricks d3dcompiler_43/47 d3dx11_43 d3dx9_43).
-      export WINEDLLOVERRIDES="d3dcompiler_43=n;d3dcompiler_47=n;d3dx11_43=n;d3dx9_43=n"
+      # d3d11=n,b lets AnomalyRPC's game-dir d3d11.dll shim load first,
+      # with wine's builtin as fallback if the shim fails.
+      export WINEDLLOVERRIDES="d3dcompiler_43=n;d3dcompiler_47=n;d3dx11_43=n;d3dx9_43=n;d3d11=n,b"
       # Xalia (Proton's accessibility bridge) crashes noisily on some Qt
       # apps including MO2; not required for anything we care about.
       export PROTON_DISABLE_XALIA=1

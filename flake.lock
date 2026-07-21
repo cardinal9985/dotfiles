@@ -1175,11 +1175,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783966032,
-        "narHash": "sha256-mhzt2mIBRLvGcGUfZX9ZeoxuntbBbQZvCaf/ZlKL5Wo=",
+        "lastModified": 1783968140,
+        "narHash": "sha256-MwmDoCT76CwIaHZZxzRHNutRsb/wEOuaQ27zRxsXpew=",
         "ref": "refs/heads/main",
-        "rev": "de8c4b029cfb2349b8197df0effb2fb07982b680",
-        "revCount": 5,
+        "rev": "9e57f2a49bdc8b984d3038ffcbc5d9831027671d",
+        "revCount": 7,
         "type": "git",
         "url": "ssh://git@github.com/cardinal9985/refinery"
       },

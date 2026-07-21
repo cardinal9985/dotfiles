@@ -71,7 +71,7 @@
       REFINERY_GAME_COVER_DIR=/persist/refinery/game_covers
       REFINERY_DAT_DIR=/persist/refinery/dats
       REFINERY_DAT_DB=/persist/refinery/dats.db
-      REFINERY_MOVIE_TARGET=/mnt/storage/media/movies
+      REFINERY_MOVIE_TARGET=/mnt/storage/media/films
       REFINERY_SHOW_TARGET=/mnt/storage/media/shows
       REFINERY_ANIME_MOVIE_TARGET=/mnt/storage/media/anime/movies
       REFINERY_ANIME_SHOW_TARGET=/mnt/storage/media/anime/shows
@@ -115,7 +115,7 @@
       RemainAfterExit = true;
     };
     script = ''
-      for dir in /mnt/storage/media/movies /mnt/storage/media/shows \
+      for dir in /mnt/storage/media/films /mnt/storage/media/shows \
                  /mnt/storage/media/anime  /mnt/storage/media/anime/movies \
                  /mnt/storage/media/anime/shows \
                  /mnt/storage/media/documentaries \
@@ -125,7 +125,7 @@
         mkdir -p "$dir" || true
       done
       for dir in /mnt/storage/media/music /mnt/storage/media/books \
-                 /mnt/storage/media/roms  /mnt/storage/media/movies \
+                 /mnt/storage/media/roms  /mnt/storage/media/films \
                  /mnt/storage/media/shows /mnt/storage/media/anime \
                  /mnt/storage/media/documentaries \
                  /mnt/storage/media/docuseries \
@@ -133,8 +133,8 @@
                  /mnt/storage/media/fan-edits \
                  /mnt/storage/downloads/slskd; do
         if [ -d "$dir" ]; then
-          ${pkgs.acl}/bin/setfacl -R    -m u:refinery:rwx,m::rwx "$dir" || true
-          ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx,m::rwx "$dir" || true
+          ${pkgs.acl}/bin/setfacl -R    -m u:refinery:rwx,g:users:rwX,m::rwx "$dir" || true
+          ${pkgs.acl}/bin/setfacl -d -R -m u:refinery:rwx,g:users:rwX,m::rwx "$dir" || true
         fi
       done
     '';

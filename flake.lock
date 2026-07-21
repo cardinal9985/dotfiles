@@ -796,11 +796,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784613206,
-        "narHash": "sha256-aaPWTSy49iOv0vu7+2kjtEykHktgbuz9R0DhHCsTwS0=",
+        "lastModified": 1784613696,
+        "narHash": "sha256-UHLjjGLol2S0iLWYR515r4WKwgPAgVeO3zCsshDDTxg=",
         "ref": "refs/heads/main",
-        "rev": "cfaa9cd32358f1475db71bcbe1e63262ec94ef98",
-        "revCount": 131,
+        "rev": "b3b305463f8beb53a5f4f5b418cc4873554ec4f6",
+        "revCount": 132,
         "type": "git",
         "url": "ssh://git@github.com/cardinal9985/loadout"
       },
